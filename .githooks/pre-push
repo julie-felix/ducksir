@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# 拦截直接 push main。装法：bash scripts/install-hooks.sh
+# 确实要直推时：DUCKSIR_ALLOW_MAIN_PUSH=1 git push origin main
+set -euo pipefail
+
+protected="refs/heads/main"
+
+if [ "${DUCKSIR_ALLOW_MAIN_PUSH:-0}" = "1" ]; then
+  exit 0
+fi
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "${remote_ref}" = "${protected}" ]; then
+    cat >&2 <<'MSG'
+✗ 直接 push main 被拦。
+
+main 受保护，走分支 + PR：
+  git switch -c feat/<短语>
+  git commit -m "feat: ..."
+  git push -u origin HEAD
+  # 然后开 PR
+
+确有需要绕过：DUCKSIR_ALLOW_MAIN_PUSH=1 git push origin main
+MSG
+    exit 1
+  fi
+done

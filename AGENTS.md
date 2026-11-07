@@ -31,3 +31,4 @@
 - 文档用中文，代码标识符、schema 字段、路径用英文。
 - 不编造 MicroDuck 的规格。没核实的数不进文档。
 - 入口只写一次。发现两处写同一件事，删掉一处。
+- **不直接 push main**：开分支 → PR → squash 合并。规则见 [CONTRIBUTING.md](CONTRIBUTING.md)。
