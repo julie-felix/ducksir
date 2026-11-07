@@ -26,7 +26,7 @@ echo "== 分支保护：${BRANCH} =="
 # 「必须走 PR」由 required_pull_request_reviews 这个对象存在来保证，与批准数无关。
 curl -fsS -X PUT "${API}/repos/${OWNER}/${REPO}/branches/${BRANCH}/protection" "${auth[@]}" \
   -d '{
-    "required_status_checks": null,
+    "required_status_checks": {"strict": false, "contexts": ["checks"]},
     "enforce_admins": true,
     "required_pull_request_reviews": {
       "dismiss_stale_reviews": true,

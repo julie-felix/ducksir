@@ -1,5 +1,7 @@
 # DuckSIR
 
+[![ci](https://github.com/julie-felix/ducksir/actions/workflows/ci.yml/badge.svg)](https://github.com/julie-felix/ducksir/actions/workflows/ci.yml)
+
 一只自己搭的机器鸭，和它背后那条从**硬件**到**强化学习运控**再到**真机部署**的完整流水线。
 
 硬件从 [MicroDuck](https://github.com/pollen-robotics/microduck) 的**开源版本**出发手搓；客户端做成一组 [DeepSeek Harness](https://github.com/deepseek-ai) 插件；训练、端侧、客户端三块代码放在这一个 monorepo 里。
