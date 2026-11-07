@@ -42,7 +42,19 @@ curl -fsS -X PUT "${API}/repos/${OWNER}/${REPO}/branches/${BRANCH}/protection" "
   | python3 -c 'import json,sys; d=json.load(sys.stdin); print("ok: 保护已启用 | 直推:", d["allow_force_pushes"]["enabled"] or "禁止", "| 删除:", d["allow_deletions"]["enabled"] or "禁止")'
 
 echo "== 回读 =="
-for k in required_pull_request_reviews enforce_admins allow_force_pushes allow_deletions required_linear_history required_conversation_resolution; do
-  curl -fsS "${API}/repos/${OWNER}/${REPO}/branches/${BRANCH}/protection" "${auth[@]}" \
-    | python3 -c "import json,sys; d=json.load(sys.stdin); k='${k}'; print(f'{k}:', 'on' if d.get(k) else 'off')"
-done
+curl -fsS "${API}/repos/${OWNER}/${REPO}/branches/${BRANCH}/protection" "${auth[@]}" \
+  | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+def flag(v):
+    if isinstance(v, dict):
+        return v.get("enabled")
+    return v
+pr = d.get("required_pull_request_reviews")
+print("必须走 PR:", "on (批准数=%s)" % pr["required_approving_review_count"] if pr else "off")
+print("enforce_admins (管理员也受约束):", flag(d.get("enforce_admins")))
+print("allow_force_pushes (应为 off):", flag(d.get("allow_force_pushes")))
+print("allow_deletions (应为 off):", flag(d.get("allow_deletions")))
+print("线性历史:", flag(d.get("required_linear_history")))
+print("合并前须解决对话:", flag(d.get("required_conversation_resolution")))
+'
