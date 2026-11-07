@@ -1,0 +1,15 @@
+node_modules/
+.pnpm-store/
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+build/
+*.log
+.DS_Store
+outputs/
+runs/
+wandb/
+.env
+*.onnx
