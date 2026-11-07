@@ -6,6 +6,8 @@
 
 > 当前状态：**v0 只有文档**。代码、BOM、标定记录都还没进来。
 
+文档入口：[AGENTS.md](AGENTS.md)（给 agent 的仓库地图）· [docs/index.md](docs/index.md)（路由表）· [GLOSSARY.md](GLOSSARY.md)（术语）。
+
 ---
 
 ## 0. 复刻对象：开源版本，不是商用原机
@@ -52,7 +54,9 @@
 
 ```
 ducksir/
-├── docs/          架构、里程碑、决策记录、SOP 库
+├── AGENTS.md      给 agent 的入口（路由，不放内容）
+├── GLOSSARY.md    术语表
+├── docs/          路由表 + 流水线 + 决策 + SOP + 否掉的提案
 ├── hardware/      BOM、结构件来源、板卡、标定记录（标定 = 带 scope 的 YAML）
 ├── training/      重定向、跟踪训练、评估、ONNX 导出
 ├── runtime/       端侧：总线抽象、安全层、策略推理、日志（MCAP）
