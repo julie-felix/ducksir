@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shell 语法
+        run: |
+          bash -n scripts/*.sh
+          bash -n .githooks/pre-push
+
+      - name: 仓库骨架与链接
+        run: python3 scripts/check-repo.py
+
+      - name: 钩子拦得住直推 main
+        run: |
+          if printf 'refs/heads/main 1111 refs/heads/main 2222\n' | .githooks/pre-push origin origin.url; then
+            echo "✗ 钩子没拦住直推 main"
+            exit 1
+          fi
+          echo "✓ 直推 main 被拦"
+
+      - name: 钩子放行普通分支
+        run: |
+          printf 'refs/heads/feat/x 1111 refs/heads/feat/x 0000\n' | .githooks/pre-push origin origin.url
+          echo "✓ 普通分支放行"
