@@ -50,22 +50,9 @@
 
 不共享契约的项目，最后一定会死在「仿真里第 7 维和真机第 7 维不是同一个关节」上。所以契约先行，代码后写。
 
-## 3. 仓库布局（计划）
+## 3. 仓库结构
 
-```
-ducksir/
-├── AGENTS.md      给 agent 的入口（路由，不放内容）
-├── GLOSSARY.md    术语表
-├── docs/          路由表 + 流水线 + 决策 + SOP + 否掉的提案
-├── hardware/      BOM、结构件来源、板卡、标定记录（标定 = 带 scope 的 YAML）
-├── training/      重定向、跟踪训练、评估、ONNX 导出
-├── runtime/       端侧：总线抽象、安全层、策略推理、日志（MCAP）
-├── client/        DSH 插件（TypeScript），调 contract 做审阅与调度
-├── contract/      三平面共享契约：关节表、schema、policy manifest
-└── tools/         校验、标定换算、烧录、批处理脚本
-```
-
-目录名和包管理器（pnpm workspace + Python 包）在写第一行代码前会再过一遍，不排除调整。
+结构表、目录职责与工作约定见 [AGENTS.md](AGENTS.md)；文档路由见 [docs/index.md](docs/index.md)。
 
 ## 4. 硬件路线：还没定，先摆选项
 
