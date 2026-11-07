@@ -52,6 +52,10 @@ DUCKSIR_ALLOW_MAIN_PUSH=1 git push origin main
 
 ## 服务端保护
 
+**状态：2026-11-07 已启用**（`enforce_admins: true`，管理员也不能绕过）。实测直推被拒：`GH006: Protected branch update failed`。
+
+仓库已从私有转为**公开**：GitHub Free 套餐的私有仓库不支持分支保护，转公开后该功能立即可用，且不花钱。如果哪天要转回私有，需要先把 org 升级到 Team，否则保护会失效。
+
 由 `scripts/protect-main.sh` 应用（需要 `GITHUB_TOKEN`，权限要 Administration: write）。它会设：禁止直推、禁止 force push、禁止删分支、必须走 PR、线性历史、只允许 squash 合并、合并后自动删源分支。
 
 因为只有一个人开发，**required approvals 设 0**：GitHub 不允许自己批准自己的 PR，设 1 会导致自己永远合不进去。「必须走 PR」这条仍然生效。
