@@ -7,6 +7,7 @@
 - [README](../README.md) — 项目定位、目标、里程碑。
 - [AGENTS.md](../AGENTS.md) — 给 agent 的仓库地图与工作约定。
 - [GLOSSARY.md](../GLOSSARY.md) — 术语表，含「别用这个词」和已解决的歧义。
+- [CONTRIBUTING.md](../CONTRIBUTING.md) — 分支、提交、PR 规则。
 
 ## 流程与边界
 
