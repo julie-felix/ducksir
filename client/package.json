@@ -1,0 +1,30 @@
+{
+  "name": "ducksir-client",
+  "version": "0.0.1",
+  "private": true,
+  "description": "ducksir 的 DSH 插件：三平面里的 client，只做控制面（看状态、查策略、跑预检、发起训练），不进实时控制回路。",
+  "type": "module",
+  "main": "./src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "check": "node --check src/index.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "license": "MIT"
+}

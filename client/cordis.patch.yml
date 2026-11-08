@@ -1,0 +1,10 @@
+# ducksir-client 的 bundle 层：被 profile 的 dsh.profile.bundles 列入时应用。
+#
+# 加载方式（本机开发）：
+#   1. profile package.json 的 dependencies 加 "ducksir-client": "link:<本目录绝对路径>"
+#   2. dsh.profile.bundles 里加 "ducksir-client"
+#   3. 在该 profile 目录 pnpm install
+#   详见 client/README.md。
+- insert:
+    - id: ducksir-client
+      name: ducksir-client
