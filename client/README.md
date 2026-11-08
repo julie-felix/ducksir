@@ -1,0 +1,80 @@
+# client — ducksir 的 DSH 插件
+
+三平面里的 **client**。装进 DSH 后，在这个 Web 界面上看状态、查策略、跑预检、发起训练。
+
+## 硬边界
+
+**客户端不进实时控制回路。** 端侧 50 Hz 的推理与安全层在 `runtime/`，客户端只是控制面：
+它能读遥测、下指令、发起训练，但任何一条控制链都不许经过它。这条线写在 [README](../README.md) 第 0 节。
+
+## 现在有什么
+
+只有一个只读工具 `ducksir_status`：读仓库五个平面的落地情况、git 分支与脏文件数。
+
+它是 Day-1 预检台的第一块砖，也是这个插件能否被加载、能否跑通的冒烟测试。
+
+```
+ducksir @ feat/client-plugin-skeleton · 6adc887 docs: ... · 脏 3
+repo: /home/zqz/文档/deepseek-harness/default-workspace/projects/ducksir
+契约     ✗ 空
+硬件     ✗ 空
+训练     ✗ 空
+端侧     ✗ 空
+客户端   ✓ 4 文件
+
+缺 4 个平面：contract, hardware, training, runtime
+```
+
+## 装进本机 profile
+
+这一步不是插件自己做的，是 profile 的事。三步，都在 profile 目录里：
+
+```bash
+cd ~/.dsh/profiles/web
+```
+
+1. `package.json` 的 `dependencies` 加一行（绝对路径）：
+
+   ```json
+   "ducksir-client": "link:/home/zqz/文档/deepseek-harness/default-workspace/projects/ducksir/client"
+   ```
+
+2. 同文件的 `dsh.profile.bundles` 数组里加一项 `"ducksir-client"`。
+
+3. 装软链，并让热重载守护重新读一遍 link 列表（它启动时只读一次）：
+
+   ```bash
+   pnpm install
+   systemctl --user restart dsh-autoreload
+   ```
+
+做完不用重启 `dsh web`：profile 重组会把插件挂上去。
+
+**注意**：`~/.dsh/profiles/` 在 DSH 的文件沙箱之外，agent 改不了（会 `EACCES`）。这三步得人跑。
+
+## 迭代循环
+
+改 `client/**` → `dsh-autoreload` 2.5 秒内触发 profile 重组 → 工具立刻可用。
+纯服务端代码不用重启进程；浏览器端 UI 代码才需要刷新页面。
+
+只改 `package.json` **不会**触发重组，要手动追加一行注释或重启守护。
+
+## 自检
+
+```bash
+node client/scripts/smoke.mjs
+```
+
+不需要装进 profile，假 ctx 跑一遍注册 / 执行 / 渲染。
+
+## 未定
+
+- **包名**：现在是 `ducksir-client`（私有）。要给别人装就得定 scope，晚改要动所有引用。
+- **发布形态**：`link:` 只是本机开发用。正式分发要发 npm；`dsh-kit` 那套零依赖安装器 + doctor 可以复用。
+- **UI 面板**：目前只有工具，没有面板。要做就照 `dsh-notes-editor` 的 client 编译方式（`lib/client.js` + 刷新页面生效）。
+
+## 下一步
+
+`contract/` 有内容之后，`ducksir_status` 应该从「数文件」升级成「核对契约」：
+关节表能不能对上、obs/action schema 版本是否一致、policy manifest 缺哪些字段。
+那才是真正的预检。
