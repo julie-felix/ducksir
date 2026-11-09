@@ -81,6 +81,10 @@ client/lib/client.js   web：侧栏「机器人」入口 + main 面板（iframe 
 - `client/lib/client.js` **是手写的**，不经打包器：面板只有一个 iframe，用 `React.createElement` 足够，
   省掉 esbuild 依赖。格式照 ModuleLoader 的 CJS factory 包（`window.__ModuleLoader__.load`）。
 - 改 `client/src`（host）由 `dsh-autoreload` 触发热重组；改 `client/lib`（浏览器侧）要**刷新页面**。
+- 坑：插件的 `inject` 里没声明 `webServer` 时，`ctx.webServer` 是 `undefined`，路由会**静默不注册**。
+  用 `ctx.inject(['webServer'], (child) => …)` 起子 fiber，既让服务变成可选，也不吞错误。
+
+![查看器经 DSH 路由打开](../docs/images/viewer-via-dsh-route.png)
 
 ## 未定
 
