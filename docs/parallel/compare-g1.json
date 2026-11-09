@@ -1,0 +1,11 @@
+{
+ "entity": "contract/robot/types/ankle-rig-g1.yaml",
+ "xml": "/tmp/rig_g1_nomesh.xml",
+ "steps": 4000,
+ "worst_rad": 0.0023770425603904573,
+ "pitch_max": 0.0023770425603904573,
+ "roll_max": 0.0008568411237792166,
+ "fails": 0,
+ "constraint_gap_mm": 0.07063710626048492,
+ "verdict": false
+}

@@ -276,6 +276,29 @@ def import_mjcf(path: str, *, entity_id: str, type_id: str, license_id: str,
                          ref=os.path.basename(path))
 
 
+    # 2.5) 闭环约束：<equality> 里的 connect/weld/joint
+    eq = root.find("equality")
+    if eq is not None:
+        for el in eq:
+            kind = {"connect": "connect", "weld": "weld", "joint": "joint"}.get(el.tag)
+            if not kind:
+                continue
+            item = {"id": el.get("name") or f"{kind}{len(doc['loops']) + 1}",
+                    "kind": kind,
+                    "body1": el.get("body1"),
+                    "body2": el.get("body2"),
+                    "source": os.path.basename(path)}
+            if el.get("anchor"):
+                item["anchor"] = E.vec3(el.get("anchor"))
+            if el.get("site1"):
+                item["site1"] = el.get("site1")
+            if el.get("joint1"):
+                item["joint1"] = el.get("joint1")
+            doc["loops"].append(item)
+            add_prov(f"loops[{item['id']}].anchor", item.get("anchor"), "length", "mjcf",
+                     ref=os.path.basename(path),
+                     note="闭环约束的锚点；MuJoCo 里按软约束求解")
+
     # 3) BAM 参数（若给了）
     if bam_json:
         import json
@@ -305,6 +328,18 @@ def import_mjcf(path: str, *, entity_id: str, type_id: str, license_id: str,
         E.warn(warnings, "W004", "links[*].visual[*].mesh",
                f"{len(missing)} 个 mesh 只有引用、没有入库；需要时可从上游按 sha256 拉一次",
                meshes=missing[:8], more=max(0, len(missing) - 8))
+
+    # 4.5) 三处"脏"的可检测信号
+    for j in doc["joints"]:
+        mech = (j.get("limit") or {}).get("mech") or {}
+        hi = max(abs(mech.get("lower", 0)), abs(mech.get("upper", 0))) if mech else 0
+        if hi > 3.2:
+            E.warn(warnings, "W009", f"joints[{j['name']}].limit",
+                   f"限位最大 {hi:.1f} 超出 ±π，而 compiler angle=radian —— 疑似把度写进了弧度字段；原值保留不修正")
+    inherited = [c for c in classes if c not in ("main",) and c.lower() in ("cassie", "atlas", "talos")]
+    if inherited:
+        E.warn(warnings, "W010", "defaults",
+               f"默认类 {inherited} 来自其它机型（原模型由 {inherited[0]} 改出来），质量/惯量/增益跟着一起搬过来了")
 
     # 5) 变体
     base = os.path.basename(path)
@@ -345,11 +380,17 @@ def main() -> int:
     ap.add_argument("--bam-json", default=None)
     ap.add_argument("--bam-ref", default=None)
     ap.add_argument("--mesh-manifest", default=None)
+    ap.add_argument("--known-defect", action="append", default=[],
+                    help="源文件自述的缺陷，如 dynamics（手工装配的试验模型）")
     args = ap.parse_args()
     doc = import_mjcf(args.input, entity_id=args.entity_id, type_id=args.type_id,
                       license_id=args.license, source_ref=args.source_ref,
                       preset=args.preset, assets_dir=args.assets_dir,
                       bam_json=args.bam_json, bam_ref=args.bam_ref)
+    for defect in args.known_defect:
+        if defect == "dynamics":
+            E.warn(doc["warnings"], "W008", "dynamics",
+                   "源文件自述动力学参数不可信（手工装配的试验模型），只可用于运动学/结构参考")
     if args.mesh_manifest:
         E.attach_meshes(doc, args.mesh_manifest)
     E.write_yaml(args.output, doc)

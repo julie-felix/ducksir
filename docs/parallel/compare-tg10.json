@@ -1,0 +1,11 @@
+{
+ "entity": "contract/robot/types/ankle-rig-tg10.yaml",
+ "xml": "/tmp/rig_tg10_nomesh.xml",
+ "steps": 4000,
+ "worst_rad": 6.30884889213923e-05,
+ "pitch_max": 5.565865040596193e-06,
+ "roll_max": 6.30884889213923e-05,
+ "fails": 0,
+ "constraint_gap_mm": 0.002845534878503919,
+ "verdict": true
+}

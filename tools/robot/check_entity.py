@@ -152,6 +152,29 @@ def check(doc: dict) -> list[tuple[str, bool, str]]:
         f"{len(seen_mech)} 个并联机构" + (f"（{len(infos)} 个 coupling 未解：{'、'.join(infos)}）" if infos else ""))
     results.append(("C6", not problems, detail))
 
+    # C7 闭环约束：两端 body 必须存在、类型合法、connect 必须带 anchor
+    problems = []
+    link_names = {l["name"] for l in doc.get("links", [])}
+    seen_id = set()
+    for lp in doc.get("loops") or []:
+        lid = lp.get("id")
+        if lid in seen_id:
+            problems.append(f"loop 重名: {lid}")
+        seen_id.add(lid)
+        kind = lp.get("kind")
+        if kind not in ("connect", "weld", "joint"):
+            problems.append(f"{lid}: kind 非法 {kind!r}")
+        for side in ("body1", "body2"):
+            b = lp.get(side)
+            if b and b not in link_names:
+                problems.append(f"{lid}: {side} {b} 不在 links 里")
+        if kind == "connect":
+            a = lp.get("anchor")
+            if not a or len(a) != 3:
+                problems.append(f"{lid}: connect 缺 anchor 或长度不是 3")
+    detail = "; ".join(problems) if problems else f"{len(doc.get('loops') or [])} 条闭环约束"
+    results.append(("C7", not problems, detail))
+
     return results
 
 
