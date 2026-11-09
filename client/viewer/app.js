@@ -70,14 +70,29 @@ let current = null; // { data, joints: Map(name -> {obj, qOrigin, axis, type, an
 let groundClamp = true;
 let clampPending = false;
 
+/**
+ * 量「模型自身」的最低点：先把整组挪回 y=0 再测，否则量到的是含位移的世界包围盒，
+ * 每帧自减一次就会来回跳（这就是拖滑条时机器人「闪」的原因）。
+ * @returns {number} 把最低点压到 y=0 需要的位移。
+ */
+function measureLift() {
+  const keep = robotGroup.position.y;
+  robotGroup.position.y = 0;
+  robotGroup.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(robotGroup);
+  const lift = box.isEmpty() ? 0 : -box.min.y;
+  robotGroup.position.y = keep;
+  return lift;
+}
+
 function scheduleGroundClamp() {
   if (!groundClamp || clampPending) return;
   clampPending = true;
   requestAnimationFrame(() => {
     clampPending = false;
-    robotGroup.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(robotGroup);
-    if (!box.isEmpty()) robotGroup.position.y = (current?.groundOffset ?? 0) - box.min.y;
+    if (!current) return;
+    current.groundOffset = measureLift();
+    robotGroup.position.y = current.groundOffset;
   });
 }
 
@@ -181,9 +196,7 @@ async function buildRobot(data) {
   await Promise.all(jobs);
 
   // 落地：把最低点挪到 y=0，并把偏移记下来给「贴地」用
-  robotGroup.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(robotGroup);
-  const lift = box.isEmpty() ? 0 : -box.min.y;
+  const lift = measureLift();
   robotGroup.position.y = lift;
   if (current) current.groundOffset = lift;
   return jointState;
@@ -304,7 +317,7 @@ function animate() {
     groundClamp = e.target.checked;
     if (!current) return;
     if (groundClamp) scheduleGroundClamp();
-    else robotGroup.position.y = current.groundOffset;
+    else robotGroup.position.y = 0;
   });
   const first = index.robots.find((r) => r.id === wanted) || index.robots[0];
   if (first) { sel.value = first.id; await show(first); }
