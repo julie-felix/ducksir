@@ -107,6 +107,14 @@
 <script type="importmap">
 { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/" } }
 </script>
-<script type="module" src="./app.js?v=1794250037"></script>
+<script>
+  // 每次都带新版本号加载：这是本地工具，别让浏览器缓存住旧脚本
+  (function () {
+    const s = document.createElement('script');
+    s.type = 'module';
+    s.src = './app.js?v=' + Date.now();
+    document.body.appendChild(s);
+  })();
+</script>
 </body>
 </html>

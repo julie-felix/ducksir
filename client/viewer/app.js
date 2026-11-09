@@ -437,7 +437,18 @@ function setView(kind) {
   controls.update();
 }
 
+let lastSize = { w: 0, h: 0 };
 function animate() {
+  // 右半边机器人每帧跟随左半边的位姿（贴地/回零会改 robotGroup 的位移）
+  if (SPLIT.on && SPLIT.root) {
+    SPLIT.root.position.copy(robotGroup.position);
+    SPLIT.root.rotation.copy(robotGroup.rotation);
+  }
+  const cw = canvas.clientWidth, ch = canvas.clientHeight;
+  if (cw !== lastSize.w || ch !== lastSize.h) {
+    lastSize = { w: cw, h: ch };
+    resize();
+  }
   if (SPLIT.on && SPLIT.renderer) {
     const cv2 = $('c2'), r2 = cv2.getBoundingClientRect();
     if (r2.width > 0) {
@@ -604,9 +615,10 @@ function parBuildSide(geom, mirror, tint) {
     g.add(motor, crank, rod, pinB, pinC);
     return { A, crank, rod, pinB, pinC };
   });
-  const plate = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.045, 0.006),
-    new THREE.MeshStandardMaterial({ color: tint ? 0xb5772f : (mirror ? 0xb5772f : 0x39505f),
-      transparent: true, opacity: .55, side: THREE.DoubleSide }));
+  const plateGeo = new THREE.BoxGeometry(0.075, 0.045, 0.006);
+  const plate = new THREE.LineSegments(new THREE.EdgesGeometry(plateGeo),
+    new THREE.LineBasicMaterial({ color: tint || (mirror ? 0xffb35a : 0x5ad1a0),
+      transparent: true, opacity: .75 }));
   g.add(plate);
   if (mirror) g.scale.y = -1;
   return { group: g, nodes, plate };
@@ -786,6 +798,10 @@ async function initParallelOverlay(data) {
     console.log('CAM left pos', f(camera.position), 'target', f(controls.target), 'fov', camera.fov);
     if (SPLIT.camera) console.log('CAM right pos', f(SPLIT.camera.position), 'target', f(SPLIT.controls.target), 'fov', SPLIT.camera.fov);
     if (SPLIT.root) console.log('CAM rootY', SPLIT.root.position.y, 'robotY', robotGroup.position.y);
+    const r1 = canvas.getBoundingClientRect();
+    const r2 = document.getElementById('c2').getBoundingClientRect();
+    console.log('SIZES left', r1.width.toFixed(0), r1.height.toFixed(0), 'aspect', camera.aspect.toFixed(3),
+      '| right', r2.width.toFixed(0), r2.height.toFixed(0), 'aspect', SPLIT.camera ? SPLIT.camera.aspect.toFixed(3) : '-');
   }, 2000);
 }
 
@@ -805,9 +821,6 @@ function splitInit() {
   const dl = new THREE.DirectionalLight(0xffffff, 1.0);
   dl.position.set(0.6, -0.8, 1.1);
   SPLIT.scene.add(dl);
-  const grid = new THREE.GridHelper(2, 40, 0x1c2632, 0x161e28);
-  grid.position.y = -0.001;
-  SPLIT.scene.add(grid);
   SPLIT.camera = new THREE.PerspectiveCamera(38, 1, 0.004, 50);
   SPLIT.controls = new OrbitControls(SPLIT.camera, cv);
   SPLIT.controls.enableDamping = true;
@@ -846,10 +859,12 @@ async function splitToggle() {
   $('split').classList.toggle('on', SPLIT.on);
   document.body.classList.toggle('split-on', SPLIT.on);
   $('view-r').style.display = SPLIT.on ? '' : 'none';
+  requestAnimationFrame(() => { lastSize = { w: 0, h: 0 }; resize(); });
   $('cap-l').textContent = SPLIT.on ? '我们的解算' : '我们的解算';
   if (!SPLIT.on) return;
   splitInit();
-  if (!SPLIT.ready && current) {
+  if (!SPLIT.ready && !SPLIT.building && current) {
+    SPLIT.building = true;
     SPLIT.root = new THREE.Group();
     SPLIT.scene.add(SPLIT.root);
     const { joints } = await buildInto(current.data, SPLIT.root);
@@ -859,7 +874,7 @@ async function splitToggle() {
       if (!o.isMesh) return;
       o.material = o.material.clone();
       o.material.transparent = true;
-      o.material.opacity = 0.18;
+      o.material.opacity = 0.22;
       o.material.depthWrite = false;
     });
     for (const m of PAR.mechs || []) {
@@ -867,6 +882,7 @@ async function splitToggle() {
       if (side) SPLIT.sides.push(side);
     }
     SPLIT.ready = true;
+    SPLIT.building = false;
   }
   // 两边镜头同朝向同距离
   const focusOn = (joints, cam, ctl) => {
