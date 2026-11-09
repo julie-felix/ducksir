@@ -294,12 +294,16 @@ async function showStatic(meta) {
     const group = new THREE.Group();
     window.__axisObjs = new Map();
     for (const a of meta.axes) {
-      const p = new THREE.Vector3(a.point[0] / 1000, a.point[1] / 1000, a.point[2] / 1000);
+      const src = a.center || a.point; // center 是「投影到零件中心」的点，画针更贴
+      const p = new THREE.Vector3(src[0] / 1000, src[1] / 1000, src[2] / 1000);
       const d = new THREE.Vector3(a.dir[0], a.dir[1], a.dir[2]).normalize();
-      const half = 0.09;
-      const geo = new THREE.BufferGeometry().setFromPoints([
-        p.clone().addScaledVector(d, -half), p.clone().addScaledVector(d, half)]);
-      const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: a.color, linewidth: 2 }));
+      // 用细圆柱代替线段：WebGL 的 linewidth 不生效，1px 线在实体上是「看不见」的
+      const half = 0.075;
+      const geo = new THREE.CylinderGeometry(0.0015, 0.0015, half * 2, 12);
+      const line = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: a.color, depthTest: false, transparent: true, opacity: 0.95 }));
+      line.renderOrder = 999;  // 穿过实体也能看见，否则针藏在孔里等于没画
+      line.position.copy(p);
+      line.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d);
       const c = document.createElement('canvas');
       c.width = 160; c.height = 80;
       const ctx = c.getContext('2d');
@@ -308,8 +312,8 @@ async function showStatic(meta) {
       ctx.fillText(a.label, 10, 56);
       const tex = new THREE.CanvasTexture(c);
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
-      sprite.scale.set(0.075, 0.0375, 1);
-      sprite.position.copy(p.clone().addScaledVector(d, half));
+      sprite.scale.set(0.055, 0.0275, 1);
+      sprite.position.copy(p);  // 贴住铰点本身；之前沿轴偏移 10 cm，标签看着像「没标到」
       group.add(line);
       group.add(sprite);
       window.__axisObjs.set(a.label, { line, sprite, base: a.color });
@@ -318,7 +322,8 @@ async function showStatic(meta) {
   }
 
   // 默认只显示第一条：这个机构 17 条轴挤在 10 cm 里，全显示必然重叠
-  let selectedAxis = (meta.axes && meta.axes[0] && meta.axes[0].label) || null;
+  const wantedAxis = new URLSearchParams(location.search).get('axis');
+  let selectedAxis = wantedAxis || (meta.axes && meta.axes[0] && meta.axes[0].label) || null;
   const axisRows = (meta.axes || []).map((a) =>
     `<div class="row axis-row" data-axis="${a.label}" style="cursor:pointer;font-size:11.5px">` +
     `<span style="color:${a.color}">${a.label}</span><b>r=${a.r_mm}mm</b></div>`).join('');
@@ -330,7 +335,7 @@ async function showStatic(meta) {
       const on = !selectedAxis || selectedAxis === name;
       o.line.material.color.set(on ? o.base : '#232a33');
       o.sprite.visible = on;
-      o.line.scale.setScalar(on ? 1 : 0.55);
+      o.line.scale.setScalar(on ? 1 : 0.5);
     }
     for (const row of document.querySelectorAll('.axis-row')) {
       const on = row.dataset.axis === selectedAxis;
