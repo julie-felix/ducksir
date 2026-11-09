@@ -1,0 +1,5045 @@
+schema: ducksir/robot/v0
+robot:
+  id: g1-29dof
+  name: g1_29dof_rev_1_0
+  type: g1-29dof
+  source_ref: https://github.com/unitreerobotics/unitree_ros/blob/master/robots/g1_description/g1_29dof_rev_1_0.urdf
+  license: BSD-3-Clause
+  generator:
+    name: importer_urdf
+    version: 0.1.0
+    input: third_party/unitree-g1/g1_29dof_rev_1_0.urdf
+    sha256: c0ae739c640c3e2c00d1bdd8810b5d6e59601487bd1a3995859f9543269ee5c8
+  created_at: '2026-11-09'
+  assets_dir: assets/g1
+frames:
+  root: pelvis
+  world_attachment: floating
+  axes:
+    x: forward
+    y: left
+    z: up
+  units:
+    length: m
+    mass: kg
+    angle: rad
+    time: s
+    force: N
+    torque: N*m
+    inertia: kg*m^2
+    angular_velocity: rad/s
+    velocity: m/s
+    stiffness: N*m/rad
+    damping: N*m*s/rad
+  quat_order: wxyz
+  euler_order: rpy
+  angular_velocity_frame: body
+links:
+- name: pelvis
+  parent: null
+  transform:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat:
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 3.813
+  com:
+  - 0.0
+  - 0.0
+  - -0.07605
+  inertia:
+    ixx: 0.010549
+    ixy: 0.0
+    ixz: 2.1e-06
+    iyy: 0.0093089
+    iyz: 0.0
+    izz: 0.0079184
+  visual:
+  - mesh: assets/g1/pelvis.STL
+    mesh_name: pelvis.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: &id001
+    - 0.2
+    - 0.2
+    - 0.2
+    - 1.0
+    vendored: false
+  collision: []
+- name: pelvis_contour_link
+  parent: pelvis
+  transform:
+    xyz: &id003
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: &id004
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.001
+  com:
+  - 0.0
+  - 0.0
+  - 0.0
+  inertia:
+    ixx: 1.0e-07
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 1.0e-07
+    iyz: 0.0
+    izz: 1.0e-07
+  visual:
+  - mesh: assets/g1/pelvis_contour_link.STL
+    mesh_name: pelvis_contour_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: &id002
+    - 0.7
+    - 0.7
+    - 0.7
+    - 1.0
+    vendored: false
+  collision:
+  - mesh: assets/g1/pelvis_contour_link.STL
+    mesh_name: pelvis_contour_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: left_hip_pitch_link
+  parent: pelvis
+  transform:
+    xyz: &id005
+    - 0.0
+    - 0.064452
+    - -0.1027
+    quat: &id006
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 1.35
+  com:
+  - 0.002741
+  - 0.047791
+  - -0.02606
+  inertia:
+    ixx: 0.001811
+    ixy: 3.68e-05
+    ixz: -3.44e-05
+    iyy: 0.0014193
+    iyz: 0.000171
+    izz: 0.0012812
+  visual:
+  - mesh: assets/g1/left_hip_pitch_link.STL
+    mesh_name: left_hip_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id001
+    vendored: false
+  collision:
+  - mesh: assets/g1/left_hip_pitch_link.STL
+    mesh_name: left_hip_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: left_hip_roll_link
+  parent: left_hip_pitch_link
+  transform:
+    xyz: &id007
+    - 0.0
+    - 0.052
+    - -0.030465
+    quat: &id008
+    - 0.996178684974
+    - 0.0
+    - -0.087338580264
+    - 0.0
+  mass: 1.52
+  com:
+  - 0.029812
+  - -0.001045
+  - -0.087934
+  inertia:
+    ixx: 0.0023773
+    ixy: -3.8e-06
+    ixz: -0.0003908
+    iyy: 0.0024123
+    iyz: 1.84e-05
+    izz: 0.0016595
+  visual:
+  - mesh: assets/g1/left_hip_roll_link.STL
+    mesh_name: left_hip_roll_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/left_hip_roll_link.STL
+    mesh_name: left_hip_roll_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: left_hip_yaw_link
+  parent: left_hip_roll_link
+  transform:
+    xyz: &id009
+    - 0.025001
+    - 0.0
+    - -0.12412
+    quat: &id010
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 1.702
+  com:
+  - -0.057709
+  - -0.010981
+  - -0.15078
+  inertia:
+    ixx: 0.0057774
+    ixy: -0.0005411
+    ixz: -0.0023948
+    iyy: 0.0076124
+    iyz: -0.0007072
+    izz: 0.003149
+  visual:
+  - mesh: assets/g1/left_hip_yaw_link.STL
+    mesh_name: left_hip_yaw_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/left_hip_yaw_link.STL
+    mesh_name: left_hip_yaw_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: left_knee_link
+  parent: left_hip_yaw_link
+  transform:
+    xyz: &id011
+    - -0.078273
+    - 0.0021489
+    - -0.17734
+    quat: &id012
+    - 0.996178684974
+    - 0.0
+    - 0.087338580264
+    - 0.0
+  mass: 1.932
+  com:
+  - 0.005457
+  - 0.003964
+  - -0.12074
+  inertia:
+    ixx: 0.011329
+    ixy: 4.82e-05
+    ixz: -4.49e-05
+    iyy: 0.011277
+    iyz: -0.0007146
+    izz: 0.0015168
+  visual:
+  - mesh: assets/g1/left_knee_link.STL
+    mesh_name: left_knee_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/left_knee_link.STL
+    mesh_name: left_knee_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: left_ankle_pitch_link
+  parent: left_knee_link
+  transform:
+    xyz: &id013
+    - 0.0
+    - -9.4445e-05
+    - -0.30001
+    quat: &id014
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.074
+  com:
+  - -0.007269
+  - 0.0
+  - 0.011137
+  inertia:
+    ixx: 8.4e-06
+    ixy: 0.0
+    ixz: -2.9e-06
+    iyy: 1.89e-05
+    iyz: 0.0
+    izz: 1.26e-05
+  visual:
+  - mesh: assets/g1/left_ankle_pitch_link.STL
+    mesh_name: left_ankle_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/left_ankle_pitch_link.STL
+    mesh_name: left_ankle_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: left_ankle_roll_link
+  parent: left_ankle_pitch_link
+  transform:
+    xyz: &id015
+    - 0.0
+    - 0.0
+    - -0.017558
+    quat: &id016
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.608
+  com:
+  - 0.026505
+  - 0.0
+  - -0.016425
+  inertia:
+    ixx: 0.0002231
+    ixy: 2.0e-07
+    ixz: 8.91e-05
+    iyy: 0.0016161
+    iyz: -1.0e-07
+    izz: 0.0016667
+  visual:
+  - mesh: assets/g1/left_ankle_roll_link.STL
+    mesh_name: left_ankle_roll_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id001
+    vendored: false
+  collision:
+  - mesh: null
+    mesh_name: null
+    origin:
+      xyz:
+      - -0.05
+      - 0.025
+      - -0.03
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+  - mesh: null
+    mesh_name: null
+    origin:
+      xyz:
+      - -0.05
+      - -0.025
+      - -0.03
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+  - mesh: null
+    mesh_name: null
+    origin:
+      xyz:
+      - 0.12
+      - 0.03
+      - -0.03
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+  - mesh: null
+    mesh_name: null
+    origin:
+      xyz:
+      - 0.12
+      - -0.03
+      - -0.03
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: right_hip_pitch_link
+  parent: pelvis
+  transform:
+    xyz: &id017
+    - 0.0
+    - -0.064452
+    - -0.1027
+    quat: &id018
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 1.35
+  com:
+  - 0.002741
+  - -0.047791
+  - -0.02606
+  inertia:
+    ixx: 0.001811
+    ixy: -3.68e-05
+    ixz: -3.44e-05
+    iyy: 0.0014193
+    iyz: -0.000171
+    izz: 0.0012812
+  visual:
+  - mesh: assets/g1/right_hip_pitch_link.STL
+    mesh_name: right_hip_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id001
+    vendored: false
+  collision:
+  - mesh: assets/g1/right_hip_pitch_link.STL
+    mesh_name: right_hip_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: right_hip_roll_link
+  parent: right_hip_pitch_link
+  transform:
+    xyz: &id019
+    - 0.0
+    - -0.052
+    - -0.030465
+    quat: &id020
+    - 0.996178684974
+    - 0.0
+    - -0.087338580264
+    - 0.0
+  mass: 1.52
+  com:
+  - 0.029812
+  - 0.001045
+  - -0.087934
+  inertia:
+    ixx: 0.0023773
+    ixy: 3.8e-06
+    ixz: -0.0003908
+    iyy: 0.0024123
+    iyz: -1.84e-05
+    izz: 0.0016595
+  visual:
+  - mesh: assets/g1/right_hip_roll_link.STL
+    mesh_name: right_hip_roll_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/right_hip_roll_link.STL
+    mesh_name: right_hip_roll_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: right_hip_yaw_link
+  parent: right_hip_roll_link
+  transform:
+    xyz: &id021
+    - 0.025001
+    - 0.0
+    - -0.12412
+    quat: &id022
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 1.702
+  com:
+  - -0.057709
+  - 0.010981
+  - -0.15078
+  inertia:
+    ixx: 0.0057774
+    ixy: 0.0005411
+    ixz: -0.0023948
+    iyy: 0.0076124
+    iyz: 0.0007072
+    izz: 0.003149
+  visual:
+  - mesh: assets/g1/right_hip_yaw_link.STL
+    mesh_name: right_hip_yaw_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/right_hip_yaw_link.STL
+    mesh_name: right_hip_yaw_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: right_knee_link
+  parent: right_hip_yaw_link
+  transform:
+    xyz: &id023
+    - -0.078273
+    - -0.0021489
+    - -0.17734
+    quat: &id024
+    - 0.996178684974
+    - 0.0
+    - 0.087338580264
+    - 0.0
+  mass: 1.932
+  com:
+  - 0.005457
+  - -0.003964
+  - -0.12074
+  inertia:
+    ixx: 0.011329
+    ixy: -4.82e-05
+    ixz: 4.49e-05
+    iyy: 0.011277
+    iyz: 0.0007146
+    izz: 0.0015168
+  visual:
+  - mesh: assets/g1/right_knee_link.STL
+    mesh_name: right_knee_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/right_knee_link.STL
+    mesh_name: right_knee_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: right_ankle_pitch_link
+  parent: right_knee_link
+  transform:
+    xyz: &id025
+    - 0.0
+    - 9.4445e-05
+    - -0.30001
+    quat: &id026
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.074
+  com:
+  - -0.007269
+  - 0.0
+  - 0.011137
+  inertia:
+    ixx: 8.4e-06
+    ixy: 0.0
+    ixz: -2.9e-06
+    iyy: 1.89e-05
+    iyz: 0.0
+    izz: 1.26e-05
+  visual:
+  - mesh: assets/g1/right_ankle_pitch_link.STL
+    mesh_name: right_ankle_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/right_ankle_pitch_link.STL
+    mesh_name: right_ankle_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: right_ankle_roll_link
+  parent: right_ankle_pitch_link
+  transform:
+    xyz: &id027
+    - 0.0
+    - 0.0
+    - -0.017558
+    quat: &id028
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.608
+  com:
+  - 0.026505
+  - 0.0
+  - -0.016425
+  inertia:
+    ixx: 0.0002231
+    ixy: -2.0e-07
+    ixz: 8.91e-05
+    iyy: 0.0016161
+    iyz: 1.0e-07
+    izz: 0.0016667
+  visual:
+  - mesh: assets/g1/right_ankle_roll_link.STL
+    mesh_name: right_ankle_roll_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id001
+    vendored: false
+  collision:
+  - mesh: null
+    mesh_name: null
+    origin:
+      xyz:
+      - -0.05
+      - 0.025
+      - -0.03
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+  - mesh: null
+    mesh_name: null
+    origin:
+      xyz:
+      - -0.05
+      - -0.025
+      - -0.03
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+  - mesh: null
+    mesh_name: null
+    origin:
+      xyz:
+      - 0.12
+      - 0.03
+      - -0.03
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+  - mesh: null
+    mesh_name: null
+    origin:
+      xyz:
+      - 0.12
+      - -0.03
+      - -0.03
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: waist_yaw_link
+  parent: pelvis
+  transform:
+    xyz: &id029
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: &id030
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.214
+  com:
+  - 0.003494
+  - 0.000233
+  - 0.018034
+  inertia:
+    ixx: 0.00010673
+    ixy: 2.703e-06
+    ixz: -7.631e-06
+    iyy: 0.00010422
+    iyz: -2.01e-07
+    izz: 0.0001625
+  visual:
+  - mesh: assets/g1/waist_yaw_link_rev_1_0.STL
+    mesh_name: waist_yaw_link_rev_1_0.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision: []
+- name: waist_roll_link
+  parent: waist_yaw_link
+  transform:
+    xyz: &id031
+    - -0.0039635
+    - 0.0
+    - 0.044
+    quat: &id032
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.086
+  com:
+  - 0.0
+  - 2.3e-05
+  - 0.0
+  inertia:
+    ixx: 7.079e-06
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 6.339e-06
+    iyz: 0.0
+    izz: 8.245e-06
+  visual:
+  - mesh: assets/g1/waist_roll_link_rev_1_0.STL
+    mesh_name: waist_roll_link_rev_1_0.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision: []
+- name: torso_link
+  parent: waist_roll_link
+  transform:
+    xyz: &id033
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: &id034
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 6.78
+  com:
+  - 0.000931
+  - 0.000346
+  - 0.15082
+  inertia:
+    ixx: 0.05905
+    ixy: 3.3302e-05
+    ixz: -0.0017715
+    iyy: 0.047014
+    iyz: -2.2399e-05
+    izz: 0.025652
+  visual:
+  - mesh: assets/g1/torso_link_rev_1_0.STL
+    mesh_name: torso_link_rev_1_0.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/torso_link_rev_1_0.STL
+    mesh_name: torso_link_rev_1_0.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: logo_link
+  parent: torso_link
+  transform:
+    xyz: &id035
+    - 0.0039635
+    - 0.0
+    - -0.044
+    quat: &id036
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.001
+  com:
+  - 0.0
+  - 0.0
+  - 0.0
+  inertia:
+    ixx: 1.0e-07
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 1.0e-07
+    iyz: 0.0
+    izz: 1.0e-07
+  visual:
+  - mesh: assets/g1/logo_link.STL
+    mesh_name: logo_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id001
+    vendored: false
+  collision:
+  - mesh: assets/g1/logo_link.STL
+    mesh_name: logo_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: head_link
+  parent: torso_link
+  transform:
+    xyz: &id037
+    - 0.0039635
+    - 0.0
+    - -0.044
+    quat: &id038
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 1.036
+  com:
+  - 0.005267
+  - 0.000299
+  - 0.449869
+  inertia:
+    ixx: 0.004085051
+    ixy: -2.543e-06
+    ixz: -6.9455e-05
+    iyy: 0.004185212
+    iyz: -3.726e-06
+    izz: 0.001807911
+  visual:
+  - mesh: assets/g1/head_link.STL
+    mesh_name: head_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id001
+    vendored: false
+  collision:
+  - mesh: assets/g1/head_link.STL
+    mesh_name: head_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: imu_in_torso
+  parent: torso_link
+  transform:
+    xyz: &id039
+    - -0.03959
+    - -0.00224
+    - 0.14792
+    quat: &id040
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: null
+  com: null
+  inertia: null
+  visual: []
+  collision: []
+- name: imu_in_pelvis
+  parent: pelvis
+  transform:
+    xyz: &id041
+    - 0.04525
+    - 0.0
+    - -0.08339
+    quat: &id042
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: null
+  com: null
+  inertia: null
+  visual: []
+  collision: []
+- name: d435_link
+  parent: torso_link
+  transform:
+    xyz: &id043
+    - 0.0576235
+    - 0.01753
+    - 0.42987
+    quat: &id044
+    - 0.91495966785
+    - 0.0
+    - 0.403545296352
+    - 0.0
+  mass: null
+  com: null
+  inertia: null
+  visual: []
+  collision: []
+- name: mid360_link
+  parent: torso_link
+  transform:
+    xyz: &id045
+    - 0.0002835
+    - 3.0e-05
+    - 0.428434
+    quat: &id046
+    - -0.0
+    - 0.999673352118
+    - -0.0
+    - -0.025557563757
+  mass: null
+  com: null
+  inertia: null
+  visual: []
+  collision: []
+- name: left_shoulder_pitch_link
+  parent: torso_link
+  transform:
+    xyz: &id047
+    - 0.0039563
+    - 0.10022
+    - 0.24778
+    quat: &id048
+    - 0.990264074372
+    - 0.139201483743
+    - 1.3872204e-05
+    - -9.8686838e-05
+  mass: 0.718
+  com:
+  - 0.0
+  - 0.035892
+  - -0.011628
+  inertia:
+    ixx: 0.0004291
+    ixy: -9.2e-06
+    ixz: 6.4e-06
+    iyy: 0.000453
+    iyz: 2.26e-05
+    izz: 0.000423
+  visual:
+  - mesh: assets/g1/left_shoulder_pitch_link.STL
+    mesh_name: left_shoulder_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: null
+    mesh_name: null
+    origin:
+      xyz:
+      - 0.0
+      - 0.04
+      - -0.01
+      rpy:
+      - 0.0
+      - 1.570796326795
+      - 0.0
+      quat:
+      - 0.707106781187
+      - 0.0
+      - 0.707106781187
+      - 0.0
+    material: []
+    vendored: false
+- name: left_shoulder_roll_link
+  parent: left_shoulder_pitch_link
+  transform:
+    xyz: &id049
+    - 0.0
+    - 0.038
+    - -0.013831
+    quat: &id050
+    - 0.990268255255
+    - -0.139171773843
+    - 0.0
+    - 0.0
+  mass: 0.643
+  com:
+  - -0.000227
+  - 0.00727
+  - -0.063243
+  inertia:
+    ixx: 0.0006177
+    ixy: -1.0e-06
+    ixz: 8.7e-06
+    iyy: 0.0006912
+    iyz: -5.3e-06
+    izz: 0.0003894
+  visual:
+  - mesh: assets/g1/left_shoulder_roll_link.STL
+    mesh_name: left_shoulder_roll_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: null
+    mesh_name: null
+    origin:
+      xyz:
+      - -0.004
+      - 0.006
+      - -0.053
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: left_shoulder_yaw_link
+  parent: left_shoulder_roll_link
+  transform:
+    xyz: &id051
+    - 0.0
+    - 0.00624
+    - -0.1032
+    quat: &id052
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.734
+  com:
+  - 0.010773
+  - -0.002949
+  - -0.072009
+  inertia:
+    ixx: 0.0009988
+    ixy: 7.9e-06
+    ixz: 0.0001412
+    iyy: 0.0010605
+    iyz: -2.86e-05
+    izz: 0.0004354
+  visual:
+  - mesh: assets/g1/left_shoulder_yaw_link.STL
+    mesh_name: left_shoulder_yaw_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/left_shoulder_yaw_link.STL
+    mesh_name: left_shoulder_yaw_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: left_elbow_link
+  parent: left_shoulder_yaw_link
+  transform:
+    xyz: &id053
+    - 0.015783
+    - 0.0
+    - -0.080518
+    quat: &id054
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.6
+  com:
+  - 0.064956
+  - 0.004454
+  - -0.010062
+  inertia:
+    ixx: 0.0002891
+    ixy: 6.53e-05
+    ixz: 1.72e-05
+    iyy: 0.0004152
+    iyz: -5.6e-06
+    izz: 0.0004197
+  visual:
+  - mesh: assets/g1/left_elbow_link.STL
+    mesh_name: left_elbow_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/left_elbow_link.STL
+    mesh_name: left_elbow_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: left_wrist_roll_link
+  parent: left_elbow_link
+  transform:
+    xyz: &id055
+    - 0.1
+    - 0.00188791
+    - -0.01
+    quat: &id056
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.08544498
+  com:
+  - 0.01713944778
+  - 0.00053759094
+  - 4.8864e-07
+  inertia:
+    ixx: 4.821544023e-05
+    ixy: -4.24511021e-06
+    ixz: 5.10599e-09
+    iyy: 3.722899093e-05
+    iyz: -1.23525e-09
+    izz: 5.482106541e-05
+  visual:
+  - mesh: assets/g1/left_wrist_roll_link.STL
+    mesh_name: left_wrist_roll_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/left_wrist_roll_link.STL
+    mesh_name: left_wrist_roll_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: left_wrist_pitch_link
+  parent: left_wrist_roll_link
+  transform:
+    xyz: &id057
+    - 0.038
+    - 0.0
+    - 0.0
+    quat: &id058
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.48404956
+  com:
+  - 0.02299989837
+  - -0.00111685314
+  - -0.00111658096
+  inertia:
+    ixx: 0.00016579646273
+    ixy: -1.231206746e-05
+    ixz: 1.231699194e-05
+    iyy: 0.0004295405741
+    iyz: 8.1417712e-07
+    izz: 0.00042953697654
+  visual:
+  - mesh: assets/g1/left_wrist_pitch_link.STL
+    mesh_name: left_wrist_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/left_wrist_pitch_link.STL
+    mesh_name: left_wrist_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: left_wrist_yaw_link
+  parent: left_wrist_pitch_link
+  transform:
+    xyz: &id059
+    - 0.046
+    - 0.0
+    - 0.0
+    quat: &id060
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.08457647
+  com:
+  - 0.02200381568
+  - 0.00049485096
+  - 0.00053861123
+  inertia:
+    ixx: 4.929128828e-05
+    ixy: -4.5735494e-07
+    ixz: 4.45867591e-06
+    iyy: 5.973338134e-05
+    iyz: 4.3217198e-07
+    izz: 3.928083826e-05
+  visual:
+  - mesh: assets/g1/left_wrist_yaw_link.STL
+    mesh_name: left_wrist_yaw_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/left_wrist_yaw_link.STL
+    mesh_name: left_wrist_yaw_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: left_rubber_hand
+  parent: left_wrist_yaw_link
+  transform:
+    xyz: &id061
+    - 0.0415
+    - 0.003
+    - 0.0
+    quat: &id062
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.17
+  com:
+  - 0.05361310808
+  - -0.0029590524
+  - 0.00215413091
+  inertia:
+    ixx: 0.00010099485234748
+    ixy: 3.618590790516e-05
+    ixz: -7.4301518642e-07
+    iyy: 0.00028135871571621
+    iyz: 3.30189743286e-06
+    izz: 0.00021894770413514
+  visual:
+  - mesh: assets/g1/left_rubber_hand.STL
+    mesh_name: left_rubber_hand.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision: []
+- name: right_shoulder_pitch_link
+  parent: torso_link
+  transform:
+    xyz: &id063
+    - 0.0039563
+    - -0.10021
+    - 0.24778
+    quat: &id064
+    - 0.990264074372
+    - -0.139201483743
+    - 1.3872204e-05
+    - 9.8686838e-05
+  mass: 0.718
+  com:
+  - 0.0
+  - -0.035892
+  - -0.011628
+  inertia:
+    ixx: 0.0004291
+    ixy: 9.2e-06
+    ixz: 6.4e-06
+    iyy: 0.000453
+    iyz: -2.26e-05
+    izz: 0.000423
+  visual:
+  - mesh: assets/g1/right_shoulder_pitch_link.STL
+    mesh_name: right_shoulder_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: null
+    mesh_name: null
+    origin:
+      xyz:
+      - 0.0
+      - -0.04
+      - -0.01
+      rpy:
+      - 0.0
+      - 1.570796326795
+      - 0.0
+      quat:
+      - 0.707106781187
+      - 0.0
+      - 0.707106781187
+      - 0.0
+    material: []
+    vendored: false
+- name: right_shoulder_roll_link
+  parent: right_shoulder_pitch_link
+  transform:
+    xyz: &id065
+    - 0.0
+    - -0.038
+    - -0.013831
+    quat: &id066
+    - 0.990268255255
+    - 0.139171773843
+    - 0.0
+    - 0.0
+  mass: 0.643
+  com:
+  - -0.000227
+  - -0.00727
+  - -0.063243
+  inertia:
+    ixx: 0.0006177
+    ixy: 1.0e-06
+    ixz: 8.7e-06
+    iyy: 0.0006912
+    iyz: 5.3e-06
+    izz: 0.0003894
+  visual:
+  - mesh: assets/g1/right_shoulder_roll_link.STL
+    mesh_name: right_shoulder_roll_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: null
+    mesh_name: null
+    origin:
+      xyz:
+      - -0.004
+      - -0.006
+      - -0.053
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: right_shoulder_yaw_link
+  parent: right_shoulder_roll_link
+  transform:
+    xyz: &id067
+    - 0.0
+    - -0.00624
+    - -0.1032
+    quat: &id068
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.734
+  com:
+  - 0.010773
+  - 0.002949
+  - -0.072009
+  inertia:
+    ixx: 0.0009988
+    ixy: -7.9e-06
+    ixz: 0.0001412
+    iyy: 0.0010605
+    iyz: 2.86e-05
+    izz: 0.0004354
+  visual:
+  - mesh: assets/g1/right_shoulder_yaw_link.STL
+    mesh_name: right_shoulder_yaw_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/right_shoulder_yaw_link.STL
+    mesh_name: right_shoulder_yaw_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: right_elbow_link
+  parent: right_shoulder_yaw_link
+  transform:
+    xyz: &id069
+    - 0.015783
+    - 0.0
+    - -0.080518
+    quat: &id070
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.6
+  com:
+  - 0.064956
+  - -0.004454
+  - -0.010062
+  inertia:
+    ixx: 0.0002891
+    ixy: -6.53e-05
+    ixz: 1.72e-05
+    iyy: 0.0004152
+    iyz: 5.6e-06
+    izz: 0.0004197
+  visual:
+  - mesh: assets/g1/right_elbow_link.STL
+    mesh_name: right_elbow_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/right_elbow_link.STL
+    mesh_name: right_elbow_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: right_wrist_roll_link
+  parent: right_elbow_link
+  transform:
+    xyz: &id071
+    - 0.1
+    - -0.00188791
+    - -0.01
+    quat: &id072
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.08544498
+  com:
+  - 0.01713944778
+  - -0.00053759094
+  - 4.8864e-07
+  inertia:
+    ixx: 4.821544023e-05
+    ixy: 4.24511021e-06
+    ixz: 5.10599e-09
+    iyy: 3.722899093e-05
+    iyz: 1.23525e-09
+    izz: 5.482106541e-05
+  visual:
+  - mesh: assets/g1/right_wrist_roll_link.STL
+    mesh_name: right_wrist_roll_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/right_wrist_roll_link.STL
+    mesh_name: right_wrist_roll_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: right_wrist_pitch_link
+  parent: right_wrist_roll_link
+  transform:
+    xyz: &id073
+    - 0.038
+    - 0.0
+    - 0.0
+    quat: &id074
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.48404956
+  com:
+  - 0.02299989837
+  - 0.00111685314
+  - -0.00111658096
+  inertia:
+    ixx: 0.00016579646273
+    ixy: 1.231206746e-05
+    ixz: 1.231699194e-05
+    iyy: 0.0004295405741
+    iyz: -8.1417712e-07
+    izz: 0.00042953697654
+  visual:
+  - mesh: assets/g1/right_wrist_pitch_link.STL
+    mesh_name: right_wrist_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/right_wrist_pitch_link.STL
+    mesh_name: right_wrist_pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: right_wrist_yaw_link
+  parent: right_wrist_pitch_link
+  transform:
+    xyz: &id075
+    - 0.046
+    - 0.0
+    - 0.0
+    quat: &id076
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.08457647
+  com:
+  - 0.02200381568
+  - -0.00049485096
+  - 0.00053861123
+  inertia:
+    ixx: 4.929128828e-05
+    ixy: 4.5735494e-07
+    ixz: 4.45867591e-06
+    iyy: 5.973338134e-05
+    iyz: -4.3217198e-07
+    izz: 3.928083826e-05
+  visual:
+  - mesh: assets/g1/right_wrist_yaw_link.STL
+    mesh_name: right_wrist_yaw_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision:
+  - mesh: assets/g1/right_wrist_yaw_link.STL
+    mesh_name: right_wrist_yaw_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: right_rubber_hand
+  parent: right_wrist_yaw_link
+  transform:
+    xyz: &id077
+    - 0.0415
+    - -0.003
+    - 0.0
+    quat: &id078
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.17
+  com:
+  - 0.05361310808
+  - 0.0029590524
+  - 0.00215413091
+  inertia:
+    ixx: 0.00010099485234748
+    ixy: -3.618590790516e-05
+    ixz: -7.4301518642e-07
+    iyy: 0.00028135871571621
+    iyz: -3.30189743286e-06
+    izz: 0.00021894770413514
+  visual:
+  - mesh: assets/g1/right_rubber_hand.STL
+    mesh_name: right_rubber_hand.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: *id002
+    vendored: false
+  collision: []
+joints:
+- name: pelvis_contour_joint
+  type: fixed
+  parent: pelvis
+  child: pelvis_contour_link
+  origin:
+    xyz: *id003
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id004
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech: null
+    effort: null
+    velocity: null
+  actuated: false
+- name: left_hip_pitch_joint
+  type: revolute
+  parent: pelvis
+  child: left_hip_pitch_link
+  origin:
+    xyz: *id005
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id006
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -2.5307
+      upper: 2.8798
+    effort: 88.0
+    velocity: 32.0
+  actuated: true
+- name: left_hip_roll_joint
+  type: revolute
+  parent: left_hip_pitch_link
+  child: left_hip_roll_link
+  origin:
+    xyz: *id007
+    rpy:
+    - 0.0
+    - -0.1749
+    - 0.0
+    quat: *id008
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.5236
+      upper: 2.9671
+    effort: 139.0
+    velocity: 20.0
+  actuated: true
+- name: left_hip_yaw_joint
+  type: revolute
+  parent: left_hip_roll_link
+  child: left_hip_yaw_link
+  origin:
+    xyz: *id009
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id010
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -2.7576
+      upper: 2.7576
+    effort: 88.0
+    velocity: 32.0
+  actuated: true
+- name: left_knee_joint
+  type: revolute
+  parent: left_hip_yaw_link
+  child: left_knee_link
+  origin:
+    xyz: *id011
+    rpy:
+    - 0.0
+    - 0.1749
+    - 0.0
+    quat: *id012
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.087267
+      upper: 2.8798
+    effort: 139.0
+    velocity: 20.0
+  actuated: true
+- name: left_ankle_pitch_joint
+  type: revolute
+  parent: left_knee_link
+  child: left_ankle_pitch_link
+  origin:
+    xyz: *id013
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id014
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.87267
+      upper: 0.5236
+    effort: 35.0
+    velocity: 30.0
+  actuated: true
+- name: left_ankle_roll_joint
+  type: revolute
+  parent: left_ankle_pitch_link
+  child: left_ankle_roll_link
+  origin:
+    xyz: *id015
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id016
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.2618
+      upper: 0.2618
+    effort: 35.0
+    velocity: 30.0
+  actuated: true
+- name: right_hip_pitch_joint
+  type: revolute
+  parent: pelvis
+  child: right_hip_pitch_link
+  origin:
+    xyz: *id017
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id018
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -2.5307
+      upper: 2.8798
+    effort: 88.0
+    velocity: 32.0
+  actuated: true
+- name: right_hip_roll_joint
+  type: revolute
+  parent: right_hip_pitch_link
+  child: right_hip_roll_link
+  origin:
+    xyz: *id019
+    rpy:
+    - 0.0
+    - -0.1749
+    - 0.0
+    quat: *id020
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -2.9671
+      upper: 0.5236
+    effort: 139.0
+    velocity: 20.0
+  actuated: true
+- name: right_hip_yaw_joint
+  type: revolute
+  parent: right_hip_roll_link
+  child: right_hip_yaw_link
+  origin:
+    xyz: *id021
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id022
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -2.7576
+      upper: 2.7576
+    effort: 88.0
+    velocity: 32.0
+  actuated: true
+- name: right_knee_joint
+  type: revolute
+  parent: right_hip_yaw_link
+  child: right_knee_link
+  origin:
+    xyz: *id023
+    rpy:
+    - 0.0
+    - 0.1749
+    - 0.0
+    quat: *id024
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.087267
+      upper: 2.8798
+    effort: 139.0
+    velocity: 20.0
+  actuated: true
+- name: right_ankle_pitch_joint
+  type: revolute
+  parent: right_knee_link
+  child: right_ankle_pitch_link
+  origin:
+    xyz: *id025
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id026
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.87267
+      upper: 0.5236
+    effort: 35.0
+    velocity: 30.0
+  actuated: true
+- name: right_ankle_roll_joint
+  type: revolute
+  parent: right_ankle_pitch_link
+  child: right_ankle_roll_link
+  origin:
+    xyz: *id027
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id028
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.2618
+      upper: 0.2618
+    effort: 35.0
+    velocity: 30.0
+  actuated: true
+- name: waist_yaw_joint
+  type: revolute
+  parent: pelvis
+  child: waist_yaw_link
+  origin:
+    xyz: *id029
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id030
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -2.618
+      upper: 2.618
+    effort: 88.0
+    velocity: 32.0
+  actuated: true
+- name: waist_roll_joint
+  type: revolute
+  parent: waist_yaw_link
+  child: waist_roll_link
+  origin:
+    xyz: *id031
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id032
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.52
+      upper: 0.52
+    effort: 35.0
+    velocity: 30.0
+  actuated: true
+- name: waist_pitch_joint
+  type: revolute
+  parent: waist_roll_link
+  child: torso_link
+  origin:
+    xyz: *id033
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id034
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.52
+      upper: 0.52
+    effort: 35.0
+    velocity: 30.0
+  actuated: true
+- name: logo_joint
+  type: fixed
+  parent: torso_link
+  child: logo_link
+  origin:
+    xyz: *id035
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id036
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech: null
+    effort: null
+    velocity: null
+  actuated: false
+- name: head_joint
+  type: fixed
+  parent: torso_link
+  child: head_link
+  origin:
+    xyz: *id037
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id038
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech: null
+    effort: null
+    velocity: null
+  actuated: false
+- name: imu_in_torso_joint
+  type: fixed
+  parent: torso_link
+  child: imu_in_torso
+  origin:
+    xyz: *id039
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id040
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech: null
+    effort: null
+    velocity: null
+  actuated: false
+- name: imu_in_pelvis_joint
+  type: fixed
+  parent: pelvis
+  child: imu_in_pelvis
+  origin:
+    xyz: *id041
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id042
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech: null
+    effort: null
+    velocity: null
+  actuated: false
+- name: d435_joint
+  type: fixed
+  parent: torso_link
+  child: d435_link
+  origin:
+    xyz: *id043
+    rpy:
+    - 0.0
+    - 0.830776723949
+    - 0.0
+    quat: *id044
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech: null
+    effort: null
+    velocity: null
+  actuated: false
+- name: mid360_joint
+  type: fixed
+  parent: torso_link
+  child: mid360_link
+  origin:
+    xyz: *id045
+    rpy:
+    - 3.14159265359
+    - 0.051120693791
+    - 0.0
+    quat: *id046
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech: null
+    effort: null
+    velocity: null
+  actuated: false
+- name: left_shoulder_pitch_joint
+  type: revolute
+  parent: torso_link
+  child: left_shoulder_pitch_link
+  origin:
+    xyz: *id047
+    rpy:
+    - 0.27931
+    - 5.4949e-05
+    - -0.00019159
+    quat: *id048
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -3.0892
+      upper: 2.6704
+    effort: 25.0
+    velocity: 37.0
+  actuated: true
+- name: left_shoulder_roll_joint
+  type: revolute
+  parent: left_shoulder_pitch_link
+  child: left_shoulder_roll_link
+  origin:
+    xyz: *id049
+    rpy:
+    - -0.27925
+    - 0.0
+    - 0.0
+    quat: *id050
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -1.5882
+      upper: 2.2515
+    effort: 25.0
+    velocity: 37.0
+  actuated: true
+- name: left_shoulder_yaw_joint
+  type: revolute
+  parent: left_shoulder_roll_link
+  child: left_shoulder_yaw_link
+  origin:
+    xyz: *id051
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id052
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -2.618
+      upper: 2.618
+    effort: 25.0
+    velocity: 37.0
+  actuated: true
+- name: left_elbow_joint
+  type: revolute
+  parent: left_shoulder_yaw_link
+  child: left_elbow_link
+  origin:
+    xyz: *id053
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id054
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -1.0472
+      upper: 2.0944
+    effort: 25.0
+    velocity: 37.0
+  actuated: true
+- name: left_wrist_roll_joint
+  type: revolute
+  parent: left_elbow_link
+  child: left_wrist_roll_link
+  origin:
+    xyz: *id055
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id056
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -1.972222054
+      upper: 1.972222054
+    effort: 25.0
+    velocity: 37.0
+  actuated: true
+- name: left_wrist_pitch_joint
+  type: revolute
+  parent: left_wrist_roll_link
+  child: left_wrist_pitch_link
+  origin:
+    xyz: *id057
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id058
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -1.614429558
+      upper: 1.614429558
+    effort: 5.0
+    velocity: 22.0
+  actuated: true
+- name: left_wrist_yaw_joint
+  type: revolute
+  parent: left_wrist_pitch_link
+  child: left_wrist_yaw_link
+  origin:
+    xyz: *id059
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id060
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -1.614429558
+      upper: 1.614429558
+    effort: 5.0
+    velocity: 22.0
+  actuated: true
+- name: left_hand_palm_joint
+  type: fixed
+  parent: left_wrist_yaw_link
+  child: left_rubber_hand
+  origin:
+    xyz: *id061
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id062
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech: null
+    effort: null
+    velocity: null
+  actuated: false
+- name: right_shoulder_pitch_joint
+  type: revolute
+  parent: torso_link
+  child: right_shoulder_pitch_link
+  origin:
+    xyz: *id063
+    rpy:
+    - -0.27931
+    - 5.4949e-05
+    - 0.00019159
+    quat: *id064
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -3.0892
+      upper: 2.6704
+    effort: 25.0
+    velocity: 37.0
+  actuated: true
+- name: right_shoulder_roll_joint
+  type: revolute
+  parent: right_shoulder_pitch_link
+  child: right_shoulder_roll_link
+  origin:
+    xyz: *id065
+    rpy:
+    - 0.27925
+    - 0.0
+    - 0.0
+    quat: *id066
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -2.2515
+      upper: 1.5882
+    effort: 25.0
+    velocity: 37.0
+  actuated: true
+- name: right_shoulder_yaw_joint
+  type: revolute
+  parent: right_shoulder_roll_link
+  child: right_shoulder_yaw_link
+  origin:
+    xyz: *id067
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id068
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -2.618
+      upper: 2.618
+    effort: 25.0
+    velocity: 37.0
+  actuated: true
+- name: right_elbow_joint
+  type: revolute
+  parent: right_shoulder_yaw_link
+  child: right_elbow_link
+  origin:
+    xyz: *id069
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id070
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -1.0472
+      upper: 2.0944
+    effort: 25.0
+    velocity: 37.0
+  actuated: true
+- name: right_wrist_roll_joint
+  type: revolute
+  parent: right_elbow_link
+  child: right_wrist_roll_link
+  origin:
+    xyz: *id071
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id072
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -1.972222054
+      upper: 1.972222054
+    effort: 25.0
+    velocity: 37.0
+  actuated: true
+- name: right_wrist_pitch_joint
+  type: revolute
+  parent: right_wrist_roll_link
+  child: right_wrist_pitch_link
+  origin:
+    xyz: *id073
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id074
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -1.614429558
+      upper: 1.614429558
+    effort: 5.0
+    velocity: 22.0
+  actuated: true
+- name: right_wrist_yaw_joint
+  type: revolute
+  parent: right_wrist_pitch_link
+  child: right_wrist_yaw_link
+  origin:
+    xyz: *id075
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id076
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -1.614429558
+      upper: 1.614429558
+    effort: 5.0
+    velocity: 22.0
+  actuated: true
+- name: right_hand_palm_joint
+  type: fixed
+  parent: right_wrist_yaw_link
+  child: right_rubber_hand
+  origin:
+    xyz: *id077
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id078
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech: null
+    effort: null
+    velocity: null
+  actuated: false
+actuators: []
+sensors: []
+bus:
+  note: 未定：SDK 的统一 interface 还没拿到，字段等那份规范
+presets: {}
+provenance:
+- path: links[pelvis].mass
+  value: 3.813
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[pelvis].com
+  value:
+  - 0.0
+  - 0.0
+  - -0.07605
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[pelvis].inertia
+  value:
+    ixx: 0.010549
+    ixy: 0.0
+    ixz: 2.1e-06
+    iyy: 0.0093089
+    iyz: 0.0
+    izz: 0.0079184
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[pelvis_contour_link].mass
+  value: 0.001
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[pelvis_contour_link].com
+  value:
+  - 0.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[pelvis_contour_link].inertia
+  value:
+    ixx: 1.0e-07
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 1.0e-07
+    iyz: 0.0
+    izz: 1.0e-07
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_hip_pitch_link].mass
+  value: 1.35
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_hip_pitch_link].com
+  value:
+  - 0.002741
+  - 0.047791
+  - -0.02606
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_hip_pitch_link].inertia
+  value:
+    ixx: 0.001811
+    ixy: 3.68e-05
+    ixz: -3.44e-05
+    iyy: 0.0014193
+    iyz: 0.000171
+    izz: 0.0012812
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_hip_roll_link].mass
+  value: 1.52
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_hip_roll_link].com
+  value:
+  - 0.029812
+  - -0.001045
+  - -0.087934
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_hip_roll_link].inertia
+  value:
+    ixx: 0.0023773
+    ixy: -3.8e-06
+    ixz: -0.0003908
+    iyy: 0.0024123
+    iyz: 1.84e-05
+    izz: 0.0016595
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_hip_yaw_link].mass
+  value: 1.702
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_hip_yaw_link].com
+  value:
+  - -0.057709
+  - -0.010981
+  - -0.15078
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_hip_yaw_link].inertia
+  value:
+    ixx: 0.0057774
+    ixy: -0.0005411
+    ixz: -0.0023948
+    iyy: 0.0076124
+    iyz: -0.0007072
+    izz: 0.003149
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_knee_link].mass
+  value: 1.932
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_knee_link].com
+  value:
+  - 0.005457
+  - 0.003964
+  - -0.12074
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_knee_link].inertia
+  value:
+    ixx: 0.011329
+    ixy: 4.82e-05
+    ixz: -4.49e-05
+    iyy: 0.011277
+    iyz: -0.0007146
+    izz: 0.0015168
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_ankle_pitch_link].mass
+  value: 0.074
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_ankle_pitch_link].com
+  value:
+  - -0.007269
+  - 0.0
+  - 0.011137
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_ankle_pitch_link].inertia
+  value:
+    ixx: 8.4e-06
+    ixy: 0.0
+    ixz: -2.9e-06
+    iyy: 1.89e-05
+    iyz: 0.0
+    izz: 1.26e-05
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_ankle_roll_link].mass
+  value: 0.608
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_ankle_roll_link].com
+  value:
+  - 0.026505
+  - 0.0
+  - -0.016425
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_ankle_roll_link].inertia
+  value:
+    ixx: 0.0002231
+    ixy: 2.0e-07
+    ixz: 8.91e-05
+    iyy: 0.0016161
+    iyz: -1.0e-07
+    izz: 0.0016667
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_hip_pitch_link].mass
+  value: 1.35
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_hip_pitch_link].com
+  value:
+  - 0.002741
+  - -0.047791
+  - -0.02606
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_hip_pitch_link].inertia
+  value:
+    ixx: 0.001811
+    ixy: -3.68e-05
+    ixz: -3.44e-05
+    iyy: 0.0014193
+    iyz: -0.000171
+    izz: 0.0012812
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_hip_roll_link].mass
+  value: 1.52
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_hip_roll_link].com
+  value:
+  - 0.029812
+  - 0.001045
+  - -0.087934
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_hip_roll_link].inertia
+  value:
+    ixx: 0.0023773
+    ixy: 3.8e-06
+    ixz: -0.0003908
+    iyy: 0.0024123
+    iyz: -1.84e-05
+    izz: 0.0016595
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_hip_yaw_link].mass
+  value: 1.702
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_hip_yaw_link].com
+  value:
+  - -0.057709
+  - 0.010981
+  - -0.15078
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_hip_yaw_link].inertia
+  value:
+    ixx: 0.0057774
+    ixy: 0.0005411
+    ixz: -0.0023948
+    iyy: 0.0076124
+    iyz: 0.0007072
+    izz: 0.003149
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_knee_link].mass
+  value: 1.932
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_knee_link].com
+  value:
+  - 0.005457
+  - -0.003964
+  - -0.12074
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_knee_link].inertia
+  value:
+    ixx: 0.011329
+    ixy: -4.82e-05
+    ixz: 4.49e-05
+    iyy: 0.011277
+    iyz: 0.0007146
+    izz: 0.0015168
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_ankle_pitch_link].mass
+  value: 0.074
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_ankle_pitch_link].com
+  value:
+  - -0.007269
+  - 0.0
+  - 0.011137
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_ankle_pitch_link].inertia
+  value:
+    ixx: 8.4e-06
+    ixy: 0.0
+    ixz: -2.9e-06
+    iyy: 1.89e-05
+    iyz: 0.0
+    izz: 1.26e-05
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_ankle_roll_link].mass
+  value: 0.608
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_ankle_roll_link].com
+  value:
+  - 0.026505
+  - 0.0
+  - -0.016425
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_ankle_roll_link].inertia
+  value:
+    ixx: 0.0002231
+    ixy: -2.0e-07
+    ixz: 8.91e-05
+    iyy: 0.0016161
+    iyz: 1.0e-07
+    izz: 0.0016667
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[waist_yaw_link].mass
+  value: 0.214
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[waist_yaw_link].com
+  value:
+  - 0.003494
+  - 0.000233
+  - 0.018034
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[waist_yaw_link].inertia
+  value:
+    ixx: 0.00010673
+    ixy: 2.703e-06
+    ixz: -7.631e-06
+    iyy: 0.00010422
+    iyz: -2.01e-07
+    izz: 0.0001625
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[waist_roll_link].mass
+  value: 0.086
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[waist_roll_link].com
+  value:
+  - 0.0
+  - 2.3e-05
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[waist_roll_link].inertia
+  value:
+    ixx: 7.079e-06
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 6.339e-06
+    iyz: 0.0
+    izz: 8.245e-06
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[torso_link].mass
+  value: 6.78
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[torso_link].com
+  value:
+  - 0.000931
+  - 0.000346
+  - 0.15082
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[torso_link].inertia
+  value:
+    ixx: 0.05905
+    ixy: 3.3302e-05
+    ixz: -0.0017715
+    iyy: 0.047014
+    iyz: -2.2399e-05
+    izz: 0.025652
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[logo_link].mass
+  value: 0.001
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[logo_link].com
+  value:
+  - 0.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[logo_link].inertia
+  value:
+    ixx: 1.0e-07
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 1.0e-07
+    iyz: 0.0
+    izz: 1.0e-07
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[head_link].mass
+  value: 1.036
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[head_link].com
+  value:
+  - 0.005267
+  - 0.000299
+  - 0.449869
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[head_link].inertia
+  value:
+    ixx: 0.004085051
+    ixy: -2.543e-06
+    ixz: -6.9455e-05
+    iyy: 0.004185212
+    iyz: -3.726e-06
+    izz: 0.001807911
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_shoulder_pitch_link].mass
+  value: 0.718
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_shoulder_pitch_link].com
+  value:
+  - 0.0
+  - 0.035892
+  - -0.011628
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_shoulder_pitch_link].inertia
+  value:
+    ixx: 0.0004291
+    ixy: -9.2e-06
+    ixz: 6.4e-06
+    iyy: 0.000453
+    iyz: 2.26e-05
+    izz: 0.000423
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_shoulder_roll_link].mass
+  value: 0.643
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_shoulder_roll_link].com
+  value:
+  - -0.000227
+  - 0.00727
+  - -0.063243
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_shoulder_roll_link].inertia
+  value:
+    ixx: 0.0006177
+    ixy: -1.0e-06
+    ixz: 8.7e-06
+    iyy: 0.0006912
+    iyz: -5.3e-06
+    izz: 0.0003894
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_shoulder_yaw_link].mass
+  value: 0.734
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_shoulder_yaw_link].com
+  value:
+  - 0.010773
+  - -0.002949
+  - -0.072009
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_shoulder_yaw_link].inertia
+  value:
+    ixx: 0.0009988
+    ixy: 7.9e-06
+    ixz: 0.0001412
+    iyy: 0.0010605
+    iyz: -2.86e-05
+    izz: 0.0004354
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_elbow_link].mass
+  value: 0.6
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_elbow_link].com
+  value:
+  - 0.064956
+  - 0.004454
+  - -0.010062
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_elbow_link].inertia
+  value:
+    ixx: 0.0002891
+    ixy: 6.53e-05
+    ixz: 1.72e-05
+    iyy: 0.0004152
+    iyz: -5.6e-06
+    izz: 0.0004197
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_wrist_roll_link].mass
+  value: 0.08544498
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_wrist_roll_link].com
+  value:
+  - 0.01713944778
+  - 0.00053759094
+  - 4.8864e-07
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_wrist_roll_link].inertia
+  value:
+    ixx: 4.821544023e-05
+    ixy: -4.24511021e-06
+    ixz: 5.10599e-09
+    iyy: 3.722899093e-05
+    iyz: -1.23525e-09
+    izz: 5.482106541e-05
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_wrist_pitch_link].mass
+  value: 0.48404956
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_wrist_pitch_link].com
+  value:
+  - 0.02299989837
+  - -0.00111685314
+  - -0.00111658096
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_wrist_pitch_link].inertia
+  value:
+    ixx: 0.00016579646273
+    ixy: -1.231206746e-05
+    ixz: 1.231699194e-05
+    iyy: 0.0004295405741
+    iyz: 8.1417712e-07
+    izz: 0.00042953697654
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_wrist_yaw_link].mass
+  value: 0.08457647
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_wrist_yaw_link].com
+  value:
+  - 0.02200381568
+  - 0.00049485096
+  - 0.00053861123
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_wrist_yaw_link].inertia
+  value:
+    ixx: 4.929128828e-05
+    ixy: -4.5735494e-07
+    ixz: 4.45867591e-06
+    iyy: 5.973338134e-05
+    iyz: 4.3217198e-07
+    izz: 3.928083826e-05
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_rubber_hand].mass
+  value: 0.17
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_rubber_hand].com
+  value:
+  - 0.05361310808
+  - -0.0029590524
+  - 0.00215413091
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[left_rubber_hand].inertia
+  value:
+    ixx: 0.00010099485234748
+    ixy: 3.618590790516e-05
+    ixz: -7.4301518642e-07
+    iyy: 0.00028135871571621
+    iyz: 3.30189743286e-06
+    izz: 0.00021894770413514
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_shoulder_pitch_link].mass
+  value: 0.718
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_shoulder_pitch_link].com
+  value:
+  - 0.0
+  - -0.035892
+  - -0.011628
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_shoulder_pitch_link].inertia
+  value:
+    ixx: 0.0004291
+    ixy: 9.2e-06
+    ixz: 6.4e-06
+    iyy: 0.000453
+    iyz: -2.26e-05
+    izz: 0.000423
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_shoulder_roll_link].mass
+  value: 0.643
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_shoulder_roll_link].com
+  value:
+  - -0.000227
+  - -0.00727
+  - -0.063243
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_shoulder_roll_link].inertia
+  value:
+    ixx: 0.0006177
+    ixy: 1.0e-06
+    ixz: 8.7e-06
+    iyy: 0.0006912
+    iyz: 5.3e-06
+    izz: 0.0003894
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_shoulder_yaw_link].mass
+  value: 0.734
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_shoulder_yaw_link].com
+  value:
+  - 0.010773
+  - 0.002949
+  - -0.072009
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_shoulder_yaw_link].inertia
+  value:
+    ixx: 0.0009988
+    ixy: -7.9e-06
+    ixz: 0.0001412
+    iyy: 0.0010605
+    iyz: 2.86e-05
+    izz: 0.0004354
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_elbow_link].mass
+  value: 0.6
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_elbow_link].com
+  value:
+  - 0.064956
+  - -0.004454
+  - -0.010062
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_elbow_link].inertia
+  value:
+    ixx: 0.0002891
+    ixy: -6.53e-05
+    ixz: 1.72e-05
+    iyy: 0.0004152
+    iyz: 5.6e-06
+    izz: 0.0004197
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_wrist_roll_link].mass
+  value: 0.08544498
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_wrist_roll_link].com
+  value:
+  - 0.01713944778
+  - -0.00053759094
+  - 4.8864e-07
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_wrist_roll_link].inertia
+  value:
+    ixx: 4.821544023e-05
+    ixy: 4.24511021e-06
+    ixz: 5.10599e-09
+    iyy: 3.722899093e-05
+    iyz: 1.23525e-09
+    izz: 5.482106541e-05
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_wrist_pitch_link].mass
+  value: 0.48404956
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_wrist_pitch_link].com
+  value:
+  - 0.02299989837
+  - 0.00111685314
+  - -0.00111658096
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_wrist_pitch_link].inertia
+  value:
+    ixx: 0.00016579646273
+    ixy: 1.231206746e-05
+    ixz: 1.231699194e-05
+    iyy: 0.0004295405741
+    iyz: -8.1417712e-07
+    izz: 0.00042953697654
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_wrist_yaw_link].mass
+  value: 0.08457647
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_wrist_yaw_link].com
+  value:
+  - 0.02200381568
+  - -0.00049485096
+  - 0.00053861123
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_wrist_yaw_link].inertia
+  value:
+    ixx: 4.929128828e-05
+    ixy: 4.5735494e-07
+    ixz: 4.45867591e-06
+    iyy: 5.973338134e-05
+    iyz: -4.3217198e-07
+    izz: 3.928083826e-05
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_rubber_hand].mass
+  value: 0.17
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_rubber_hand].com
+  value:
+  - 0.05361310808
+  - 0.0029590524
+  - 0.00215413091
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: links[right_rubber_hand].inertia
+  value:
+    ixx: 0.00010099485234748
+    ixy: -3.618590790516e-05
+    ixz: -7.4301518642e-07
+    iyy: 0.00028135871571621
+    iyz: -3.30189743286e-06
+    izz: 0.00021894770413514
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[pelvis_contour_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_hip_pitch_joint].limit.mech
+  value:
+    lower: -2.5307
+    upper: 2.8798
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_hip_pitch_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_hip_pitch_joint].limit.effort
+  value: 88.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_hip_roll_joint].limit.mech
+  value:
+    lower: -0.5236
+    upper: 2.9671
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_hip_roll_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_hip_roll_joint].limit.effort
+  value: 139.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_hip_yaw_joint].limit.mech
+  value:
+    lower: -2.7576
+    upper: 2.7576
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_hip_yaw_joint].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_hip_yaw_joint].limit.effort
+  value: 88.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_knee_joint].limit.mech
+  value:
+    lower: -0.087267
+    upper: 2.8798
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_knee_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_knee_joint].limit.effort
+  value: 139.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_ankle_pitch_joint].limit.mech
+  value:
+    lower: -0.87267
+    upper: 0.5236
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_ankle_pitch_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_ankle_pitch_joint].limit.effort
+  value: 35.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_ankle_roll_joint].limit.mech
+  value:
+    lower: -0.2618
+    upper: 0.2618
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_ankle_roll_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_ankle_roll_joint].limit.effort
+  value: 35.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_hip_pitch_joint].limit.mech
+  value:
+    lower: -2.5307
+    upper: 2.8798
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_hip_pitch_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_hip_pitch_joint].limit.effort
+  value: 88.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_hip_roll_joint].limit.mech
+  value:
+    lower: -2.9671
+    upper: 0.5236
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_hip_roll_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_hip_roll_joint].limit.effort
+  value: 139.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_hip_yaw_joint].limit.mech
+  value:
+    lower: -2.7576
+    upper: 2.7576
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_hip_yaw_joint].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_hip_yaw_joint].limit.effort
+  value: 88.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_knee_joint].limit.mech
+  value:
+    lower: -0.087267
+    upper: 2.8798
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_knee_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_knee_joint].limit.effort
+  value: 139.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_ankle_pitch_joint].limit.mech
+  value:
+    lower: -0.87267
+    upper: 0.5236
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_ankle_pitch_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_ankle_pitch_joint].limit.effort
+  value: 35.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_ankle_roll_joint].limit.mech
+  value:
+    lower: -0.2618
+    upper: 0.2618
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_ankle_roll_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_ankle_roll_joint].limit.effort
+  value: 35.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[waist_yaw_joint].limit.mech
+  value:
+    lower: -2.618
+    upper: 2.618
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[waist_yaw_joint].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[waist_yaw_joint].limit.effort
+  value: 88.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[waist_roll_joint].limit.mech
+  value:
+    lower: -0.52
+    upper: 0.52
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[waist_roll_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[waist_roll_joint].limit.effort
+  value: 35.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[waist_pitch_joint].limit.mech
+  value:
+    lower: -0.52
+    upper: 0.52
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[waist_pitch_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[waist_pitch_joint].limit.effort
+  value: 35.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[logo_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[head_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[imu_in_torso_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[imu_in_pelvis_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[d435_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[mid360_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_shoulder_pitch_joint].limit.mech
+  value:
+    lower: -3.0892
+    upper: 2.6704
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_shoulder_pitch_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_shoulder_pitch_joint].limit.effort
+  value: 25.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_shoulder_roll_joint].limit.mech
+  value:
+    lower: -1.5882
+    upper: 2.2515
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_shoulder_roll_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_shoulder_roll_joint].limit.effort
+  value: 25.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_shoulder_yaw_joint].limit.mech
+  value:
+    lower: -2.618
+    upper: 2.618
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_shoulder_yaw_joint].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_shoulder_yaw_joint].limit.effort
+  value: 25.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_elbow_joint].limit.mech
+  value:
+    lower: -1.0472
+    upper: 2.0944
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_elbow_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_elbow_joint].limit.effort
+  value: 25.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_wrist_roll_joint].limit.mech
+  value:
+    lower: -1.972222054
+    upper: 1.972222054
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_wrist_roll_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_wrist_roll_joint].limit.effort
+  value: 25.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_wrist_pitch_joint].limit.mech
+  value:
+    lower: -1.614429558
+    upper: 1.614429558
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_wrist_pitch_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_wrist_pitch_joint].limit.effort
+  value: 5.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_wrist_yaw_joint].limit.mech
+  value:
+    lower: -1.614429558
+    upper: 1.614429558
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_wrist_yaw_joint].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_wrist_yaw_joint].limit.effort
+  value: 5.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[left_hand_palm_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_shoulder_pitch_joint].limit.mech
+  value:
+    lower: -3.0892
+    upper: 2.6704
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_shoulder_pitch_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_shoulder_pitch_joint].limit.effort
+  value: 25.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_shoulder_roll_joint].limit.mech
+  value:
+    lower: -2.2515
+    upper: 1.5882
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_shoulder_roll_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_shoulder_roll_joint].limit.effort
+  value: 25.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_shoulder_yaw_joint].limit.mech
+  value:
+    lower: -2.618
+    upper: 2.618
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_shoulder_yaw_joint].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_shoulder_yaw_joint].limit.effort
+  value: 25.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_elbow_joint].limit.mech
+  value:
+    lower: -1.0472
+    upper: 2.0944
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_elbow_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_elbow_joint].limit.effort
+  value: 25.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_wrist_roll_joint].limit.mech
+  value:
+    lower: -1.972222054
+    upper: 1.972222054
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_wrist_roll_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_wrist_roll_joint].limit.effort
+  value: 25.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_wrist_pitch_joint].limit.mech
+  value:
+    lower: -1.614429558
+    upper: 1.614429558
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_wrist_pitch_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_wrist_pitch_joint].limit.effort
+  value: 5.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_wrist_yaw_joint].limit.mech
+  value:
+    lower: -1.614429558
+    upper: 1.614429558
+  unit: rad
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_wrist_yaw_joint].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_wrist_yaw_joint].limit.effort
+  value: 5.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: joints[right_hand_palm_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+- path: summary.total_mass
+  value: 33.34114202
+  unit: kg
+  source: urdf
+  date: '2026-11-09'
+  ref: g1_29dof_rev_1_0.urdf
+  note: 39 个 link 求和
+warnings:
+- code: W002
+  path: actuators[]
+  message: URDF 不含执行器参数（减速比/Kt/力矩常数）；G1 的减速比在 README 表、effort/velocity 在 <limit> 与 motor_info.md
+- code: W002
+  path: frames.world_attachment
+  message: 源 URDF 的 world+floating_base_joint 是注释掉的（原文 uncomment when convert to mujoco）；这里记 floating，导出 MJCF 时补
+    world
+- code: W006
+  path: joints[*]
+  message: 9 个 fixed joint 保留成关节（拓扑是真的）；导出 MJCF 时会被焊成同一个 body
+- code: W004
+  path: links[*].visual[*].mesh
+  message: 35 个 mesh 只有引用、没有入库
+  meshes:
+  - assets/g1/head_link.STL
+  - assets/g1/left_ankle_pitch_link.STL
+  - assets/g1/left_ankle_roll_link.STL
+  - assets/g1/left_elbow_link.STL
+  - assets/g1/left_hip_pitch_link.STL
+  - assets/g1/left_hip_roll_link.STL
+  - assets/g1/left_hip_yaw_link.STL
+  - assets/g1/left_knee_link.STL
+summary:
+  links: 39
+  joints: 38
+  actuated_joints: 29
+  actuators: 0
+  total_mass: 33.34114202

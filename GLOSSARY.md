@@ -4,8 +4,14 @@
 
 ## 核心
 
+**canonical**（规范形式）
+：一个系统里被指定为「唯一权威」的那一份表示；其他格式都是它的投影。**是角色，不是格式**——先说「谁算数」，才轮到「用什么文件装」。
+：与类/schema 的关系：**类（JSON Schema）定义长什么样，canonical 规定哪一份算数**。两者常被混说成「canonical 用 URDF」。
+：本仓库的 canonical 载体是**自定 YAML**（D4）：`base` + `overlay` 是源头，`resolved` 是派生物。URDF / MJCF / USD 都只是导入端或导出端。见 [阶段 2 执行计划](docs/plans/2026-11-09-robot-entity.md)。
+_避免_：把 canonical 当格式名用
+
 **数字描述** (digital description)
-：描述机器人几何与物理属性的模型文件。canonical 是 URDF/xacro，USD、MJCF 由它导出。
+：描述机器人几何与物理属性的那一份数据（本文档里也叫「实体」）。载体是自定 YAML，MJCF / USD 由它导出，URDF / MJCF 可以由它导入。
 _避免_：模型（除非在说神经网络）、仿真模型、机器人模型
 
 **模型** (model)
@@ -23,6 +29,26 @@ _歧义已解决_：2026-11-07 前「模型」两义混用，现在分开。
 
 **零位** (zero offset)
 ：关节读数为 0 时对应的机械姿态偏差。属于标定增量，写进 overlay，不改数字描述本体。
+
+**实体** (entity)
+：一台机器人的数字描述文件（`contract/robot/types/<type>.yaml`）。回答「这台机器在物理上是什么」，不回答「策略怎么用它」。
+：与**契约**的区分是一条判据：实体有真假（质量、惯量、轴），契约只有一致不一致（关节序、单位、obs/act 语义）。
+_避免_：数字孪生（那是「一直跟着真机跑」的东西，本仓库现在没有）、模型
+
+**base / overlay / resolved**
+：`base` 由 importer 生成、只读、入库；`overlay` 是人或客户端写的增量（`路径 → 值 + 出处`）；`resolved` 是两者确定性合并的产物，**不入库**，谁需要谁生成。
+
+**preset**
+：同一结构的建模开关（碰撞体范围、滚轮、回差），不是「这台机器的差异」。preset 不得改变 actuated 关节集合，不得改变质量与惯量。
+
+**provenance**
+：逐值的「凭什么算数」。每个数值带 `source ∈ {measured, identified, spec, cad, mjcf, urdf, guessed}`；同 path 出现两个不同值且没有显式 `override` 时**报错**，不静默取高等级。
+
+**canonical order**
+：动作向量与观测向量里关节的排列顺序里被指定为权威的那一份。按运动链分组、组内近端到远端的语义顺序；其余各处（MJCF actuator、SDK、动画骨架）都写成显式映射，禁止按 index 直拷。
+
+**导入 / 导出** (import / export)
+：导入 = 把 URDF / MJCF 变成实体；导出 = 把实体变成 MJCF（或以后的 URDF / USD）。导出的最小版本只用于验证导入（round-trip），不是训练用的那个导出端。
 
 ## 硬件检查
 

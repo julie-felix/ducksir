@@ -12,6 +12,9 @@
 |---|---|
 | `docs/index.md` | 文档路由表，**从这里开始** |
 | `contract/` | 三平面共享契约（关节表、schema、manifest），机器可读 |
+| `contract/robot/` | 数字描述：`types/` 是 base（导入生成、只读），`instances/` 是 overlay |
+| `tools/robot/` | 导入 / 检查 / 导出 / 比对脚本，零依赖（标准库 + PyYAML） |
+| `third_party/` | 上游原样文件（MJCF/URDF/许可），只加不改 |
 | `hardware/` | BOM、结构件、板卡、标定记录 |
 | `training/` | 重定向、跟踪训练、评估、导出 |
 | `runtime/` | 端侧：总线、安全层、推理 |
