@@ -3,9 +3,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/three/controls/OrbitControls.js';
 import { GLTFLoader } from './vendor/three/loaders/GLTFLoader.js';
-import { DRACOLoader } from './vendor/three/loaders/DRACOLoader.js';
 
 const $ = (id) => document.getElementById(id);
+addEventListener('error', (e) => { const b = $('busy'); if (b) { b.style.display = 'grid'; b.textContent = '出错：' + (e.message || e.error); } });
+addEventListener('unhandledrejection', (e) => { const b = $('busy'); if (b) { b.style.display = 'grid'; b.textContent = '加载失败：' + (e.reason && (e.reason.message || e.reason)); } });
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -36,10 +37,8 @@ robotGroup.rotation.x = -Math.PI / 2;
 scene.add(robotGroup);
 
 const loader = new GLTFLoader();
-// step2glb 出来的 GLB 一律带 Draco（KHR_draco_mesh_compression），没有这个 decoder 会加载失败
-const draco = new DRACOLoader();
-draco.setDecoderPath('./vendor/three/draco/');
-loader.setDRACOLoader(draco);
+// 注：GLB 若带 Draco（step2glb 默认会压）必须挂 DRACOLoader；
+// 我们的 CAD 资产用 tools/cad 流程先剥掉 Draco，所以这里不需要。
 const glbCache = new Map();
 const materialCache = new Map();
 
@@ -281,14 +280,45 @@ async function showStatic(meta) {
   $('busy').style.display = 'grid';
   robotGroup.clear();
   current = null;
+  $('busy').textContent = '下载 GLB…';
   const gltf = await loader.loadAsync(meta.glb);
+  $('busy').textContent = '解析完成，建场景…';
   robotGroup.add(gltf.scene);
   robotGroup.rotation.x = 0;
   robotGroup.position.set(0, 0, 0);
   const box = new THREE.Box3().setFromObject(gltf.scene);
   const size = box.getSize(new THREE.Vector3());
   robotGroup.position.y -= box.min.y;
-  $('joints').innerHTML = '<div class="row">静态模型（无关节）</div>';
+  // 轴线叠加：毫米 → 米，长度按 60 mm 半长画；标签用 canvas 贴图做 Sprite
+  if (meta.axes && meta.axes.length) {
+    const group = new THREE.Group();
+    for (const a of meta.axes) {
+      const p = new THREE.Vector3(a.point[0] / 1000, a.point[1] / 1000, a.point[2] / 1000);
+      const d = new THREE.Vector3(a.dir[0], a.dir[1], a.dir[2]).normalize();
+      const half = 0.06;
+      const geo = new THREE.BufferGeometry().setFromPoints([
+        p.clone().addScaledVector(d, -half), p.clone().addScaledVector(d, half)]);
+      group.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color: a.color })));
+      const c = document.createElement('canvas');
+      c.width = 128; c.height = 64;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = 'rgba(10,12,16,0.75)'; ctx.fillRect(0, 0, 128, 64);
+      ctx.fillStyle = a.color; ctx.font = 'bold 40px sans-serif';
+      ctx.fillText(a.label, 14, 46);
+      const tex = new THREE.CanvasTexture(c);
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
+      sprite.scale.set(0.05, 0.025, 1);
+      sprite.position.copy(p.clone().addScaledVector(d, half * 1.05));
+      group.add(sprite);
+    }
+    robotGroup.add(group);
+    // 关掉 Z-up 旋转（GLB 已经是 Y 上）
+  }
+
+  $('joints').innerHTML = (meta.axes || []).length
+    ? meta.axes.map((a) => `<div class="row" style="font-size:11.5px"><span style="color:${a.color}">${a.label}</span>` +
+        `<b>r=${a.r_mm}mm</b></div>`).join('')
+    : '<div class="row">静态模型（无关节）</div>';
   $('mechanisms').innerHTML = '<div class="row">—</div>';
   $('tree').textContent = '（静态 GLB，无骨架）';
   $('summary').innerHTML = `
@@ -342,7 +372,7 @@ function animate() {
   for (const r of index.robots) {
     const opt = document.createElement('option');
     opt.value = r.id;
-    opt.textContent = `${r.name}（${r.links} link / ${r.joints} joint）`;
+    opt.textContent = r.static ? r.name : `${r.name}（${r.links} link / ${r.joints} joint）`;
     sel.appendChild(opt);
   }
   sel.addEventListener('change', () => {

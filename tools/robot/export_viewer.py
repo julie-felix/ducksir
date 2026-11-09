@@ -96,8 +96,13 @@ def main() -> int:
         for name in sorted(os.listdir(cad_dir)):
             if not name.lower().endswith(".glb"):
                 continue
-            index.append({"id": os.path.splitext(name)[0], "name": f"CAD · {os.path.splitext(name)[0]}",
-                          "static": True, "glb": ASSET_PREFIX + os.path.join(cad_dir, name)})
+            stem = os.path.splitext(name)[0]
+            entry = {"id": stem, "name": f"CAD · {stem}", "static": True,
+                     "glb": ASSET_PREFIX + os.path.join(cad_dir, name)}
+            sidecar = os.path.join(cad_dir, stem + ".axes.json")
+            if os.path.exists(sidecar):
+                entry["axes"] = E.read_yaml(sidecar)["axes"]
+            index.append(entry)
             print(f"  + 静态模型 {name}")
 
     with open(os.path.join(args.out, "index.json"), "w", encoding="utf-8") as f:

@@ -203,7 +203,7 @@ def render_assembly(size, solids, view, shade=True):
     return img
 
 
-def rasterize(solids, view, W=900, H=900):
+def rasterize(solids, view, W=900, H=900, annotations=None):
     """真·z-buffer 软件光栅化：面三角化后逐像素比较深度，画出实体感。"""
     from array import array
 
@@ -279,7 +279,16 @@ def rasterize(solids, view, W=900, H=900):
                     zbuf[idx] = z
                     j = idx * 3
                     buf[j:j + 3] = col
-    return Image.frombytes("RGB", (W, H), bytes(buf))
+    img = Image.frombytes("RGB", (W, H), bytes(buf))
+    if annotations:
+        d = ImageDraw.Draw(img)
+        for p0, p1, color, label in annotations:
+            a, b = to_px(p0), to_px(p1)
+            d.line([(a[0], a[1]), (b[0], b[1])], fill=color, width=3)
+            mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+            d.rectangle([mx - 2, my - 9, mx + 8 * len(label) + 2, my + 8], fill=(10, 12, 16))
+            d.text((mx, my - 7), label, fill=(255, 255, 255))
+    return img
 
 
 def main() -> int:
