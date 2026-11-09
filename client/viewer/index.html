@@ -90,6 +90,9 @@
       <button id="view-top" title="俯视">俯视</button>
       <button id="reset">回零</button>
       <button id="fit">重置视角</button>
+      <label style="display:flex;gap:5px;align-items:center;color:var(--dim);font-size:12px">
+        <input type="checkbox" id="camsync" checked /> 同步视角
+      </label>
       <button id="split" title="左右并排：左边我们的解算，右边 MuJoCo 查表">并排对比</button>
     </header>
     <div id="views">
@@ -104,6 +107,6 @@
 <script type="importmap">
 { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/" } }
 </script>
-<script type="module" src="./app.js"></script>
+<script type="module" src="./app.js?v=1794250037"></script>
 </body>
 </html>

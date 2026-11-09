@@ -781,6 +781,12 @@ async function initParallelOverlay(data) {
     }
   }
   if (qs.has('split')) setTimeout(() => { if (!SPLIT.on) splitToggle(); }, 600);
+  if (qs.has('selftest')) setTimeout(() => {
+    const f = (v) => `(${v.toArray().map((x) => x.toFixed(3)).join(',')})`;
+    console.log('CAM left pos', f(camera.position), 'target', f(controls.target), 'fov', camera.fov);
+    if (SPLIT.camera) console.log('CAM right pos', f(SPLIT.camera.position), 'target', f(SPLIT.controls.target), 'fov', SPLIT.camera.fov);
+    if (SPLIT.root) console.log('CAM rootY', SPLIT.root.position.y, 'robotY', robotGroup.position.y);
+  }, 2000);
 }
 
 
@@ -874,14 +880,25 @@ async function splitToggle() {
     cam.near = 0.004; cam.far = 50; cam.updateProjectionMatrix();
     ctl.update();
   };
+  if (SPLIT.root) {
+    SPLIT.root.position.copy(robotGroup.position);
+    SPLIT.root.rotation.copy(robotGroup.rotation);
+    SPLIT.root.updateMatrixWorld(true);
+  }
   focusOn(current.joints, camera, controls);
   focusOn(SPLIT.joints, SPLIT.camera, SPLIT.controls);
+  if (!SPLIT.camHooked) { hookCamSync(); SPLIT.camHooked = true; }
+  camSync(camera, controls, SPLIT.camera, SPLIT.controls);
   for (const side of Object.values(PAR.sides)) splitUpdate(side);
 }
 
 /** 更新右半边：机器人与连杆都按 MuJoCo 的 roll/pitch。 */
 async function splitUpdate(side) {
   if (!SPLIT.on || !SPLIT.ready || !side.gridFile) return;
+  if (SPLIT.root) {
+    SPLIT.root.position.copy(robotGroup.position);   // 跟着「贴地」一起动
+    SPLIT.root.rotation.copy(robotGroup.rotation);   // Z-up → Y-up 的显示旋转也要一致
+  }
   const g = await splitGrid(side);
   if (!g) return;
   const twin = SPLIT.sides.find((s) => s.prefix === side.prefix);
@@ -901,6 +918,40 @@ function parTraceCaption(side, mj, g) {
     + `pitch ${(mj[1] * 180 / Math.PI).toFixed(2)}° · 差 `
     + `${(Math.max(Math.abs(dr), Math.abs(dp)) * 1e3).toFixed(2)} mrad`
     + (g ? ` · ${g.n}×${g.n} 查表` : '');
+}
+
+// ---------------------------------------------------------------------------
+// 两边相机同步：把「相对各自 target 的球坐标」复制过去，取景完全一致。
+// ---------------------------------------------------------------------------
+let camGuard = false;
+function camSync(srcCam, srcCtl, dstCam, dstCtl) {
+  if (camGuard) return;
+  camGuard = true;
+  // 直接把「相对 target 的位移」搬过去：比换算球坐标更不容易出偏差
+  // 两边机器人放在同一处（落地偏移同步过），所以 target 也可以直接照抄
+  dstCtl.target.copy(srcCtl.target);
+  dstCam.position.copy(srcCam.position);
+  dstCam.up.copy(srcCam.up);
+  dstCam.fov = srcCam.fov;
+  dstCam.near = srcCam.near;
+  dstCam.far = srcCam.far;
+  dstCam.updateProjectionMatrix();
+  dstCtl.update();
+  camGuard = false;
+}
+function hookCamSync() {
+  const cb = $('camsync');
+  const enabled = () => cb ? cb.checked : true;
+  controls.addEventListener('change', () => {
+    if (!enabled() || !SPLIT.on || !SPLIT.ready || camGuard) return;
+    camSync(camera, controls, SPLIT.camera, SPLIT.controls);
+  });
+  if (SPLIT.controls) {
+    SPLIT.controls.addEventListener('change', () => {
+      if (!enabled() || !SPLIT.on || !SPLIT.ready || camGuard) return;
+      camSync(SPLIT.camera, SPLIT.controls, camera, controls);
+    });
+  }
 }
 
 (function hookTranslucent() {
