@@ -1,0 +1,75 @@
+# 天工 Lite（TienKung Lite）的并联踝描述。
+#
+# URDF 本身只有串联等效（ankle_pitch → ankle_roll，两个 revolute），实物是两个电机经连杆驱动平台。
+# 这里把并联结构补上，几何沿用讲者那份 TC10-00 装配 rig —— 依据是：
+#   rig 的 roll 关节相对 pitch 关节的位移是 (0,0,0)，
+#   而 TienKung Lite 的 ankle_roll_l_joint origin 也是 (0,0,0)；两者踝坐标系同构。
+# 仍未核实的：AB 电机的关节名/索引（Lite URDF 里没有电机关节，只有两个踝关节）。
+
+mechanisms:
+  - id: ankle_left
+    kind: parallel_2dof
+    mount: ankle_pitch_l_link
+    platform: ankle_roll_l_link
+    charts:
+      pr:
+        joints: [ankle_pitch_l_joint, ankle_roll_l_joint]
+        semantic: [pitch, roll]
+      ab:
+        motors: []          # Lite URDF 没有电机关节，AB 槽位未定
+    coupling:
+      kind: analytic
+      params:
+        frame: ankle_pitch
+        units: m
+        passive_pr: true      # 两个踝关节是被动的，驱动来自电机 + 连杆
+        ab_unresolved: true   # AB 槽位与关节名未定，先只给 PR→电机角的映射
+        chains:
+          - {a: [0, -0.043247, 0.14], axis: [0, 1, 0], v: [-0.055821, 0, 0.022], rod: 0.14}
+          - {a: [0, 0.043252, 0.215], axis: [0, 1, 0], v: [-0.055821, 0, 0.022], rod: 0.215}
+        platform:
+          pitch_axis: [0, 1, 0]
+          pitch_pivot: [0, 0, 0]
+          roll_axis: [1, 0, 0]
+          roll_pivot: [0, 0, 0]
+          c0: [[-0.055821, -0.04325, 0.022], [-0.055821, 0.04325, 0.022]]
+      source: "ankle-rig-tg10（讲者的 TC10-00 装配，MIT）；踝坐标系与 TienKung Lite 的 ankle_roll origin (0,0,0) 一致"
+      assumed:
+        - "geometry_from_rig: 连杆几何取自讲者的装配 rig，不是官方 Lite 几何"
+        - "ab_mapping: AB 电机与关节的对应未定，Lite URDF 里没有电机关节"
+      anchor_zero: {A: 0, B: 0, roll: 0, pitch: 0}
+      todo: "拿到官方装配图后替换连杆几何；补齐 AB 槽位"
+
+  - id: ankle_right
+    kind: parallel_2dof
+    mount: ankle_pitch_r_link
+    platform: ankle_roll_r_link
+    charts:
+      pr:
+        joints: [ankle_pitch_r_joint, ankle_roll_r_joint]
+        semantic: [pitch, roll]
+      ab:
+        motors: []
+    coupling:
+      kind: analytic
+      params:
+        frame: ankle_pitch
+        units: m
+        mirror: true
+        passive_pr: true
+        ab_unresolved: true
+        chains:
+          - {a: [0, 0.043247, 0.14], axis: [0, 1, 0], v: [-0.055821, 0, 0.022], rod: 0.14}
+          - {a: [0, -0.043252, 0.215], axis: [0, 1, 0], v: [-0.055821, 0, 0.022], rod: 0.215}
+        platform:
+          pitch_axis: [0, 1, 0]
+          pitch_pivot: [0, 0, 0]
+          roll_axis: [1, 0, 0]
+          roll_pivot: [0, 0, 0]
+          c0: [[-0.055821, 0.04325, 0.022], [-0.055821, -0.04325, 0.022]]
+      source: "ankle_left 关于矢状面的镜像（几何镜像，未在实物上确认）"
+      assumed:
+        - "left_right_mirror: 右侧按左侧关于 y=0 镜像"
+        - "roll_sign: 右侧写关节时 roll 取反，需实物确认"
+      anchor_zero: {A: 0, B: 0, roll: 0, pitch: 0}
+      todo: "确认右侧是否真为镜像"

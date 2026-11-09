@@ -139,10 +139,15 @@ def check(doc: dict) -> list[tuple[str, bool, str]]:
                 problems.append(f"{mid}: PR 关节 {name} 不是 actuated（若机构是「电机驱动 + 关节被动」，"
                                 "在 coupling.params 里写 passive_pr: true）")
         motors = (charts.get("ab") or {}).get("motors") or []
+        ab_unresolved = bool(((m.get("coupling") or {}).get("params") or {}).get("ab_unresolved"))
         letters = [x.get("ab") for x in motors]
-        if sorted(letters) != ["A", "B"]:
+        if ab_unresolved and not motors:
+            pass                                  # AB 槽位尚未确定，明确标了 ab_unresolved
+        elif sorted(letters) != ["A", "B"]:
             problems.append(f"{mid}: AB 电机必须恰好是 A 和 B，实际 {letters}")
-        if any(x.get("index") is not None for x in motors):
+        if ab_unresolved and not motors:
+            pass
+        elif any(x.get("index") is not None for x in motors):
             idx = [x.get("index") for x in motors]
             if None in idx or len(set(idx)) != len(idx):
                 problems.append(f"{mid}: AB 电机 index 缺失或重复 {idx}")

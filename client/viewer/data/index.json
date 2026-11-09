@@ -29,6 +29,13 @@
    "joints": 29
   },
   {
+   "id": "tienkung-lite",
+   "name": "TienKung Lite",
+   "file": "tienkung-lite.json",
+   "links": 22,
+   "joints": 20
+  },
+  {
    "id": "g1-ankle-parallel",
    "name": "CAD · g1-ankle-parallel",
    "static": true,
