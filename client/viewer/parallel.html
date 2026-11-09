@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>并联踝：解算 vs MuJoCo</title>
+<style>
+  :root { --bg:#0d1014; --panel:#141a21; --line:#232c37; --fg:#d7dee8; --dim:#7f8b9b;
+          --ours:#5ad1a0; --mj:#ff9f5a; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font:14px/1.5 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
+  header { display:flex; gap:14px; align-items:center; flex-wrap:wrap;
+           padding:10px 16px; border-bottom:1px solid var(--line); background:var(--panel); }
+  header h1 { font-size:15px; margin:0 10px 0 0; font-weight:600; }
+  select, button { background:#1b232c; color:var(--fg); border:1px solid var(--line);
+                   border-radius:6px; padding:5px 10px; font-size:13px; }
+  button { cursor:pointer; }
+  button:hover { border-color:#38455a; }
+  #time { flex:1; min-width:160px; }
+  .wrap { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); }
+  .cell { position:relative; background:var(--bg); }
+  .cell canvas { display:block; width:100%; height:46vh; }
+  .cap { position:absolute; left:12px; top:10px; font-size:12px; letter-spacing:.02em; }
+  .cap b { font-size:13px; }
+  .ours .cap b { color:var(--ours); }
+  .mj .cap b { color:var(--mj); }
+  .cap span { color:var(--dim); }
+  .read { position:absolute; right:12px; top:10px; text-align:right; font-size:12px;
+          color:var(--dim); font-variant-numeric:tabular-nums; }
+  .read b { color:var(--fg); font-weight:500; }
+  footer { display:flex; gap:18px; align-items:center; padding:10px 16px; border-top:1px solid var(--line); }
+  #plot { width:100%; height:150px; }
+  .legend { font-size:12px; color:var(--dim); line-height:1.9; white-space:nowrap; }
+  .legend i { display:inline-block; width:18px; height:0; border-top:2px solid; vertical-align:middle; margin-right:6px; }
+  #note { padding:6px 16px 14px; color:var(--dim); font-size:12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>并联踝 · 解算 vs MuJoCo</h1>
+  <select id="ds">
+    <option value="tg10">天工 TG10-00（对拍 PASS）</option>
+    <option value="g1">G1 装配版（差 2.5e-3 rad）</option>
+  </select>
+  <button id="play">暂停</button>
+  <input id="time" type="range" min="0" max="399" value="0" step="1">
+  <span id="tlab" style="color:var(--dim);font-variant-numeric:tabular-nums">0.00 s</span>
+</header>
+
+<div class="wrap">
+  <div class="cell ours">
+    <canvas id="cv-l"></canvas>
+    <div class="cap"><b>我们的解算</b><br><span>两根定长推杆 · 闭式逆解 + 牛顿正解</span></div>
+    <div class="read" id="read-l"></div>
+  </div>
+  <div class="cell mj">
+    <canvas id="cv-r"></canvas>
+    <div class="cap"><b>MuJoCo</b><br><span>同一台机构 · 软约束 connect</span></div>
+    <div class="read" id="read-r"></div>
+  </div>
+</div>
+
+<footer>
+  <canvas id="plot"></canvas>
+  <div class="legend">
+    <div><i style="border-color:#5ad1a0"></i>我们的 roll / pitch</div>
+    <div><i style="border-color:#ff9f5a;border-top-style:dashed"></i>MuJoCo 的 roll / pitch</div>
+    <div id="err" style="color:#d7dee8"></div>
+  </div>
+</footer>
+<div id="note">两边喂的是同一串电机角 θ(t)。左图的平台位姿由我们的解算给出；右图直接用 MuJoCo 报出来的位姿。
+差别就是「刚性机构」与「弹簧约束」的差别。</div>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js" } }
+</script>
+
+<script type="module">
+import * as THREE from './vendor/three/three.module.js';
+import { OrbitControls } from './vendor/three/controls/OrbitControls.js';
+
+const $ = (id) => document.getElementById(id);
+const state = { data: null, i: 0, playing: true, t: 0 };
+
+// ---------- 两个场景 ----------
+function makeView(canvas) {
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0d1014);
+  const camera = new THREE.PerspectiveCamera(38, 2, 0.01, 20);
+  camera.position.set(0.42, -0.42, 0.52);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.target.set(0, 0, 0.22);
+
+  scene.add(new THREE.HemisphereLight(0xdfe9f5, 0x1a2230, 1.1));
+  const dir = new THREE.DirectionalLight(0xffffff, 1.1);
+  dir.position.set(0.6, -0.8, 1.1);
+  scene.add(dir);
+
+  const grid = new THREE.GridHelper(0.6, 12, 0x1c2632, 0x161e28);
+  grid.rotation.x = Math.PI / 2;            // 水平面（xy）
+  grid.position.z = 0.10;
+  scene.add(grid);
+
+  return { renderer, scene, camera, controls };
+}
+
+const MAT = {
+  static: new THREE.MeshStandardMaterial({ color: 0x39485c, metalness: .2, roughness: .7 }),
+  crank:  new THREE.MeshStandardMaterial({ color: 0x8b9bb0, metalness: .3, roughness: .5 }),
+  joint:  new THREE.MeshStandardMaterial({ color: 0xf1f5fa, metalness: .1, roughness: .4 }),
+};
+function rodMesh(color) {
+  const g = new THREE.CylinderGeometry(0.0035, 0.0035, 1, 10, 1, true);
+  g.translate(0, 0.5, 0);                    // 以 A 为原点向上生长，便于两点定位
+  return new THREE.Mesh(g, new THREE.MeshStandardMaterial({
+    color, metalness: .25, roughness: .45, side: THREE.DoubleSide }));
+}
+function sphere(r, color) {
+  return new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12),
+    new THREE.MeshStandardMaterial({ color, metalness: .1, roughness: .45 }));
+}
+const V = (a) => new THREE.Vector3(a[0], a[1], a[2]);
+
+// 把「从 a 到 b」的杆摆好
+const _u = new THREE.Vector3(), _q = new THREE.Quaternion(), _up = new THREE.Vector3(0, 1, 0);
+function placeRod(mesh, a, b) {
+  _u.subVectors(b, a);
+  const len = _u.length() || 1e-6;
+  mesh.position.copy(a);
+  mesh.quaternion.copy(_q.setFromUnitVectors(_up, _u.clone().normalize()));
+  mesh.scale.set(1, len, 1);
+}
+
+function buildScene(view, data, color) {
+  const { scene } = view;
+  const chains = data.chains;
+
+  // 电机：沿轴向的一段圆柱 + 轴心球
+  for (const ch of chains) {
+    const A = V(ch.A), ax = V(ch.axis).normalize();
+    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.03, 20),
+      MAT.static);
+    cyl.position.copy(A);
+    cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), ax);
+    scene.add(cyl);
+    const hub = sphere(0.005, 0xd8e2ee); hub.position.copy(A); scene.add(hub);
+  }
+
+  // 平台：一块薄板，位姿逐帧更新
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.05, 0.008),
+    new THREE.MeshStandardMaterial({ color: 0x2f3a49, metalness: .2, roughness: .6 }));
+  scene.add(plate);
+
+  const robs = chains.map(() => {
+    const crank = new THREE.Mesh(new THREE.CylinderGeometry(0.0025, 0.0025, 1, 8, 1, true),
+      MAT.crank);
+    crank.geometry.translate(0, 0.5, 0);
+    const rod = rodMesh(color);
+    const jb = sphere(0.0045, 0xe8eef6);
+    const jc = sphere(0.0045, 0xe8eef6);
+    scene.add(crank, rod, jb, jc);
+    return { crank, rod, jb, jc };
+  });
+
+  const fit = () => {
+    const box = new THREE.Box3();
+    chains.forEach((ch) => box.expandByPoint(V(ch.A)));
+    for (const s of data.samples) {
+      s.ours.B.forEach((b) => box.expandByPoint(V(b)));
+      s.ours.C.forEach((c) => box.expandByPoint(V(c)));
+    }
+    const c = box.getCenter(new THREE.Vector3());
+    const radius = Math.max(box.getSize(new THREE.Vector3()).length() * 0.5, 0.08);
+    view.controls.target.copy(c);
+    const dist = radius * 3.0;
+    view.camera.position.copy(c).add(new THREE.Vector3(0.55, -0.75, 0.35).normalize().multiplyScalar(dist));
+    view.camera.near = dist / 500; view.camera.far = dist * 20; view.camera.updateProjectionMatrix();
+    view.controls.minDistance = dist * 0.2;
+    view.controls.maxDistance = dist * 6;
+    view.controls.update();
+  };
+  fit();
+
+  return { plate, robs, fit };
+}
+
+function applyFrame(objs, f) {
+  const { plate, robs } = objs;
+  f.B.forEach((b, i) => {
+    const A = V(objs.chains[i].A), Bp = V(b), Cp = V(f.C[i]);
+    placeRod(robs[i].crank, A, Bp);
+    placeRod(robs[i].rod, Bp, Cp);
+    robs[i].jb.position.copy(Bp);
+    robs[i].jc.position.copy(Cp);
+  });
+  // 板面朝向用 pose，位置钉在两个 C 点的中点（否则板会「浮」在销旁边）
+  const C0 = V(f.C[0]), C1 = V(f.C[1]);
+  const mid = C0.clone().add(C1).multiplyScalar(0.5);
+  const ex = C1.clone().sub(C0).normalize();
+  const R = f.pose.R;
+  const ey = new THREE.Vector3(R[1], R[4], R[7]);          // pose 的 y 轴
+  ey.addScaledVector(ex, -ey.dot(ex)).normalize();
+  const ez = new THREE.Vector3().crossVectors(ex, ey).normalize();
+  const m = new THREE.Matrix4().makeBasis(ex, ey, ez).setPosition(mid);
+  plate.matrixAutoUpdate = false;
+  plate.matrix.copy(m);
+}
+
+// ---------- 曲线图 ----------
+const plot = $('plot'), pctx = plot.getContext('2d');
+function drawPlot(data, idx) {
+  const w = plot.clientWidth, h = plot.clientHeight;
+  plot.width = w * devicePixelRatio; plot.height = h * devicePixelRatio;
+  pctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  pctx.clearRect(0, 0, w, h);
+  const S = data.samples, n = S.length;
+  const vals = S.flatMap((s) => [s.mj.roll, s.mj.pitch, s.ours.roll, s.ours.pitch]);
+  const lo = Math.min(...vals), hi = Math.max(...vals), pad = (hi - lo) * 0.15 || 0.01;
+  const y = (v) => h - 8 - ((v - lo + pad) / (hi - lo + 2 * pad)) * (h - 16);
+  const x = (i) => (i / (n - 1)) * (w - 8) + 4;
+  pctx.strokeStyle = '#1c2632'; pctx.lineWidth = 1;
+  pctx.beginPath(); pctx.moveTo(0, y(0)); pctx.lineTo(w, y(0)); pctx.stroke();
+  const line = (key, axis, color, dash) => {
+    pctx.strokeStyle = color; pctx.lineWidth = 1.6;
+    pctx.setLineDash(dash ? [4, 4] : []);
+    pctx.beginPath();
+    S.forEach((s, i) => { const v = s[key][axis]; i ? pctx.lineTo(x(i), y(v)) : pctx.moveTo(x(i), y(v)); });
+    pctx.stroke();
+  };
+  line('ours', 'roll', '#5ad1a0', false);
+  line('ours', 'pitch', '#3fae86', false);
+  line('mj', 'roll', '#ff9f5a', true);
+  line('mj', 'pitch', '#c97a3d', true);
+  pctx.setLineDash([]);
+  pctx.strokeStyle = '#ffffff88'; pctx.beginPath();
+  pctx.moveTo(x(idx), 0); pctx.lineTo(x(idx), h); pctx.stroke();
+}
+
+// ---------- 主流程 ----------
+const viewL = makeView($('cv-l'));
+const viewR = makeView($('cv-r'));
+let objL = null, objR = null;
+const chainsL = [];
+
+async function load(name) {
+  const data = await (await fetch(`./data/parallel-${name}.json`)).json();
+  state.data = data; state.i = 0; state.t = 0;
+  [viewL, viewR].forEach((v) => {
+    for (const ch of [...v.scene.children]) {
+      if (ch.isLight || ch.isGridHelper) continue;
+      v.scene.remove(ch);
+    }
+  });
+  objL = buildScene(viewL, data, 0x5ad1a0);
+  objR = buildScene(viewR, data, 0xff9f5a);
+  objL.chains = data.chains; objR.chains = data.chains;
+  $('time').max = data.samples.length - 1;
+  $('time').value = 0;
+  update();
+}
+
+function update() {
+  const d = state.data; if (!d) return;
+  const s = d.samples[state.i];
+  applyFrame(objL, s.ours);
+  applyFrame(objR, s.mj);
+  $('tlab').textContent = `${s.t.toFixed(2)} s`;
+  $('read-l').innerHTML = `roll <b>${s.ours.roll.toFixed(4)}</b> rad<br>`
+    + `pitch <b>${s.ours.pitch.toFixed(4)}</b> rad<br>`
+    + `<span style="color:#5ad1a0">杆长误差 ${(Math.max(...s.ours.rod_err.map(Math.abs)) * 1e9).toFixed(2)} nm</span>`;
+  $('read-r').innerHTML = `roll <b>${s.mj.roll.toFixed(4)}</b> rad<br>`
+    + `pitch <b>${s.mj.pitch.toFixed(4)}</b> rad<br>`
+    + `<span style="color:#ff9f5a">杆长误差 ${(Math.max(...s.mj.rod_err.map(Math.abs)) * 1e6).toFixed(1)} µm</span>`;
+  const dr = s.ours.roll - s.mj.roll, dp = s.ours.pitch - s.mj.pitch;
+  $('err').textContent = `此刻差 Δroll ${dr.toExponential(1)} · Δpitch ${dp.toExponential(1)} rad`;
+  $('time').value = state.i;
+  drawPlot(d, state.i);
+}
+
+let last = performance.now();
+function loop(now) {
+  const dt = (now - last) / 1000; last = now;
+  if (state.playing && state.data) {
+    state.t += dt;
+    if (state.t > 1 / 30) {                 // 30 fps 播放
+      state.t = 0;
+      state.i = (state.i + 1) % state.data.samples.length;
+      update();
+    }
+  }
+  for (const v of [viewL, viewR]) {
+    v.renderer.setSize(v.renderer.domElement.clientWidth,
+                        v.renderer.domElement.clientHeight, false);
+    v.camera.aspect = v.renderer.domElement.clientWidth / v.renderer.domElement.clientHeight;
+    v.camera.updateProjectionMatrix();
+    v.controls.update();
+    v.renderer.render(v.scene, v.camera);
+  }
+  requestAnimationFrame(loop);
+}
+
+$('play').onclick = () => { state.playing = !state.playing; $('play').textContent = state.playing ? '暂停' : '播放'; };
+$('time').oninput = (e) => { state.i = +e.target.value; update(); };
+$('ds').onchange = (e) => load(e.target.value);
+load('tg10');
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
