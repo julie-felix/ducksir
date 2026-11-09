@@ -23,8 +23,15 @@
     border-radius: 6px; padding: 5px 9px; font: inherit; cursor: pointer;
   }
   button:hover, select:hover { border-color: var(--accent); }
-  #stage { position: relative; min-height: 0; }
+  #stage { position: relative; min-height: 0; display: flex; flex-direction: column; }
+  #stage > header { flex: 0 0 auto; }
   canvas { display: block; width: 100%; height: 100%; }
+  #views { position: relative; flex: 1 1 auto; display: flex; min-height: 0; }
+  #views > .view { position: relative; flex: 1 1 50%; min-width: 0; height: 100%; }
+  #views > .view > canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
+  #views.single > .view { flex: 1 1 100%; }
+  .vcap { position: absolute; left: 12px; top: 10px; font-size: 12px; color: var(--dim);
+          background: #0d1014cc; padding: 2px 8px; border-radius: 6px; pointer-events: none; }
   .sec { color: var(--dim); font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
     margin: 14px 0 6px; }
   .row { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; color: var(--dim); }
@@ -74,8 +81,13 @@
       <button id="view-top" title="俯视">俯视</button>
       <button id="reset">回零</button>
       <button id="fit">重置视角</button>
+      <button id="split" title="左右并排：左边我们的解算，右边 MuJoCo 查表">并排对比</button>
     </header>
-    <canvas id="c"></canvas>
+    <div id="views">
+      <div class="view"><canvas id="c"></canvas><div class="vcap" id="cap-l">我们的解算</div></div>
+      <div class="view" id="view-r" style="display:none"><canvas id="c2"></canvas>
+        <div class="vcap" id="cap-r">MuJoCo（位置伺服 · 41×41 查表）</div></div>
+    </div>
     <div id="busy">加载中…</div>
     <div id="hint">左键旋转 · 滚轮缩放 · 右键平移</div>
   </div>

@@ -5,6 +5,10 @@ import { OrbitControls } from './vendor/three/controls/OrbitControls.js';
 import { GLTFLoader } from './vendor/three/loaders/GLTFLoader.js';
 
 const $ = (id) => document.getElementById(id);
+
+const SPLIT = { on: false, renderer: null, scene: null, camera: null, controls: null,
+                objs: [], grid: new Map(), data: new Map() };
+
 addEventListener('error', (e) => { const b = $('busy'); if (b) { b.style.display = 'grid'; b.textContent = '出错：' + (e.message || e.error); } });
 addEventListener('unhandledrejection', (e) => { const b = $('busy'); if (b) { b.style.display = 'grid'; b.textContent = '加载失败：' + (e.reason && (e.reason.message || e.reason)); } });
 const canvas = $('c');
@@ -428,6 +432,16 @@ function setView(kind) {
 }
 
 function animate() {
+  if (SPLIT.on && SPLIT.renderer) {
+    const cv2 = $('c2'), r2 = cv2.getBoundingClientRect();
+    if (r2.width > 0) {
+      SPLIT.renderer.setSize(r2.width, r2.height, false);
+      SPLIT.camera.aspect = r2.width / Math.max(r2.height, 1);
+      SPLIT.camera.updateProjectionMatrix();
+      SPLIT.controls.update();
+      SPLIT.renderer.render(SPLIT.scene, SPLIT.camera);
+    }
+  }
   requestAnimationFrame(animate);
   controls.update();
   renderer.render(scene, camera);
@@ -435,6 +449,8 @@ function animate() {
 
 (async function main() {
   resize();
+  $('split').addEventListener('click', () => splitToggle());
+  if (new URLSearchParams(location.search).has('split')) setTimeout(() => { if (!SPLIT.on) splitToggle(); }, 800);
   animate();
   const index = await (await fetch('./data/index.json')).json();
   const sel = $('robot');
@@ -478,6 +494,7 @@ function animate() {
 // （contract/robot/types/g1-29dof.yaml，坐标系 = ankle pitch 关节中心）。
 // ---------------------------------------------------------------------------
 const PAR = { sides: {}, translucent: false };
+
 
 const parV = (a) => new THREE.Vector3(a[0], a[1], a[2]);
 const parN = (a) => new THREE.Vector3(a[0], a[1], a[2]).normalize();
@@ -564,10 +581,11 @@ function parCylGeo(r) {
   return g;
 }
 
-function parBuildSide(geom, mirror) {
+function parBuildSide(geom, mirror, tint) {
   const g = new THREE.Group();
+  const base = tint || (mirror ? 0xffb35a : 0x5ad1a0);
   const rodMat = new THREE.MeshStandardMaterial({
-    color: mirror ? 0xffb35a : 0x5ad1a0, emissive: mirror ? 0x3a2210 : 0x143528,
+    color: base, emissive: tint ? 0x3a2210 : (mirror ? 0x3a2210 : 0x143528),
     metalness: .2, roughness: .5, side: THREE.DoubleSide });
   const nodes = geom.chains.map((ch) => {
     const A = parV(ch.A);
@@ -582,7 +600,7 @@ function parBuildSide(geom, mirror) {
     return { A, crank, rod, pinB, pinC };
   });
   const plate = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.045, 0.006),
-    new THREE.MeshStandardMaterial({ color: mirror ? 0xb5772f : 0x39505f,
+    new THREE.MeshStandardMaterial({ color: tint ? 0xb5772f : (mirror ? 0xb5772f : 0x39505f),
       transparent: true, opacity: .55, side: THREE.DoubleSide }));
   g.add(plate);
   if (mirror) g.scale.y = -1;
@@ -651,6 +669,14 @@ function parMakeUI(side, host) {
       + (side.assumed ? ` · ${side.assumed} 项假设` : '') + `</span>`;
     parApply(side, state.th, state.x);
     applyJointPair(side, state.x);
+    if (SPLIT.on && SPLIT.objs.length && side.gridFile) {
+      const g = SPLIT.data.get(side.gridFile);
+      if (g) {
+        const mj = splitLookup(g, state.th);
+        splitApply([{ side, x: mj }]);
+        parTraceCaption(side, mj, g);
+      }
+    }
   };
 
   inputs.forEach((input) => input.addEventListener('input', () => {
@@ -716,6 +742,7 @@ async function initParallelOverlay(data) {
     current.joints.get(pitchJoint).obj.parent.add(side.group);
 
     side.traceFile = params.mujoco_trace || null;
+    side.gridFile = params.mujoco_grid || null;
     parMakeUI(side, panel);
     PAR.sides[mech.id] = side;
   }
@@ -859,6 +886,131 @@ function parTraceApply(side) {
     const out = el.parentElement.querySelector('[data-v]');
     if (out) out.textContent = `${degv}°`;
   }
+}
+
+// ---------------------------------------------------------------------------
+// 并排对比：左边是我们的解算（机器人模型 + 绿色连杆），右边只画 MuJoCo 的连杆（橙色）。
+// MuJoCo 那边用 41×41 的 (θA,θB)→(roll,pitch) 查表（tools/parallel/export_mujoco_grid.py）。
+// ---------------------------------------------------------------------------
+function splitInit() {
+  if (SPLIT.renderer) return;
+  const cv = $('c2');
+  SPLIT.renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+  SPLIT.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  SPLIT.scene = new THREE.Scene();
+  SPLIT.scene.background = new THREE.Color(0x0b0e12);
+  SPLIT.scene.add(new THREE.HemisphereLight(0xdfe9f5, 0x1a2230, 1.2));
+  const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+  dir.position.set(0.6, -0.8, 1.1);
+  SPLIT.scene.add(dir);
+  SPLIT.camera = new THREE.PerspectiveCamera(38, 1, 0.005, 20);
+  SPLIT.controls = new OrbitControls(SPLIT.camera, cv);
+  SPLIT.controls.enableDamping = true;
+}
+
+async function splitLoadGrid(side, file) {
+  if (SPLIT.data.has(file)) return SPLIT.data.get(file);
+  try {
+    const g = await (await fetch(`./data/${file}`)).json();
+    SPLIT.data.set(file, g);
+    return g;
+  } catch (e) { console.warn('MuJoCo 查表缺失', file, e); return null; }
+}
+
+/** 双线性插值：电机角 → MuJoCo 的 roll/pitch。 */
+function splitLookup(g, th) {
+  const n = g.n, span = g.span;
+  const u = (th[0] + span) / (2 * span) * (n - 1);
+  const v = (th[1] + span) / (2 * span) * (n - 1);
+  const i = Math.max(0, Math.min(n - 2, Math.floor(u)));
+  const j = Math.max(0, Math.min(n - 2, Math.floor(v)));
+  const fu = Math.max(0, Math.min(1, u - i)), fv = Math.max(0, Math.min(1, v - j));
+  const at = (a, b) => g.grid[a][b];
+  const lerp = (a, b, t) => a + (b - a) * t;
+  return [0, 1].map((k) => lerp(
+    lerp(at(i, j)[k], at(i + 1, j)[k], fu),
+    lerp(at(i, j + 1)[k], at(i + 1, j + 1)[k], fu), fv));
+}
+
+function splitBuild(geoms) {
+  SPLIT.objs = [];
+  SPLIT.scene.children.filter((c) => c.userData.splitLink).forEach((c) => SPLIT.scene.remove(c));
+  let anchor = null;
+  geoms.forEach((geom, si) => {
+    const built = parBuildSide(geom, false, 0xffb35a);
+    built.group.userData.splitLink = true;
+    SPLIT.scene.add(built.group);
+    SPLIT.objs.push({ geom, nodes: built.nodes, plate: built.plate, group: built.group });
+    if (!anchor) anchor = geom;
+  });
+  // 取景：包住所有 A 与 c0
+  const box = new THREE.Box3();
+  geoms.forEach((g) => {
+    g.chains.forEach((c) => box.expandByPoint(parV(c.A)));
+    g.platform.c0.forEach((c) => box.expandByPoint(parV(c)));
+  });
+  const c = box.getCenter(new THREE.Vector3());
+  const r = Math.max(box.getSize(new THREE.Vector3()).length() * 0.5, 0.1);
+  SPLIT.controls.target.copy(c);
+  // 和左边同一个朝向、同样的距离，方便两边逐点对照
+  SPLIT.camera.position.copy(c)
+    .add(new THREE.Vector3(0.6, -0.7, 0.45).normalize().multiplyScalar(0.55));
+  SPLIT.camera.near = 0.004; SPLIT.camera.far = 20;
+  SPLIT.camera.updateProjectionMatrix();
+  SPLIT.controls.update();
+}
+
+function splitApply(sideList) {
+  sideList.forEach(({ side, x }) => {
+    const obj = SPLIT.objs.find((o) => o.geom === side.geom);
+    if (!obj) return;
+    const fake = { ...side, nodes: obj.nodes, plate: obj.plate };
+    parApply(fake, side.state.th, x);
+  });
+}
+
+async function splitToggle() {
+  SPLIT.on = !SPLIT.on;
+  $('split').classList.toggle('on', SPLIT.on);
+  $('view-r').style.display = SPLIT.on ? '' : 'none';
+  $('cap-l').textContent = SPLIT.on ? '我们的解算（机器人模型 + 绿色连杆）' : '我们的解算';
+  if (!SPLIT.on) return;
+  splitInit();
+  const sides = Object.values(PAR.sides);
+  const first = sides[0];
+  const geoms = sides.map((s) => s.geom);
+  if (!geoms.length) return;
+  splitBuild(geoms);
+  // 左边镜头怼到这颗踝上，和右边同一个方向，方便逐点对照
+  const pj = current.joints.get(first.pitchJoint);
+  if (pj) {
+    const wp = new THREE.Vector3();
+    pj.obj.getWorldPosition(wp);
+    const dir = new THREE.Vector3(0.6, -0.7, 0.45).normalize();
+    controls.target.copy(wp);
+    camera.position.copy(wp).addScaledVector(dir, 0.55);
+    camera.near = 0.004; camera.far = 20; camera.updateProjectionMatrix();
+    controls.update();
+  }
+  const file = first.gridFile;
+  if (file) {
+    const g = await splitLoadGrid(first, file);
+    if (g) {
+      const mj = splitLookup(g, first.state.th);
+      splitApply(sides.map((s) => ({ side: s, x: mj })));
+      parTraceCaption(first, mj, g);
+    }
+  }
+}
+let sideRef = null;
+
+function parTraceCaption(side, mj, g) {
+  const ours = side.state.x;
+  const dr = ours[0] - mj[0], dp = ours[1] - mj[1];
+  $('cap-r').textContent = `MuJoCo · roll ${(mj[0] * 180 / Math.PI).toFixed(2)}° `
+    + `pitch ${(mj[1] * 180 / Math.PI).toFixed(2)}° · 差 `
+    + `${(Math.max(Math.abs(dr), Math.abs(dp)) * 1e3).toFixed(2)} mrad`
+    + (g ? ` · ${g.n}×${g.n} 查表` : '');
 }
 
 (function hookTranslucent() {

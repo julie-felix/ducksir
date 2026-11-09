@@ -9,14 +9,38 @@
 
 阈值来自计划 Q9：PR 误差 ≤ 1e-4 rad。tg10 通过；g1 未通过，原因见计划文档 §3.8。
 
-## MuJoCo 对照（在机器人页面里）
+## MuJoCo 对照（在机器人页面里，两种模式）
 
-对照不再单独开页，直接就在查看器里：侧栏每个并联机构下面有「**MuJoCo 对照（400 帧）**」。
+### A. 并排对比（推荐，跟着滑条实时动）
+
+点右上角「**并排对比**」（或 URL 加 `&split=1`）：
+
+- **左**：机器人模型 + 绿色连杆 = 我们的解算；
+- **右**：橙色连杆 = MuJoCo 的结果；
+- 拖 A/B 或 roll/pitch 时两边**同时**更新，右侧标题实时显示两边角度与差值（典型 0.3–0.8 mrad）。
+
+MuJoCo 侧用的是 **41×41 的 (θA,θB) → (roll,pitch) 查表**，因为浏览器跑不了 MuJoCo。
+表由 `tools/parallel/export_mujoco_grid.py` 生成：rig 的 XML 里执行器是**位置伺服**，
+直接把目标角写进 `ctrl`、跑 600 步等收敛，读 roll/pitch。
+
+```bash
+PYTHONPATH=/tmp/pylibs python3 tools/parallel/export_mujoco_grid.py \
+    contract/robot/types/ankle-rig-g1.yaml /tmp/rig_g1_nomesh.xml \
+    --grid 41 --span 0.5 -o client/viewer/data/mujoco-grid-g1.json
+```
+
+与解算器的差：g1 rig 最大 1.6 mrad、tg10 rig 最大 3.0 mrad——量级和前面查的软约束偏差一致。
+
+### B. 播 MuJoCo 的动力学轨迹
+
+侧栏每个并联机构下面还有「**MuJoCo 对照（400 帧）**」。
 
 - 勾上之后**模型按 MuJoCo 的位姿动**，叠加层（推杆/销/平台）画的是**我们的解**；
 - 时间轴、播放/暂停都在那里，读数给出这一帧两边的 roll/pitch 与差值（典型 0.5 mrad）；
 - 四个滑条会同步显示我们的解，方便对照；
 - URL 参数 `?trace=120` 可以直接钉在某一帧。
+
+两种模式分工：A 用来「拖到任意角度看两边差多少」，B 用来「看同一串电机角在动力学里跑出来的轨迹」。
 
 轨迹数据由 `tools/parallel/export_viz.py` 生成（同一串电机角 θ(t) 喂两边）：
 

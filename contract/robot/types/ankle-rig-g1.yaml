@@ -677,6 +677,7 @@ mechanisms:
       frame: pitch_joint
       units: m
       mujoco_trace: parallel-g1.json
+      mujoco_grid: mujoco-grid-g1.json
       passive_pr: true
       motor_joints:
       - right_motor_joint

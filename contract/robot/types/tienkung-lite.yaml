@@ -2081,6 +2081,7 @@ mechanisms:
       units: m
       passive_pr: true
       mujoco_trace: parallel-tg10.json
+      mujoco_grid: mujoco-grid-tg10.json
       ab_unresolved: true
       chains:
       - a:
@@ -2163,6 +2164,7 @@ mechanisms:
       frame: ankle_pitch
       units: m
       mirror: true
+      mujoco_grid: mujoco-grid-tg10.json
       passive_pr: true
       mujoco_trace: parallel-tg10.json
       ab_unresolved: true

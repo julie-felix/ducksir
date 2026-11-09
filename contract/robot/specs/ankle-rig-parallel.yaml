@@ -26,6 +26,7 @@ mechanisms:
           frame: pitch_joint
           units: m
           mujoco_trace: parallel-tg10.json
+          mujoco_grid: mujoco-grid-tg10.json
           # rig 里踝关节是被动的：真正驱动的是两个电机，闭链靠 connect 约束闭合
           passive_pr: true
           motor_joints: [right_motor_joint, left_motor_joint]
@@ -63,6 +64,7 @@ mechanisms:
           frame: pitch_joint
           units: m
           mujoco_trace: parallel-g1.json
+          mujoco_grid: mujoco-grid-g1.json
           # rig 里踝关节是被动的：真正驱动的是两个电机，闭链靠 connect 约束闭合
           passive_pr: true
           motor_joints: [right_motor_joint, left_motor_joint]
