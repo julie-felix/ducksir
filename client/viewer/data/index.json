@@ -13,6 +13,12 @@
    "file": "g1-29dof.json",
    "links": 39,
    "joints": 29
+  },
+  {
+   "id": "g1-ankle-parallel",
+   "name": "CAD · g1-ankle-parallel",
+   "static": true,
+   "glb": "../../assets/cad/g1-ankle-parallel.glb"
   }
  ]
 }

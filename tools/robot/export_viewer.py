@@ -91,6 +91,15 @@ def main() -> int:
         index.append({"id": data["id"], "name": data["name"], "file": file_name,
                       "links": len(data["links"]), "joints": len(data["joints"])})
         print(f"  {data['id']}: {len(data['links'])} link / {len(data['joints'])} joint → {file_name}")
+    cad_dir = os.path.join("assets", "cad")
+    if os.path.isdir(cad_dir):
+        for name in sorted(os.listdir(cad_dir)):
+            if not name.lower().endswith(".glb"):
+                continue
+            index.append({"id": os.path.splitext(name)[0], "name": f"CAD · {os.path.splitext(name)[0]}",
+                          "static": True, "glb": ASSET_PREFIX + os.path.join(cad_dir, name)})
+            print(f"  + 静态模型 {name}")
+
     with open(os.path.join(args.out, "index.json"), "w", encoding="utf-8") as f:
         json.dump({"robots": index}, f, ensure_ascii=False, indent=1)
     print(f"{len(index)} 台机器 → {args.out}")

@@ -56,6 +56,22 @@ python3 tools/cad/step_analyze.py "<G1脚踝并联结构.stp>" --out /tmp/cadout
 python3 tools/cad/step_render.py  "<G1脚踝并联结构.stp>" --out /tmp/cadout   # 三视图 + 等轴测（线框 + 平面填充）
 ```
 
+### 3.0 先更正一个数：这不是整台机器人，是**踝 + 脚**
+
+我最早手搓解析给的是 852 × 192 × 149 mm、Y 跨 5.6 m——**错了**。那是把 B-spline 的
+**控制点**也算进了包围盒。用 OpenCascade（`step2glb`）读出来是：
+
+```
+包围盒 0.08 × 0.30 × 0.21 m（80 × 300 × 210 mm）· 45,463 三角面 · 11 个节点
+```
+
+所以这份 `G1脚踝并联结构.stp` 是**单只脚踝的局部件**，不是人形整机。
+整台 G1 是 39 个 link、约 1.3 m 高——那在另一个文件里。
+
+![踝部 CAD 实体渲染](../images/cad/assembly-render.png)
+
+（右：脚板/踝平台；左：两根连杆与电机座。用 `step2glb` 转成 GLB 后在查看器的「CAD · g1-ankle-parallel」里看。）
+
 ### 3.1 清单（7 个实体）
 
 | # | 尺寸 dx,dy,dz (mm) | 平面/圆柱/锥面 | 关键几何 | 判读 |

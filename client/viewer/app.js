@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/three/controls/OrbitControls.js';
 import { GLTFLoader } from './vendor/three/loaders/GLTFLoader.js';
+import { DRACOLoader } from './vendor/three/loaders/DRACOLoader.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('c');
@@ -35,6 +36,10 @@ robotGroup.rotation.x = -Math.PI / 2;
 scene.add(robotGroup);
 
 const loader = new GLTFLoader();
+// step2glb 出来的 GLB 一律带 Draco（KHR_draco_mesh_compression），没有这个 decoder 会加载失败
+const draco = new DRACOLoader();
+draco.setDecoderPath('./vendor/three/draco/');
+loader.setDRACOLoader(draco);
 const glbCache = new Map();
 const materialCache = new Map();
 
@@ -272,7 +277,31 @@ function renderMeta(data) {
     : '<div class="row">无</div>';
 }
 
+async function showStatic(meta) {
+  $('busy').style.display = 'grid';
+  robotGroup.clear();
+  current = null;
+  const gltf = await loader.loadAsync(meta.glb);
+  robotGroup.add(gltf.scene);
+  robotGroup.rotation.x = 0;
+  robotGroup.position.set(0, 0, 0);
+  const box = new THREE.Box3().setFromObject(gltf.scene);
+  const size = box.getSize(new THREE.Vector3());
+  robotGroup.position.y -= box.min.y;
+  $('joints').innerHTML = '<div class="row">静态模型（无关节）</div>';
+  $('mechanisms').innerHTML = '<div class="row">—</div>';
+  $('tree').textContent = '（静态 GLB，无骨架）';
+  $('summary').innerHTML = `
+    <div class="row"><span>格式</span><b>STEP → GLB</b></div>
+    <div class="row"><span>包围盒</span><b>${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)} m</b></div>
+    <div class="row"><span>节点</span><b>${gltf.scene.children.length}</b></div>`;
+  $('warnings').innerHTML = '<div class="warn">这份 CAD 由 step2glb 从 STEP 转换，许可未知，只用于判读，不进实体</div>';
+  fitView();
+  $('busy').style.display = 'none';
+}
+
 async function show(meta) {
+  if (meta.static) return showStatic(meta);
   $('busy').style.display = 'grid';
   const data = await (await fetch(`./data/${meta.file}`)).json();
   robotGroup.position.set(0, 0, 0);
