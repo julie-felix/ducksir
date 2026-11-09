@@ -13,3 +13,7 @@ runs/
 wandb/
 .env
 *.onnx
+
+# 上游原始 mesh（可用 tools/robot/fetch_meshes.py 重新拉，不入库）
+third_party/*/meshes/
+third_party/*/assets/

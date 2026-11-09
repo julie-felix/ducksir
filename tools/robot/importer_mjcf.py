@@ -177,9 +177,9 @@ def import_mjcf(path: str, *, entity_id: str, type_id: str, license_id: str,
             conaffinity = int(attrs.get("conaffinity", geom.get("conaffinity", 1)))
             mesh_name = geom.get("mesh")
             item = {
-                "mesh": os.path.join(assets_dir, os.path.basename(mesh_files.get(mesh_name, "")))
-                if mesh_name else None,
+                "mesh": os.path.join(assets_dir, (mesh_name or "") + ".glb") if mesh_name else None,
                 "mesh_name": mesh_name,
+                "source_file": os.path.basename(mesh_files.get(mesh_name, "")) or None,
                 "origin": {"xyz": E.vec3(geom.get("pos")),
                            "quat": E.numbers(geom.get("quat")) if geom.get("quat") else [1.0, 0.0, 0.0, 0.0]},
                 "material": list((materials.get(geom.get("material")) or {}).get("rgba") or []),
@@ -344,11 +344,14 @@ def main() -> int:
     ap.add_argument("--preset", default=None)
     ap.add_argument("--bam-json", default=None)
     ap.add_argument("--bam-ref", default=None)
+    ap.add_argument("--mesh-manifest", default=None)
     args = ap.parse_args()
     doc = import_mjcf(args.input, entity_id=args.entity_id, type_id=args.type_id,
                       license_id=args.license, source_ref=args.source_ref,
                       preset=args.preset, assets_dir=args.assets_dir,
                       bam_json=args.bam_json, bam_ref=args.bam_ref)
+    if args.mesh_manifest:
+        E.attach_meshes(doc, args.mesh_manifest)
     E.write_yaml(args.output, doc)
     print(f"写入 {args.output}: {doc['summary']}；warnings={len(doc['warnings'])}")
     return 0

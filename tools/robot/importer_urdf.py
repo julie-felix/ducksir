@@ -80,10 +80,12 @@ def import_urdf(path: str, *, entity_id: str, type_id: str, license_id: str,
                 geom = el.find("geometry")
                 mesh = geom.find("mesh") if geom is not None else None
                 mat = el.find("material")
+                src = os.path.basename(mesh.get("filename")) if mesh is not None else None
                 link[kind].append({
-                    "mesh": os.path.join(assets_dir, os.path.basename(mesh.get("filename")))
-                    if mesh is not None else None,
-                    "mesh_name": os.path.basename(mesh.get("filename")) if mesh is not None else None,
+                    # mesh_name 一律取 stem（不带扩展名）：URDF 写 `x.STL`、MJCF 写 `x`，统一成一份
+                    "mesh": os.path.join(assets_dir, os.path.splitext(src)[0] + ".glb") if src else None,
+                    "mesh_name": os.path.splitext(src)[0] if src else None,
+                    "source_file": src,
                     "origin": _origin(el.find("origin")),
                     "material": (materials.get(mat.get("name")) if mat is not None else None) or [],
                     "vendored": False,
@@ -174,10 +176,13 @@ def main() -> int:
     ap.add_argument("--license", default="unknown")
     ap.add_argument("--source-ref", default="")
     ap.add_argument("--assets-dir", default="assets/g1")
+    ap.add_argument("--mesh-manifest", default=None)
     args = ap.parse_args()
     doc = import_urdf(args.input, entity_id=args.entity_id, type_id=args.type_id,
                       license_id=args.license, source_ref=args.source_ref,
                       assets_dir=args.assets_dir)
+    if args.mesh_manifest:
+        E.attach_meshes(doc, args.mesh_manifest)
     E.write_yaml(args.output, doc)
     print(f"写入 {args.output}: {doc['summary']}；warnings={len(doc['warnings'])}")
     return 0

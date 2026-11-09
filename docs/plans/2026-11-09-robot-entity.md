@@ -69,6 +69,31 @@ contract/robot/instances/<ID>.yaml         overlay：稀疏覆盖（本轮鸭子
 | `tools/robot/check_entity.py` | C1 树 / C2 名字 / C3 单位 / C4 出处冲突 / C5 preset |
 | `tools/robot/export_mjcf.py` | 实体 → 最小 MJCF |
 | `tools/robot/compare_entities.py` | 两份实体比对（质量/质心/惯量 Frobenius/拓扑/轴/限位/增益） |
+| `tools/robot/fetch_meshes.py` | 只拉实体引用的 mesh（带 UA，否则 raw.githubusercontent 对 urllib 直接 404） |
+| `tools/robot/stl2glb.py` | STL → GLB：顶点焊接 + 40° 折痕切法线，19.7+21.6 MB → 10.5+10.8 MB |
+| `tools/robot/export_viewer.py` | 实体 → 浏览器 JSON（只读投影，不解析 YAML） |
+| `assets/{g1,microduck}/*.glb` | 显示用 GLB（22 MB），原始 STL 不进库（`.gitignore`，可重拉） |
+| `client/viewer/` | 静态查看器：three.js + 自写 FK，树 / 3D / 关节滑条 / 贴地开关 |
+
+## 6.5 查看器（第二段交付）
+
+```bash
+python3 -m http.server 8123 --bind 127.0.0.1     # 在仓库根起静态服务
+# 打开 http://127.0.0.1:8123/client/viewer/index.html
+#   ?robot=g1-29dof   ?pose=left_knee_joint:-60,left_hip_pitch_joint:30
+```
+
+![鸭子在查看器里](../../docs/images/viewer-duck.png)
+
+![G1 摆姿势（FK 正确）](../../docs/images/viewer-g1-pose.png)
+
+已经能用的：选机型、拖 14 / 29 个关节、看限位、看骨架树、看缺字段、贴地开关、URL 带姿态（截图与回归用）。
+
+三条限制，先写清楚：
+
+1. **根是固定的**（实体里 `world_attachment: floating`，但查看器不模拟自由落体）。腿一弯脚会离地，所以加了「贴地」这个**显示辅助**——它按最低点把整机压回地面，不代表物理。关掉它看到的是真实 FK 结果。
+2. **只画视觉 mesh**，不画碰撞体，也不做接触/自碰撞。
+3. **姿态不落盘**：`?pose=` 只是查询参数，还没有「存快照 / 写 overlay」那条路（D17 的第二步）。
 
 ## 4. 三个实测发现（都影响 schema）
 
@@ -119,9 +144,10 @@ python3 tools/robot/compare_entities.py contract/robot/types/g1-29dof.yaml /tmp/
 1. **JSON Schema 还没落**。现在只有 `check_entity.py` 那五条；「schema 是语言中立的那一份」这句话目前没有载体。下一步要么写 `contract/robot/schema/robot.v0.schema.json`，要么承认 v0 只有 Python 类。
 2. **焊接口径**。G1 的 F2 说明 `links[]` 需要 `welded_from: [...]` 之类的表达；要不要在实体里保留被焊的子件（显示用）而导出时再合并，未定。
 3. **鸭子不给 instance**（本轮明确），所以 overlay 合并逻辑只写在文档里，没有真实用例驱动。
-4. **mesh 还没入库**：`assets/` 下为空，实体里只有引用（`W004`）。要用 3D 显示时必须先拉一次并按 D14 转 GLB。
+4. **原始 STL 不进库**（41 MB），只入库转换后的 GLB（22 MB）；`fetch_meshes.py` 可重拉，manifest 里有 sha256。
 5. **`bus` 块空着**：等 SDK 的统一 interface 规范。
 6. **执行器单位**：`kp` 记成 `N*m/rad`、力限幅用 `N*m`；`ctrlrange` 对 position 执行器是角度，对 motor 是力矩——现在没区分，导 G1 的 `motor` 时会混。
+7. **查看器还没进 DSH 面板**：现在是 `client/viewer/` 静态页，挂在插件的面板里需要 host 侧一条静态路由 + 客户端 bundle。
 
 ## 相关
 

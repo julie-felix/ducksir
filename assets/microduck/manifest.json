@@ -1,0 +1,306 @@
+{
+ "ankle_left": {
+  "bytes": 176144,
+  "glb": "assets/microduck/ankle_left.glb",
+  "sha256": "e811163037adf2e0b06f13234b451cb8c74f072bdaf3d87064e92bfd26a44739",
+  "source_bytes": 248984,
+  "triangles": 4836,
+  "vertices": 4885
+ },
+ "ankle_right": {
+  "bytes": 176196,
+  "glb": "assets/microduck/ankle_right.glb",
+  "sha256": "b661e47f848d888bfef7a06d97cc92adc77023ee340655c452d3b4e545cf5539",
+  "source_bytes": 248884,
+  "triangles": 4838,
+  "vertices": 4886
+ },
+ "banana_pcb_locker": {
+  "bytes": 46812,
+  "glb": "assets/microduck/banana_pcb_locker.glb",
+  "sha256": "95fc8f1800f652fa2f1f97daa83cc28a2da1786fcb90d1967bb4d5df4a06df22",
+  "source_bytes": 69484,
+  "triangles": 1268,
+  "vertices": 1280
+ },
+ "bearing_roll": {
+  "bytes": 80504,
+  "glb": "assets/microduck/bearing_roll.glb",
+  "sha256": "fbfbd1fc6fae269f72557cd1519cb070fe3def565671231e0b3588e2de0996d9",
+  "source_bytes": 121084,
+  "triangles": 2240,
+  "vertices": 2198
+ },
+ "bottom_head_shell": {
+  "bytes": 647932,
+  "glb": "assets/microduck/bottom_head_shell.glb",
+  "sha256": "6ede36085361ac6e53aad95bad3a2b0836227de56af51e534fb5a489de9bafb5",
+  "source_bytes": 1048584,
+  "triangles": 20398,
+  "vertices": 16761
+ },
+ "elec_rpi_robot_hat_pcb": {
+  "bytes": 375672,
+  "glb": "assets/microduck/elec_rpi_robot_hat_pcb.glb",
+  "sha256": "c77e644b67ea7873ee69634a262147c75acb4890f6b2f63be89009e58a495305",
+  "source_bytes": 942884,
+  "triangles": 10728,
+  "vertices": 10252
+ },
+ "face_part": {
+  "bytes": 376260,
+  "glb": "assets/microduck/face_part.glb",
+  "sha256": "0149a7f2d4dfd5e52bcdd2ff8f6982590b2a0150b4cc3d406573c209077180dd",
+  "source_bytes": 570684,
+  "triangles": 10476,
+  "vertices": 10403
+ },
+ "foot_left": {
+  "bytes": 369440,
+  "glb": "assets/microduck/foot_left.glb",
+  "sha256": "e5c2b68e3535188b823b11f0900c3ca26b8e4f54e5b311bbed386ae6c05307fe",
+  "source_bytes": 996184,
+  "triangles": 11970,
+  "vertices": 9372
+ },
+ "foot_right": {
+  "bytes": 368460,
+  "glb": "assets/microduck/foot_right.glb",
+  "sha256": "4c85d1b44d5943f84adcac58a44e669732a57367c16293d7f3996ac6888134e5",
+  "source_bytes": 995784,
+  "triangles": 11978,
+  "vertices": 9327
+ },
+ "hip_l": {
+  "bytes": 611716,
+  "glb": "assets/microduck/hip_l.glb",
+  "sha256": "8900a8939fae470d1dd16ef258240907ba3865d33d453096dc5700ccf874b957",
+  "source_bytes": 1048584,
+  "triangles": 18934,
+  "vertices": 15985
+ },
+ "jaw": {
+  "bytes": 246520,
+  "glb": "assets/microduck/jaw.glb",
+  "sha256": "0589737e8e3889afd364a9b3af1eb6350fdcdf7e06b716d8a88280076207f1e0",
+  "source_bytes": 495984,
+  "triangles": 8018,
+  "vertices": 6227
+ },
+ "jaw_soft": {
+  "bytes": 101356,
+  "glb": "assets/microduck/jaw_soft.glb",
+  "sha256": "cad2379e4b9158e30ff205a37d1a823ceff4a182fa7c50ea596d0fa806644ba1",
+  "source_bytes": 336384,
+  "triangles": 3886,
+  "vertices": 2244
+ },
+ "left_shell": {
+  "bytes": 566340,
+  "glb": "assets/microduck/left_shell.glb",
+  "sha256": "0976ab6582b14ce8fed3b3b1c90f510d4a4f2feecc4fe2a75bc958f36fd4ca5b",
+  "source_bytes": 1048584,
+  "triangles": 17838,
+  "vertices": 14642
+ },
+ "leg": {
+  "bytes": 414716,
+  "glb": "assets/microduck/leg.glb",
+  "sha256": "405c430bb92db8d3d506d6cec41d5bd9699f5edfcc24ef264a88ee476972f483",
+  "source_bytes": 738884,
+  "triangles": 13182,
+  "vertices": 10653
+ },
+ "lens": {
+  "bytes": 56204,
+  "glb": "assets/microduck/lens.glb",
+  "sha256": "e6f77da9f7930f5ab30ab24acabe26840378293375fcb2676ce13b9840406d4a",
+  "source_bytes": 93684,
+  "triangles": 1872,
+  "vertices": 1370
+ },
+ "m12_lens_holder": {
+  "bytes": 101420,
+  "glb": "assets/microduck/m12_lens_holder.glb",
+  "sha256": "17023094682c4a424bf5c25961fec042309054eabc87b5ae568b3f8acde33241",
+  "source_bytes": 549684,
+  "triangles": 3436,
+  "vertices": 2471
+ },
+ "motor_support": {
+  "bytes": 133696,
+  "glb": "assets/microduck/motor_support.glb",
+  "sha256": "f2aec2f2ccd48fc3687a160f4c2539620f66b60213181e4d989f41dd0ca5089a",
+  "source_bytes": 180884,
+  "triangles": 3610,
+  "vertices": 3729
+ },
+ "neck": {
+  "bytes": 48792,
+  "glb": "assets/microduck/neck.glb",
+  "sha256": "e6fa1aa278d4f49cf049b31d7c349c263d9d4ae7f432cbeb5d80a4b00a88e59f",
+  "source_bytes": 73484,
+  "triangles": 1340,
+  "vertices": 1328
+ },
+ "neck_pitch": {
+  "bytes": 246728,
+  "glb": "assets/microduck/neck_pitch.glb",
+  "sha256": "e9b070e47576bdf288ce00b21363ac69aef63db9dc8e2ecf9f8066b2d56eccc5",
+  "source_bytes": 356084,
+  "triangles": 6856,
+  "vertices": 6816
+ },
+ "noenoeil": {
+  "bytes": 36864,
+  "glb": "assets/microduck/noenoeil.glb",
+  "sha256": "ba8013d381091344a9f763d0ad4b4314e253ed500bf2d97635cf3e495942f3f3",
+  "source_bytes": 49284,
+  "triangles": 984,
+  "vertices": 1008
+ },
+ "np_f970": {
+  "bytes": 162724,
+  "glb": "assets/microduck/np_f970.glb",
+  "sha256": "9961e07e4507262a2bf445aa5d5089570b54af05613d6011e25d0c11566f486c",
+  "source_bytes": 1048584,
+  "triangles": 4096,
+  "vertices": 4696
+ },
+ "pcb__raspberry_pi_zero_2_w": {
+  "bytes": 458620,
+  "glb": "assets/microduck/pcb__raspberry_pi_zero_2_w.glb",
+  "sha256": "170189d366f1ab777621a58cc9c2e3ce14a44c860ec23f80a5aadf7bb9f42e50",
+  "source_bytes": 1048584,
+  "triangles": 15634,
+  "vertices": 11254
+ },
+ "power_support": {
+  "bytes": 358888,
+  "glb": "assets/microduck/power_support.glb",
+  "sha256": "f5944a0418557964e5a5405b3194cb71af0f30ef5c91db2bfc20ca8dc968ea7f",
+  "source_bytes": 641684,
+  "triangles": 9888,
+  "vertices": 9973
+ },
+ "right_shell": {
+  "bytes": 568744,
+  "glb": "assets/microduck/right_shell.glb",
+  "sha256": "76b3adaf6a55a2d6f010713637a3ed00bd2000061fff23609bdb80eaa4dadee1",
+  "source_bytes": 1048584,
+  "triangles": 17826,
+  "vertices": 14748
+ },
+ "seeed_bearing__configuration__22x16x4": {
+  "bytes": 647044,
+  "glb": "assets/microduck/seeed_bearing__configuration__22x16x4.glb",
+  "sha256": "5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb",
+  "source_bytes": 1048584,
+  "triangles": 14126,
+  "vertices": 19859
+ },
+ "seeed_bearing__configuration_default": {
+  "bytes": 655780,
+  "glb": "assets/microduck/seeed_bearing__configuration_default.glb",
+  "sha256": "111f1cafdd793e59392ae79e20e4e5b045dc7d310a50dd827379eeeaf188cc16",
+  "source_bytes": 1048584,
+  "triangles": 14400,
+  "vertices": 20086
+ },
+ "soft_mouth_top": {
+  "bytes": 89920,
+  "glb": "assets/microduck/soft_mouth_top.glb",
+  "sha256": "6d881b08f4f85aac398bb5d1c8a8ee5bf68a8485ef7c091de37ce22a9992a05e",
+  "source_bytes": 393584,
+  "triangles": 3490,
+  "vertices": 1965
+ },
+ "sole_left": {
+  "bytes": 389820,
+  "glb": "assets/microduck/sole_left.glb",
+  "sha256": "b85743a16874459cc6c67573c291f2f39c62e7f7ed0a00b02056d2f8d0c51539",
+  "source_bytes": 789484,
+  "triangles": 15474,
+  "vertices": 8469
+ },
+ "sole_right": {
+  "bytes": 390400,
+  "glb": "assets/microduck/sole_right.glb",
+  "sha256": "5a6e83a5db4c87bd6e29fdce19ee3fa30578224270b31b97e5247b9716b19cb4",
+  "source_bytes": 794484,
+  "triangles": 15560,
+  "vertices": 8450
+ },
+ "speaker": {
+  "bytes": 1512,
+  "glb": "assets/microduck/speaker.glb",
+  "sha256": "33f6528b75f59592c1e847a38b3d674ced55ddf8563bd2bf1a6734084cee9c2c",
+  "source_bytes": 684,
+  "triangles": 12,
+  "vertices": 24
+ },
+ "top_head_shell": {
+  "bytes": 444648,
+  "glb": "assets/microduck/top_head_shell.glb",
+  "sha256": "cacb156acc19fc04e5c38862daff5c3aac2f7eea37d62fe62cc5133ec1b6beeb",
+  "source_bytes": 806084,
+  "triangles": 15652,
+  "vertices": 10664
+ },
+ "trunk_base": {
+  "bytes": 118444,
+  "glb": "assets/microduck/trunk_base.glb",
+  "sha256": "eafe8ef090a47eb40fa6a5171240a6b3bc42f62134b75ab150f7ae121c9e9f2b",
+  "source_bytes": 184984,
+  "triangles": 3318,
+  "vertices": 3240
+ },
+ "upper_leg_left": {
+  "bytes": 315400,
+  "glb": "assets/microduck/upper_leg_left.glb",
+  "sha256": "49335a6f736e5fbcbc6ca295abd7c56b383c4590c990bfd251266bcbabed925f",
+  "source_bytes": 612584,
+  "triangles": 10552,
+  "vertices": 7829
+ },
+ "upper_leg_right": {
+  "bytes": 315572,
+  "glb": "assets/microduck/upper_leg_right.glb",
+  "sha256": "587618e4f6135c3ed6d7482c0e96ec973e80a7651ca55c6b53b4e390cbd05837",
+  "source_bytes": 612584,
+  "triangles": 10552,
+  "vertices": 7836
+ },
+ "upper_leg_rigidity_plate": {
+  "bytes": 124448,
+  "glb": "assets/microduck/upper_leg_rigidity_plate.glb",
+  "sha256": "464b15d58858c4123852d6d7d427d588a61ff68be4e9d504240f98db54fb2520",
+  "source_bytes": 180084,
+  "triangles": 3496,
+  "vertices": 3400
+ },
+ "xl330": {
+  "bytes": 136032,
+  "glb": "assets/microduck/xl330.glb",
+  "sha256": "00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067",
+  "source_bytes": 206384,
+  "triangles": 3742,
+  "vertices": 3761
+ },
+ "yaw2roll": {
+  "bytes": 277876,
+  "glb": "assets/microduck/yaw2roll.glb",
+  "sha256": "a3b90958453a6169280b6ecb8eaaaa316d75d17bc6a7190774431043fe44993f",
+  "source_bytes": 620284,
+  "triangles": 8458,
+  "vertices": 7313
+ },
+ "yaw_roll_motion": {
+  "bytes": 207932,
+  "glb": "assets/microduck/yaw_roll_motion.glb",
+  "sha256": "9bc9a7b0670379ecbd36551ffb30cb39babbf5c481d503b5a783f0dea74576ba",
+  "source_bytes": 290784,
+  "triangles": 5730,
+  "vertices": 5762
+ }
+}

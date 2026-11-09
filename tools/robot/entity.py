@@ -135,6 +135,26 @@ def make_entity(*, entity_id: str, name: str, type_id: str, source_ref: str,
     }
 
 
+def attach_meshes(doc: dict, glb_manifest: str) -> None:
+    """把视觉 mesh 换成本地 GLB，并补 sha256（碰撞仍指向上游原件）。"""
+    import json
+    with open(glb_manifest, encoding="utf-8") as f:
+        manifest = json.load(f)
+    assets_dir = doc["robot"].get("assets_dir") or "assets"
+    hit = 0
+    for link in doc["links"]:
+        for item in link["visual"]:
+            name = item.get("mesh_name")
+            if name and name in manifest:
+                item["mesh"] = os.path.join(assets_dir, name + ".glb")
+                item["sha256"] = manifest[name]["sha256"]
+                item["bytes"] = manifest[name]["bytes"]
+                item["vendored"] = True
+                hit += 1
+    doc["robot"]["mesh_manifest"] = glb_manifest
+    doc["summary"]["visual_meshes_vendored"] = hit
+
+
 def write_yaml(path: str, doc: dict) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:

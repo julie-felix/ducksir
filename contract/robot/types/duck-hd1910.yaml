@@ -12,6 +12,7 @@ robot:
     sha256: 07af5e482200dfd2a7bf80ddde371153c88768a3a5aebc2f58ea42136fc7dadb
   created_at: '2026-11-09'
   assets_dir: assets/microduck
+  mesh_manifest: assets/microduck/manifest.json
 frames:
   root: trunk_base
   world_attachment: floating
@@ -61,8 +62,9 @@ links:
     iyz: 1.32429e-07
     izz: 0.000115351
   visual:
-  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.stl
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
     mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
     origin:
       xyz:
       - 0.006
@@ -79,9 +81,12 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/right_shell.stl
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  - mesh: assets/microduck/right_shell.glb
     mesh_name: right_shell
+    source_file: right_shell.stl
     origin:
       xyz:
       - 0.004
@@ -98,9 +103,12 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/banana_pcb_locker.stl
+    vendored: true
+    sha256: 76b3adaf6a55a2d6f010713637a3ed00bd2000061fff23609bdb80eaa4dadee1
+    bytes: 568744
+  - mesh: assets/microduck/banana_pcb_locker.glb
     mesh_name: banana_pcb_locker
+    source_file: banana_pcb_locker.stl
     origin:
       xyz:
       - 0.0042
@@ -117,9 +125,12 @@ links:
     - 0.647059
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/trunk_base.stl
+    vendored: true
+    sha256: 95fc8f1800f652fa2f1f97daa83cc28a2da1786fcb90d1967bb4d5df4a06df22
+    bytes: 46812
+  - mesh: assets/microduck/trunk_base.glb
     mesh_name: trunk_base
+    source_file: trunk_base.stl
     origin:
       xyz:
       - 0.004
@@ -136,9 +147,12 @@ links:
     - 0.4
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/xl330.stl
+    vendored: true
+    sha256: eafe8ef090a47eb40fa6a5171240a6b3bc42f62134b75ab150f7ae121c9e9f2b
+    bytes: 118444
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - 0.006
@@ -155,9 +169,12 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/power_support.stl
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/power_support.glb
     mesh_name: power_support
+    source_file: power_support.stl
     origin:
       xyz:
       - 0.004
@@ -174,9 +191,12 @@ links:
     - 0.901961
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/np_f970.stl
+    vendored: true
+    sha256: f5944a0418557964e5a5405b3194cb71af0f30ef5c91db2bfc20ca8dc968ea7f
+    bytes: 358888
+  - mesh: assets/microduck/np_f970.glb
     mesh_name: np_f970
+    source_file: np_f970.stl
     origin:
       xyz:
       - -0.0359693
@@ -193,9 +213,12 @@ links:
     - 0.901961
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/xl330.stl
+    vendored: true
+    sha256: 9961e07e4507262a2bf445aa5d5089570b54af05613d6011e25d0c11566f486c
+    bytes: 162724
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - 0.006
@@ -212,9 +235,12 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/left_shell.stl
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/left_shell.glb
     mesh_name: left_shell
+    source_file: left_shell.stl
     origin:
       xyz:
       - 0.004
@@ -231,9 +257,12 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.stl
+    vendored: true
+    sha256: 0976ab6582b14ce8fed3b3b1c90f510d4a4f2feecc4fe2a75bc958f36fd4ca5b
+    bytes: 566340
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
     mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
     origin:
       xyz:
       - 0.006
@@ -250,10 +279,13 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
   collision:
-  - mesh: assets/microduck/power_support.stl
+  - mesh: assets/microduck/power_support.glb
     mesh_name: power_support
+    source_file: power_support.stl
     origin:
       xyz:
       - 0.004
@@ -297,8 +329,9 @@ links:
     iyz: -5.0881e-08
     izz: 2.3265e-06
   visual:
-  - mesh: assets/microduck/yaw2roll.stl
+  - mesh: assets/microduck/yaw2roll.glb
     mesh_name: yaw2roll
+    source_file: yaw2roll.stl
     origin:
       xyz:
       - -0.0175
@@ -315,9 +348,12 @@ links:
     - 0.647059
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/xl330.stl
+    vendored: true
+    sha256: a3b90958453a6169280b6ecb8eaaaa316d75d17bc6a7190774431043fe44993f
+    bytes: 277876
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - -0.0
@@ -334,9 +370,12 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.stl
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
     mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
     origin:
       xyz:
       - -0.0
@@ -353,9 +392,12 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/bearing_roll.stl
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  - mesh: assets/microduck/bearing_roll.glb
     mesh_name: bearing_roll
+    source_file: bearing_roll.stl
     origin:
       xyz:
       - -0.0175
@@ -372,7 +414,9 @@ links:
     - 0.301961
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: fbfbd1fc6fae269f72557cd1519cb070fe3def565671231e0b3588e2de0996d9
+    bytes: 80504
   collision: []
 - name: hip_l
   parent: yaw2roll
@@ -399,8 +443,9 @@ links:
     iyz: -1.0e-12
     izz: 6.51588e-07
   visual:
-  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.stl
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
     mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
     origin:
       xyz:
       - 0.021
@@ -417,9 +462,12 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/hip_l.stl
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  - mesh: assets/microduck/hip_l.glb
     mesh_name: hip_l
+    source_file: hip_l.stl
     origin:
       xyz:
       - -0.0175
@@ -436,7 +484,9 @@ links:
     - 0.901961
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: 8900a8939fae470d1dd16ef258240907ba3865d33d453096dc5700ccf874b957
+    bytes: 611716
   collision: []
 - name: upper_leg_left
   parent: hip_l
@@ -463,8 +513,9 @@ links:
     iyz: 3.89298e-07
     izz: 1.98269e-05
   visual:
-  - mesh: assets/microduck/upper_leg_left.stl
+  - mesh: assets/microduck/upper_leg_left.glb
     mesh_name: upper_leg_left
+    source_file: upper_leg_left.stl
     origin:
       xyz:
       - -0.0
@@ -481,9 +532,12 @@ links:
     - 0.866667
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/xl330.stl
+    vendored: true
+    sha256: 49335a6f736e5fbcbc6ca295abd7c56b383c4590c990bfd251266bcbabed925f
+    bytes: 315400
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - 0.022
@@ -500,9 +554,12 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/upper_leg_rigidity_plate.stl
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/upper_leg_rigidity_plate.glb
     mesh_name: upper_leg_rigidity_plate
+    source_file: upper_leg_rigidity_plate.stl
     origin:
       xyz:
       - 0.0
@@ -519,9 +576,12 @@ links:
     - 0.827451
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.stl
+    vendored: true
+    sha256: 464b15d58858c4123852d6d7d427d588a61ff68be4e9d504240f98db54fb2520
+    bytes: 124448
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
     mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
     origin:
       xyz:
       - 0.022
@@ -538,9 +598,12 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/xl330.stl
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - -0.0
@@ -557,7 +620,9 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
   collision: []
 - name: leg
   parent: upper_leg_left
@@ -584,8 +649,9 @@ links:
     iyz: 7.65005e-07
     izz: 4.33925e-06
   visual:
-  - mesh: assets/microduck/leg.stl
+  - mesh: assets/microduck/leg.glb
     mesh_name: leg
+    source_file: leg.stl
     origin:
       xyz:
       - -0.022
@@ -602,9 +668,12 @@ links:
     - 0.898039
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/xl330.stl
+    vendored: true
+    sha256: 405c430bb92db8d3d506d6cec41d5bd9699f5edfcc24ef264a88ee476972f483
+    bytes: 414716
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - 0.0
@@ -621,10 +690,13 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
   collision:
-  - mesh: assets/microduck/leg.stl
+  - mesh: assets/microduck/leg.glb
     mesh_name: leg
+    source_file: leg.stl
     origin:
       xyz:
       - -0.022
@@ -668,8 +740,9 @@ links:
     iyz: 5.6714e-08
     izz: 7.74015e-06
   visual:
-  - mesh: assets/microduck/sole_left.stl
+  - mesh: assets/microduck/sole_left.glb
     mesh_name: sole_left
+    source_file: sole_left.stl
     origin:
       xyz:
       - -0.022
@@ -686,9 +759,12 @@ links:
     - 0.827451
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/foot_left.stl
+    vendored: true
+    sha256: b85743a16874459cc6c67573c291f2f39c62e7f7ed0a00b02056d2f8d0c51539
+    bytes: 389820
+  - mesh: assets/microduck/foot_left.glb
     mesh_name: foot_left
+    source_file: foot_left.stl
     origin:
       xyz:
       - -0.022
@@ -705,9 +781,12 @@ links:
     - 0.00392157
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/seeed_bearing__configuration_default.stl
+    vendored: true
+    sha256: e5c2b68e3535188b823b11f0900c3ca26b8e4f54e5b311bbed386ae6c05307fe
+    bytes: 369440
+  - mesh: assets/microduck/seeed_bearing__configuration_default.glb
     mesh_name: seeed_bearing__configuration_default
+    source_file: seeed_bearing__configuration_default.stl
     origin:
       xyz:
       - 0.0
@@ -724,9 +803,12 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/ankle_left.stl
+    vendored: true
+    sha256: 111f1cafdd793e59392ae79e20e4e5b045dc7d310a50dd827379eeeaf188cc16
+    bytes: 655780
+  - mesh: assets/microduck/ankle_left.glb
     mesh_name: ankle_left
+    source_file: ankle_left.stl
     origin:
       xyz:
       - -0.022
@@ -743,10 +825,13 @@ links:
     - 0.00392157
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: e811163037adf2e0b06f13234b451cb8c74f072bdaf3d87064e92bfd26a44739
+    bytes: 176144
   collision:
-  - mesh: assets/microduck/sole_left.stl
+  - mesh: assets/microduck/sole_left.glb
     mesh_name: sole_left
+    source_file: sole_left.stl
     origin:
       xyz:
       - -0.022
@@ -790,8 +875,9 @@ links:
     iyz: 0.0
     izz: 1.63707e-05
   visual:
-  - mesh: assets/microduck/neck.stl
+  - mesh: assets/microduck/neck.glb
     mesh_name: neck
+    source_file: neck.stl
     origin:
       xyz:
       - 0.022
@@ -808,9 +894,12 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/xl330.stl
+    vendored: true
+    sha256: e6fa1aa278d4f49cf049b31d7c349c263d9d4ae7f432cbeb5d80a4b00a88e59f
+    bytes: 48792
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - 0.0
@@ -827,9 +916,12 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/xl330.stl
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - 0.0
@@ -846,9 +938,12 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/neck.stl
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/neck.glb
     mesh_name: neck
+    source_file: neck.stl
     origin:
       xyz:
       - 0.022
@@ -865,7 +960,9 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: e6fa1aa278d4f49cf049b31d7c349c263d9d4ae7f432cbeb5d80a4b00a88e59f
+    bytes: 48792
   collision: []
 - name: neck_pitch
   parent: neck
@@ -892,8 +989,9 @@ links:
     iyz: 0.0
     izz: 5.12111e-07
   visual:
-  - mesh: assets/microduck/neck_pitch.stl
+  - mesh: assets/microduck/neck_pitch.glb
     mesh_name: neck_pitch
+    source_file: neck_pitch.stl
     origin:
       xyz:
       - -0.0
@@ -910,9 +1008,12 @@ links:
     - 0.4
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.stl
+    vendored: true
+    sha256: e9b070e47576bdf288ce00b21363ac69aef63db9dc8e2ecf9f8066b2d56eccc5
+    bytes: 246728
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
     mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
     origin:
       xyz:
       - -0.0
@@ -929,7 +1030,9 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
   collision: []
 - name: yaw_roll_motion
   parent: neck_pitch
@@ -956,8 +1059,9 @@ links:
     iyz: 3.4295e-07
     izz: 9.57884e-06
   visual:
-  - mesh: assets/microduck/yaw_roll_motion.stl
+  - mesh: assets/microduck/yaw_roll_motion.glb
     mesh_name: yaw_roll_motion
+    source_file: yaw_roll_motion.stl
     origin:
       xyz:
       - 0.0
@@ -974,9 +1078,12 @@ links:
     - 0.952941
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/xl330.stl
+    vendored: true
+    sha256: 9bc9a7b0670379ecbd36551ffb30cb39babbf5c481d503b5a783f0dea74576ba
+    bytes: 207932
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - 0.0
@@ -993,9 +1100,12 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.stl
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
     mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
     origin:
       xyz:
       - -0.016
@@ -1012,9 +1122,12 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.stl
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
     mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
     origin:
       xyz:
       - 0.018
@@ -1031,7 +1144,9 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
   collision: []
 - name: jaw_soft
   parent: yaw_roll_motion
@@ -1058,8 +1173,9 @@ links:
     iyz: 4.18476e-06
     izz: 0.000149882
   visual:
-  - mesh: assets/microduck/lens.stl
+  - mesh: assets/microduck/lens.glb
     mesh_name: lens
+    source_file: lens.stl
     origin:
       xyz:
       - 0.0155
@@ -1076,9 +1192,12 @@ links:
     - 0.301961
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/face_part.stl
+    vendored: true
+    sha256: e6f77da9f7930f5ab30ab24acabe26840378293375fcb2676ce13b9840406d4a
+    bytes: 56204
+  - mesh: assets/microduck/face_part.glb
     mesh_name: face_part
+    source_file: face_part.stl
     origin:
       xyz:
       - -0.0045
@@ -1095,9 +1214,12 @@ links:
     - 0.4
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/xl330.stl
+    vendored: true
+    sha256: 0149a7f2d4dfd5e52bcdd2ff8f6982590b2a0150b4cc3d406573c209077180dd
+    bytes: 376260
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - 0.003
@@ -1114,9 +1236,12 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/jaw_soft.stl
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/jaw_soft.glb
     mesh_name: jaw_soft
+    source_file: jaw_soft.stl
     origin:
       xyz:
       - -0.0046
@@ -1133,9 +1258,12 @@ links:
     - 0.866667
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/motor_support.stl
+    vendored: true
+    sha256: cad2379e4b9158e30ff205a37d1a823ceff4a182fa7c50ea596d0fa806644ba1
+    bytes: 101356
+  - mesh: assets/microduck/motor_support.glb
     mesh_name: motor_support
+    source_file: motor_support.stl
     origin:
       xyz:
       - -0.0045
@@ -1152,9 +1280,12 @@ links:
     - 0.301961
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/top_head_shell.stl
+    vendored: true
+    sha256: f2aec2f2ccd48fc3687a160f4c2539620f66b60213181e4d989f41dd0ca5089a
+    bytes: 133696
+  - mesh: assets/microduck/top_head_shell.glb
     mesh_name: top_head_shell
+    source_file: top_head_shell.stl
     origin:
       xyz:
       - -0.0045
@@ -1171,9 +1302,12 @@ links:
     - 0.901961
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/xl330.stl
+    vendored: true
+    sha256: cacb156acc19fc04e5c38862daff5c3aac2f7eea37d62fe62cc5133ec1b6beeb
+    bytes: 444648
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - 0.0
@@ -1190,9 +1324,12 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/seeed_bearing__configuration_default.stl
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/seeed_bearing__configuration_default.glb
     mesh_name: seeed_bearing__configuration_default
+    source_file: seeed_bearing__configuration_default.stl
     origin:
       xyz:
       - 0.0032
@@ -1209,9 +1346,12 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/elec_rpi_robot_hat_pcb.stl
+    vendored: true
+    sha256: 111f1cafdd793e59392ae79e20e4e5b045dc7d310a50dd827379eeeaf188cc16
+    bytes: 655780
+  - mesh: assets/microduck/elec_rpi_robot_hat_pcb.glb
     mesh_name: elec_rpi_robot_hat_pcb
+    source_file: elec_rpi_robot_hat_pcb.stl
     origin:
       xyz:
       - 0.02694
@@ -1228,9 +1368,12 @@ links:
     - 0.411765
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/soft_mouth_top.stl
+    vendored: true
+    sha256: c77e644b67ea7873ee69634a262147c75acb4890f6b2f63be89009e58a495305
+    bytes: 375672
+  - mesh: assets/microduck/soft_mouth_top.glb
     mesh_name: soft_mouth_top
+    source_file: soft_mouth_top.stl
     origin:
       xyz:
       - -0.00420071
@@ -1247,9 +1390,12 @@ links:
     - 0.866667
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/noenoeil.stl
+    vendored: true
+    sha256: 6d881b08f4f85aac398bb5d1c8a8ee5bf68a8485ef7c091de37ce22a9992a05e
+    bytes: 89920
+  - mesh: assets/microduck/noenoeil.glb
     mesh_name: noenoeil
+    source_file: noenoeil.stl
     origin:
       xyz:
       - -0.0045
@@ -1266,9 +1412,12 @@ links:
     - 0.301961
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/jaw.stl
+    vendored: true
+    sha256: ba8013d381091344a9f763d0ad4b4314e253ed500bf2d97635cf3e495942f3f3
+    bytes: 36864
+  - mesh: assets/microduck/jaw.glb
     mesh_name: jaw
+    source_file: jaw.stl
     origin:
       xyz:
       - -0.0045
@@ -1285,9 +1434,12 @@ links:
     - 0.00392157
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/bottom_head_shell.stl
+    vendored: true
+    sha256: 0589737e8e3889afd364a9b3af1eb6350fdcdf7e06b716d8a88280076207f1e0
+    bytes: 246520
+  - mesh: assets/microduck/bottom_head_shell.glb
     mesh_name: bottom_head_shell
+    source_file: bottom_head_shell.stl
     origin:
       xyz:
       - -0.0043
@@ -1304,9 +1456,12 @@ links:
     - 0.00392157
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/m12_lens_holder.stl
+    vendored: true
+    sha256: 6ede36085361ac6e53aad95bad3a2b0836227de56af51e534fb5a489de9bafb5
+    bytes: 647932
+  - mesh: assets/microduck/m12_lens_holder.glb
     mesh_name: m12_lens_holder
+    source_file: m12_lens_holder.stl
     origin:
       xyz:
       - 0.0155
@@ -1323,9 +1478,12 @@ links:
     - 0.301961
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/pcb__raspberry_pi_zero_2_w.stl
+    vendored: true
+    sha256: 17023094682c4a424bf5c25961fec042309054eabc87b5ae568b3f8acde33241
+    bytes: 101420
+  - mesh: assets/microduck/pcb__raspberry_pi_zero_2_w.glb
     mesh_name: pcb__raspberry_pi_zero_2_w
+    source_file: pcb__raspberry_pi_zero_2_w.stl
     origin:
       xyz:
       - 0.015435
@@ -1342,9 +1500,12 @@ links:
     - 0.498039
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/speaker.stl
+    vendored: true
+    sha256: 170189d366f1ab777621a58cc9c2e3ce14a44c860ec23f80a5aadf7bb9f42e50
+    bytes: 458620
+  - mesh: assets/microduck/speaker.glb
     mesh_name: speaker
+    source_file: speaker.stl
     origin:
       xyz:
       - 0.01
@@ -1361,7 +1522,9 @@ links:
     - 0.290196
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: 33f6528b75f59592c1e847a38b3d674ced55ddf8563bd2bf1a6734084cee9c2c
+    bytes: 1512
   collision: []
 - name: bearing_roll
   parent: trunk_base
@@ -1388,8 +1551,9 @@ links:
     iyz: -5.0881e-08
     izz: 2.3265e-06
   visual:
-  - mesh: assets/microduck/yaw2roll.stl
+  - mesh: assets/microduck/yaw2roll.glb
     mesh_name: yaw2roll
+    source_file: yaw2roll.stl
     origin:
       xyz:
       - -0.0175
@@ -1406,9 +1570,12 @@ links:
     - 0.647059
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/xl330.stl
+    vendored: true
+    sha256: a3b90958453a6169280b6ecb8eaaaa316d75d17bc6a7190774431043fe44993f
+    bytes: 277876
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - -0.0
@@ -1425,9 +1592,12 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/bearing_roll.stl
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/bearing_roll.glb
     mesh_name: bearing_roll
+    source_file: bearing_roll.stl
     origin:
       xyz:
       - -0.0175
@@ -1444,9 +1614,12 @@ links:
     - 0.301961
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.stl
+    vendored: true
+    sha256: fbfbd1fc6fae269f72557cd1519cb070fe3def565671231e0b3588e2de0996d9
+    bytes: 80504
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
     mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
     origin:
       xyz:
       - -0.0
@@ -1463,7 +1636,9 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
   collision: []
 - name: hip_l_2
   parent: bearing_roll
@@ -1490,8 +1665,9 @@ links:
     iyz: -1.0e-12
     izz: 6.51588e-07
   visual:
-  - mesh: assets/microduck/hip_l.stl
+  - mesh: assets/microduck/hip_l.glb
     mesh_name: hip_l
+    source_file: hip_l.stl
     origin:
       xyz:
       - -0.0175
@@ -1508,9 +1684,12 @@ links:
     - 0.901961
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.stl
+    vendored: true
+    sha256: 8900a8939fae470d1dd16ef258240907ba3865d33d453096dc5700ccf874b957
+    bytes: 611716
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
     mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
     origin:
       xyz:
       - 0.025
@@ -1527,7 +1706,9 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
   collision: []
 - name: upper_leg_right
   parent: hip_l_2
@@ -1554,8 +1735,9 @@ links:
     iyz: 3.89298e-07
     izz: 1.98269e-05
   visual:
-  - mesh: assets/microduck/xl330.stl
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - -0.022
@@ -1572,9 +1754,12 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.stl
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
     mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
     origin:
       xyz:
       - -0.022
@@ -1591,9 +1776,12 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/upper_leg_rigidity_plate.stl
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  - mesh: assets/microduck/upper_leg_rigidity_plate.glb
     mesh_name: upper_leg_rigidity_plate
+    source_file: upper_leg_rigidity_plate.stl
     origin:
       xyz:
       - 0.0
@@ -1610,9 +1798,12 @@ links:
     - 0.827451
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/upper_leg_right.stl
+    vendored: true
+    sha256: 464b15d58858c4123852d6d7d427d588a61ff68be4e9d504240f98db54fb2520
+    bytes: 124448
+  - mesh: assets/microduck/upper_leg_right.glb
     mesh_name: upper_leg_right
+    source_file: upper_leg_right.stl
     origin:
       xyz:
       - -0.0
@@ -1629,9 +1820,12 @@ links:
     - 0.866667
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/xl330.stl
+    vendored: true
+    sha256: 587618e4f6135c3ed6d7482c0e96ec973e80a7651ca55c6b53b4e390cbd05837
+    bytes: 315572
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - 0.0
@@ -1648,7 +1842,9 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
   collision: []
 - name: leg_2
   parent: upper_leg_right
@@ -1675,8 +1871,9 @@ links:
     iyz: 0.0
     izz: 4.33925e-06
   visual:
-  - mesh: assets/microduck/xl330.stl
+  - mesh: assets/microduck/xl330.glb
     mesh_name: xl330
+    source_file: xl330.stl
     origin:
       xyz:
       - -0.042
@@ -1693,9 +1890,12 @@ links:
     - 0.286275
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/leg.stl
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/leg.glb
     mesh_name: leg
+    source_file: leg.stl
     origin:
       xyz:
       - -0.0357771
@@ -1712,10 +1912,13 @@ links:
     - 0.898039
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: 405c430bb92db8d3d506d6cec41d5bd9699f5edfcc24ef264a88ee476972f483
+    bytes: 414716
   collision:
-  - mesh: assets/microduck/leg.stl
+  - mesh: assets/microduck/leg.glb
     mesh_name: leg
+    source_file: leg.stl
     origin:
       xyz:
       - -0.0357771
@@ -1759,8 +1962,9 @@ links:
     iyz: 5.7017e-08
     izz: 7.74016e-06
   visual:
-  - mesh: assets/microduck/ankle_right.stl
+  - mesh: assets/microduck/ankle_right.glb
     mesh_name: ankle_right
+    source_file: ankle_right.stl
     origin:
       xyz:
       - 0.022
@@ -1777,9 +1981,12 @@ links:
     - 0.00392157
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/sole_right.stl
+    vendored: true
+    sha256: b661e47f848d888bfef7a06d97cc92adc77023ee340655c452d3b4e545cf5539
+    bytes: 176196
+  - mesh: assets/microduck/sole_right.glb
     mesh_name: sole_right
+    source_file: sole_right.stl
     origin:
       xyz:
       - 0.022
@@ -1796,9 +2003,12 @@ links:
     - 0.827451
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/seeed_bearing__configuration_default.stl
+    vendored: true
+    sha256: 5a6e83a5db4c87bd6e29fdce19ee3fa30578224270b31b97e5247b9716b19cb4
+    bytes: 390400
+  - mesh: assets/microduck/seeed_bearing__configuration_default.glb
     mesh_name: seeed_bearing__configuration_default
+    source_file: seeed_bearing__configuration_default.stl
     origin:
       xyz:
       - -0.0
@@ -1815,9 +2025,12 @@ links:
     - 0.8
     - 1.0
     class: visual
-    vendored: false
-  - mesh: assets/microduck/foot_right.stl
+    vendored: true
+    sha256: 111f1cafdd793e59392ae79e20e4e5b045dc7d310a50dd827379eeeaf188cc16
+    bytes: 655780
+  - mesh: assets/microduck/foot_right.glb
     mesh_name: foot_right
+    source_file: foot_right.stl
     origin:
       xyz:
       - 0.022
@@ -1834,10 +2047,13 @@ links:
     - 0.00392157
     - 1.0
     class: visual
-    vendored: false
+    vendored: true
+    sha256: 4c85d1b44d5943f84adcac58a44e669732a57367c16293d7f3996ac6888134e5
+    bytes: 368460
   collision:
-  - mesh: assets/microduck/sole_right.stl
+  - mesh: assets/microduck/sole_right.glb
     mesh_name: sole_right
+    source_file: sole_right.stl
     origin:
       xyz:
       - 0.022
@@ -3501,14 +3717,14 @@ warnings:
   path: links[*].visual[*].mesh
   message: 38 个 mesh 只有引用、没有入库；需要时可从上游按 sha256 拉一次
   meshes:
-  - assets/microduck/ankle_left.stl
-  - assets/microduck/ankle_right.stl
-  - assets/microduck/banana_pcb_locker.stl
-  - assets/microduck/bearing_roll.stl
-  - assets/microduck/bottom_head_shell.stl
-  - assets/microduck/elec_rpi_robot_hat_pcb.stl
-  - assets/microduck/face_part.stl
-  - assets/microduck/foot_left.stl
+  - assets/microduck/ankle_left.glb
+  - assets/microduck/ankle_right.glb
+  - assets/microduck/banana_pcb_locker.glb
+  - assets/microduck/bearing_roll.glb
+  - assets/microduck/bottom_head_shell.glb
+  - assets/microduck/elec_rpi_robot_hat_pcb.glb
+  - assets/microduck/face_part.glb
+  - assets/microduck/foot_left.glb
   more: 30
 - code: W005
   path: presets
@@ -3519,3 +3735,4 @@ summary:
   actuated_joints: 14
   actuators: 14
   total_mass: 0.73724318
+  visual_meshes_vendored: 70

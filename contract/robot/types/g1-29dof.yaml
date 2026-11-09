@@ -12,6 +12,7 @@ robot:
     sha256: c0ae739c640c3e2c00d1bdd8810b5d6e59601487bd1a3995859f9543269ee5c8
   created_at: '2026-11-09'
   assets_dir: assets/g1
+  mesh_manifest: assets/g1/manifest.json
 frames:
   root: pelvis
   world_attachment: floating
@@ -60,8 +61,9 @@ links:
     iyz: 0.0
     izz: 0.0079184
   visual:
-  - mesh: assets/g1/pelvis.STL
-    mesh_name: pelvis.STL
+  - mesh: assets/g1/pelvis.glb
+    mesh_name: pelvis
+    source_file: pelvis.STL
     origin:
       xyz:
       - 0.0
@@ -81,7 +83,9 @@ links:
     - 0.2
     - 0.2
     - 1.0
-    vendored: false
+    vendored: true
+    sha256: c5acc2190436d5bc4256ccbd021100a5d1dfc9e981d9d7291033fe8ea0e1beba
+    bytes: 555988
   collision: []
 - name: pelvis_contour_link
   parent: pelvis
@@ -108,8 +112,9 @@ links:
     iyz: 0.0
     izz: 1.0e-07
   visual:
-  - mesh: assets/g1/pelvis_contour_link.STL
-    mesh_name: pelvis_contour_link.STL
+  - mesh: assets/g1/pelvis_contour_link.glb
+    mesh_name: pelvis_contour_link
+    source_file: pelvis_contour_link.STL
     origin:
       xyz:
       - 0.0
@@ -129,10 +134,13 @@ links:
     - 0.7
     - 0.7
     - 1.0
-    vendored: false
+    vendored: true
+    sha256: 3ec89bf0fa599e68422b69882c25ac0807ca954fe55ae8963924adaed85dc42a
+    bytes: 738128
   collision:
-  - mesh: assets/g1/pelvis_contour_link.STL
-    mesh_name: pelvis_contour_link.STL
+  - mesh: assets/g1/pelvis_contour_link.glb
+    mesh_name: pelvis_contour_link
+    source_file: pelvis_contour_link.STL
     origin:
       xyz:
       - 0.0
@@ -174,8 +182,9 @@ links:
     iyz: 0.000171
     izz: 0.0012812
   visual:
-  - mesh: assets/g1/left_hip_pitch_link.STL
-    mesh_name: left_hip_pitch_link.STL
+  - mesh: assets/g1/left_hip_pitch_link.glb
+    mesh_name: left_hip_pitch_link
+    source_file: left_hip_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -191,10 +200,13 @@ links:
       - 0.0
       - 0.0
     material: *id001
-    vendored: false
+    vendored: true
+    sha256: f1907d13d57adaca71a2ed117c098721cde0dc5753fe04da8e1939538a5f92b0
+    bytes: 101952
   collision:
-  - mesh: assets/g1/left_hip_pitch_link.STL
-    mesh_name: left_hip_pitch_link.STL
+  - mesh: assets/g1/left_hip_pitch_link.glb
+    mesh_name: left_hip_pitch_link
+    source_file: left_hip_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -236,8 +248,9 @@ links:
     iyz: 1.84e-05
     izz: 0.0016595
   visual:
-  - mesh: assets/g1/left_hip_roll_link.STL
-    mesh_name: left_hip_roll_link.STL
+  - mesh: assets/g1/left_hip_roll_link.glb
+    mesh_name: left_hip_roll_link
+    source_file: left_hip_roll_link.STL
     origin:
       xyz:
       - 0.0
@@ -253,10 +266,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: fa351bb9f01e61190c3c8b0b614214a07376a2008030eb0b292a26419127696d
+    bytes: 120288
   collision:
-  - mesh: assets/g1/left_hip_roll_link.STL
-    mesh_name: left_hip_roll_link.STL
+  - mesh: assets/g1/left_hip_roll_link.glb
+    mesh_name: left_hip_roll_link
+    source_file: left_hip_roll_link.STL
     origin:
       xyz:
       - 0.0
@@ -298,8 +314,9 @@ links:
     iyz: -0.0007072
     izz: 0.003149
   visual:
-  - mesh: assets/g1/left_hip_yaw_link.STL
-    mesh_name: left_hip_yaw_link.STL
+  - mesh: assets/g1/left_hip_yaw_link.glb
+    mesh_name: left_hip_yaw_link
+    source_file: left_hip_yaw_link.STL
     origin:
       xyz:
       - 0.0
@@ -315,10 +332,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 9a0affb78ea5b6c20211c2865e51ca8d471c62c86875ad8495c10ac19515d4a7
+    bytes: 168284
   collision:
-  - mesh: assets/g1/left_hip_yaw_link.STL
-    mesh_name: left_hip_yaw_link.STL
+  - mesh: assets/g1/left_hip_yaw_link.glb
+    mesh_name: left_hip_yaw_link
+    source_file: left_hip_yaw_link.STL
     origin:
       xyz:
       - 0.0
@@ -360,8 +380,9 @@ links:
     iyz: -0.0007146
     izz: 0.0015168
   visual:
-  - mesh: assets/g1/left_knee_link.STL
-    mesh_name: left_knee_link.STL
+  - mesh: assets/g1/left_knee_link.glb
+    mesh_name: left_knee_link
+    source_file: left_knee_link.STL
     origin:
       xyz:
       - 0.0
@@ -377,10 +398,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: ab8ffb58e960be47bbf13a66ab7acda02488448f5f8de48e09e6b7155a8dc28f
+    bytes: 512128
   collision:
-  - mesh: assets/g1/left_knee_link.STL
-    mesh_name: left_knee_link.STL
+  - mesh: assets/g1/left_knee_link.glb
+    mesh_name: left_knee_link
+    source_file: left_knee_link.STL
     origin:
       xyz:
       - 0.0
@@ -422,8 +446,9 @@ links:
     iyz: 0.0
     izz: 1.26e-05
   visual:
-  - mesh: assets/g1/left_ankle_pitch_link.STL
-    mesh_name: left_ankle_pitch_link.STL
+  - mesh: assets/g1/left_ankle_pitch_link.glb
+    mesh_name: left_ankle_pitch_link
+    source_file: left_ankle_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -439,10 +464,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 18b9a0434fbced4726089269616037d7f3821144ed956d73e0b1b3f38dbef0bf
+    bytes: 52732
   collision:
-  - mesh: assets/g1/left_ankle_pitch_link.STL
-    mesh_name: left_ankle_pitch_link.STL
+  - mesh: assets/g1/left_ankle_pitch_link.glb
+    mesh_name: left_ankle_pitch_link
+    source_file: left_ankle_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -484,8 +512,9 @@ links:
     iyz: -1.0e-07
     izz: 0.0016667
   visual:
-  - mesh: assets/g1/left_ankle_roll_link.STL
-    mesh_name: left_ankle_roll_link.STL
+  - mesh: assets/g1/left_ankle_roll_link.glb
+    mesh_name: left_ankle_roll_link
+    source_file: left_ankle_roll_link.STL
     origin:
       xyz:
       - 0.0
@@ -501,10 +530,13 @@ links:
       - 0.0
       - 0.0
     material: *id001
-    vendored: false
+    vendored: true
+    sha256: b7f473f177d9895f8cef8ee4fac730e1b2a2923058097254538f8d68aaa9939c
+    bytes: 360152
   collision:
   - mesh: null
     mesh_name: null
+    source_file: null
     origin:
       xyz:
       - -0.05
@@ -523,6 +555,7 @@ links:
     vendored: false
   - mesh: null
     mesh_name: null
+    source_file: null
     origin:
       xyz:
       - -0.05
@@ -541,6 +574,7 @@ links:
     vendored: false
   - mesh: null
     mesh_name: null
+    source_file: null
     origin:
       xyz:
       - 0.12
@@ -559,6 +593,7 @@ links:
     vendored: false
   - mesh: null
     mesh_name: null
+    source_file: null
     origin:
       xyz:
       - 0.12
@@ -600,8 +635,9 @@ links:
     iyz: -0.000171
     izz: 0.0012812
   visual:
-  - mesh: assets/g1/right_hip_pitch_link.STL
-    mesh_name: right_hip_pitch_link.STL
+  - mesh: assets/g1/right_hip_pitch_link.glb
+    mesh_name: right_hip_pitch_link
+    source_file: right_hip_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -617,10 +653,13 @@ links:
       - 0.0
       - 0.0
     material: *id001
-    vendored: false
+    vendored: true
+    sha256: ec10798543abc89c2cfc3efc61c3c14d329f477f0dc8618700e01c4cafd15d2a
+    bytes: 101356
   collision:
-  - mesh: assets/g1/right_hip_pitch_link.STL
-    mesh_name: right_hip_pitch_link.STL
+  - mesh: assets/g1/right_hip_pitch_link.glb
+    mesh_name: right_hip_pitch_link
+    source_file: right_hip_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -662,8 +701,9 @@ links:
     iyz: -1.84e-05
     izz: 0.0016595
   visual:
-  - mesh: assets/g1/right_hip_roll_link.STL
-    mesh_name: right_hip_roll_link.STL
+  - mesh: assets/g1/right_hip_roll_link.glb
+    mesh_name: right_hip_roll_link
+    source_file: right_hip_roll_link.STL
     origin:
       xyz:
       - 0.0
@@ -679,10 +719,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 3994919ff4fbcf853d46f100210aa85d4a7fad33f0ba3250d489c283523eb560
+    bytes: 120672
   collision:
-  - mesh: assets/g1/right_hip_roll_link.STL
-    mesh_name: right_hip_roll_link.STL
+  - mesh: assets/g1/right_hip_roll_link.glb
+    mesh_name: right_hip_roll_link
+    source_file: right_hip_roll_link.STL
     origin:
       xyz:
       - 0.0
@@ -724,8 +767,9 @@ links:
     iyz: 0.0007072
     izz: 0.003149
   visual:
-  - mesh: assets/g1/right_hip_yaw_link.STL
-    mesh_name: right_hip_yaw_link.STL
+  - mesh: assets/g1/right_hip_yaw_link.glb
+    mesh_name: right_hip_yaw_link
+    source_file: right_hip_yaw_link.STL
     origin:
       xyz:
       - 0.0
@@ -741,10 +785,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: e3ad2bb39ac75bc3503cb3b7ad4f998bb073c383d949229cf8e95ceb5b632a51
+    bytes: 168212
   collision:
-  - mesh: assets/g1/right_hip_yaw_link.STL
-    mesh_name: right_hip_yaw_link.STL
+  - mesh: assets/g1/right_hip_yaw_link.glb
+    mesh_name: right_hip_yaw_link
+    source_file: right_hip_yaw_link.STL
     origin:
       xyz:
       - 0.0
@@ -786,8 +833,9 @@ links:
     iyz: 0.0007146
     izz: 0.0015168
   visual:
-  - mesh: assets/g1/right_knee_link.STL
-    mesh_name: right_knee_link.STL
+  - mesh: assets/g1/right_knee_link.glb
+    mesh_name: right_knee_link
+    source_file: right_knee_link.STL
     origin:
       xyz:
       - 0.0
@@ -803,10 +851,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: f796d9190175a8fe29a7284b33fbbb8371daa4ab22fa877c31a47611e997fcc0
+    bytes: 511604
   collision:
-  - mesh: assets/g1/right_knee_link.STL
-    mesh_name: right_knee_link.STL
+  - mesh: assets/g1/right_knee_link.glb
+    mesh_name: right_knee_link
+    source_file: right_knee_link.STL
     origin:
       xyz:
       - 0.0
@@ -848,8 +899,9 @@ links:
     iyz: 0.0
     izz: 1.26e-05
   visual:
-  - mesh: assets/g1/right_ankle_pitch_link.STL
-    mesh_name: right_ankle_pitch_link.STL
+  - mesh: assets/g1/right_ankle_pitch_link.glb
+    mesh_name: right_ankle_pitch_link
+    source_file: right_ankle_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -865,10 +917,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 88c5cb78a26a212fb2200af1738bb5ae697e004bfa37e3dc1a0f71ec9aa0c91b
+    bytes: 52732
   collision:
-  - mesh: assets/g1/right_ankle_pitch_link.STL
-    mesh_name: right_ankle_pitch_link.STL
+  - mesh: assets/g1/right_ankle_pitch_link.glb
+    mesh_name: right_ankle_pitch_link
+    source_file: right_ankle_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -910,8 +965,9 @@ links:
     iyz: 1.0e-07
     izz: 0.0016667
   visual:
-  - mesh: assets/g1/right_ankle_roll_link.STL
-    mesh_name: right_ankle_roll_link.STL
+  - mesh: assets/g1/right_ankle_roll_link.glb
+    mesh_name: right_ankle_roll_link
+    source_file: right_ankle_roll_link.STL
     origin:
       xyz:
       - 0.0
@@ -927,10 +983,13 @@ links:
       - 0.0
       - 0.0
     material: *id001
-    vendored: false
+    vendored: true
+    sha256: 5eb8b7e68f73f43f5cc8fac755e146bf20fbb52e62c84df5def4fa7812579cdd
+    bytes: 359624
   collision:
   - mesh: null
     mesh_name: null
+    source_file: null
     origin:
       xyz:
       - -0.05
@@ -949,6 +1008,7 @@ links:
     vendored: false
   - mesh: null
     mesh_name: null
+    source_file: null
     origin:
       xyz:
       - -0.05
@@ -967,6 +1027,7 @@ links:
     vendored: false
   - mesh: null
     mesh_name: null
+    source_file: null
     origin:
       xyz:
       - 0.12
@@ -985,6 +1046,7 @@ links:
     vendored: false
   - mesh: null
     mesh_name: null
+    source_file: null
     origin:
       xyz:
       - 0.12
@@ -1026,8 +1088,9 @@ links:
     iyz: -2.01e-07
     izz: 0.0001625
   visual:
-  - mesh: assets/g1/waist_yaw_link_rev_1_0.STL
-    mesh_name: waist_yaw_link_rev_1_0.STL
+  - mesh: assets/g1/waist_yaw_link_rev_1_0.glb
+    mesh_name: waist_yaw_link_rev_1_0
+    source_file: waist_yaw_link_rev_1_0.STL
     origin:
       xyz:
       - 0.0
@@ -1043,7 +1106,9 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: df3462d7b215c768166572d18fe2e1340e1d8b19dd6c089ad165ae52c5749297
+    bytes: 400384
   collision: []
 - name: waist_roll_link
   parent: waist_yaw_link
@@ -1070,8 +1135,9 @@ links:
     iyz: 0.0
     izz: 8.245e-06
   visual:
-  - mesh: assets/g1/waist_roll_link_rev_1_0.STL
-    mesh_name: waist_roll_link_rev_1_0.STL
+  - mesh: assets/g1/waist_roll_link_rev_1_0.glb
+    mesh_name: waist_roll_link_rev_1_0
+    source_file: waist_roll_link_rev_1_0.STL
     origin:
       xyz:
       - 0.0
@@ -1087,7 +1153,9 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: aae4de339f30e31266c032169d3ce4a18055faba0735afbc7d497889754c78f2
+    bytes: 48436
   collision: []
 - name: torso_link
   parent: waist_roll_link
@@ -1114,8 +1182,9 @@ links:
     iyz: -2.2399e-05
     izz: 0.025652
   visual:
-  - mesh: assets/g1/torso_link_rev_1_0.STL
-    mesh_name: torso_link_rev_1_0.STL
+  - mesh: assets/g1/torso_link_rev_1_0.glb
+    mesh_name: torso_link_rev_1_0
+    source_file: torso_link_rev_1_0.STL
     origin:
       xyz:
       - 0.0
@@ -1131,10 +1200,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: ca99797a976b72800cf286c78843c08c4725d44ed0fd5146f552819b8c845dad
+    bytes: 1440592
   collision:
-  - mesh: assets/g1/torso_link_rev_1_0.STL
-    mesh_name: torso_link_rev_1_0.STL
+  - mesh: assets/g1/torso_link_rev_1_0.glb
+    mesh_name: torso_link_rev_1_0
+    source_file: torso_link_rev_1_0.STL
     origin:
       xyz:
       - 0.0
@@ -1176,8 +1248,9 @@ links:
     iyz: 0.0
     izz: 1.0e-07
   visual:
-  - mesh: assets/g1/logo_link.STL
-    mesh_name: logo_link.STL
+  - mesh: assets/g1/logo_link.glb
+    mesh_name: logo_link
+    source_file: logo_link.STL
     origin:
       xyz:
       - 0.0
@@ -1193,10 +1266,13 @@ links:
       - 0.0
       - 0.0
     material: *id001
-    vendored: false
+    vendored: true
+    sha256: e7aa5f52176b583d4ebcaf7327c6d16df3f88843ea6c640a46d8a11bc0ae1127
+    bytes: 162600
   collision:
-  - mesh: assets/g1/logo_link.STL
-    mesh_name: logo_link.STL
+  - mesh: assets/g1/logo_link.glb
+    mesh_name: logo_link
+    source_file: logo_link.STL
     origin:
       xyz:
       - 0.0
@@ -1238,8 +1314,9 @@ links:
     iyz: -3.726e-06
     izz: 0.001807911
   visual:
-  - mesh: assets/g1/head_link.STL
-    mesh_name: head_link.STL
+  - mesh: assets/g1/head_link.glb
+    mesh_name: head_link
+    source_file: head_link.STL
     origin:
       xyz:
       - 0.0
@@ -1255,10 +1332,13 @@ links:
       - 0.0
       - 0.0
     material: *id001
-    vendored: false
+    vendored: true
+    sha256: 8a902385996157a9d80f4632a6c52712ea610b3e8b39cae913e963f19518f1d4
+    bytes: 494092
   collision:
-  - mesh: assets/g1/head_link.STL
-    mesh_name: head_link.STL
+  - mesh: assets/g1/head_link.glb
+    mesh_name: head_link
+    source_file: head_link.STL
     origin:
       xyz:
       - 0.0
@@ -1368,8 +1448,9 @@ links:
     iyz: 2.26e-05
     izz: 0.000423
   visual:
-  - mesh: assets/g1/left_shoulder_pitch_link.STL
-    mesh_name: left_shoulder_pitch_link.STL
+  - mesh: assets/g1/left_shoulder_pitch_link.glb
+    mesh_name: left_shoulder_pitch_link
+    source_file: left_shoulder_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -1385,10 +1466,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 80ca45dc5c3ffcb6401888b1778f4a1c13f19b2f42439bb93c33273b24f19132
+    bytes: 90684
   collision:
   - mesh: null
     mesh_name: null
+    source_file: null
     origin:
       xyz:
       - 0.0
@@ -1430,8 +1514,9 @@ links:
     iyz: -5.3e-06
     izz: 0.0003894
   visual:
-  - mesh: assets/g1/left_shoulder_roll_link.STL
-    mesh_name: left_shoulder_roll_link.STL
+  - mesh: assets/g1/left_shoulder_roll_link.glb
+    mesh_name: left_shoulder_roll_link
+    source_file: left_shoulder_roll_link.STL
     origin:
       xyz:
       - 0.0
@@ -1447,10 +1532,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 8c40b4cdb77a0b67488dfd4394d965df855ff762abc58e284f6de06174fdc858
+    bytes: 223160
   collision:
   - mesh: null
     mesh_name: null
+    source_file: null
     origin:
       xyz:
       - -0.004
@@ -1492,8 +1580,9 @@ links:
     iyz: -2.86e-05
     izz: 0.0004354
   visual:
-  - mesh: assets/g1/left_shoulder_yaw_link.STL
-    mesh_name: left_shoulder_yaw_link.STL
+  - mesh: assets/g1/left_shoulder_yaw_link.glb
+    mesh_name: left_shoulder_yaw_link
+    source_file: left_shoulder_yaw_link.STL
     origin:
       xyz:
       - 0.0
@@ -1509,10 +1598,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 98b1c94ddab9aac9f74af83923f618800942f8a6d8b044e3f517df203dac4763
+    bytes: 138536
   collision:
-  - mesh: assets/g1/left_shoulder_yaw_link.STL
-    mesh_name: left_shoulder_yaw_link.STL
+  - mesh: assets/g1/left_shoulder_yaw_link.glb
+    mesh_name: left_shoulder_yaw_link
+    source_file: left_shoulder_yaw_link.STL
     origin:
       xyz:
       - 0.0
@@ -1554,8 +1646,9 @@ links:
     iyz: -5.6e-06
     izz: 0.0004197
   visual:
-  - mesh: assets/g1/left_elbow_link.STL
-    mesh_name: left_elbow_link.STL
+  - mesh: assets/g1/left_elbow_link.glb
+    mesh_name: left_elbow_link
+    source_file: left_elbow_link.STL
     origin:
       xyz:
       - 0.0
@@ -1571,10 +1664,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 9c1923db2133b65faf3ccdb9d8d0552a2325bd08e14fe600cf14205e92074e19
+    bytes: 58236
   collision:
-  - mesh: assets/g1/left_elbow_link.STL
-    mesh_name: left_elbow_link.STL
+  - mesh: assets/g1/left_elbow_link.glb
+    mesh_name: left_elbow_link
+    source_file: left_elbow_link.STL
     origin:
       xyz:
       - 0.0
@@ -1616,8 +1712,9 @@ links:
     iyz: -1.23525e-09
     izz: 5.482106541e-05
   visual:
-  - mesh: assets/g1/left_wrist_roll_link.STL
-    mesh_name: left_wrist_roll_link.STL
+  - mesh: assets/g1/left_wrist_roll_link.glb
+    mesh_name: left_wrist_roll_link
+    source_file: left_wrist_roll_link.STL
     origin:
       xyz:
       - 0.0
@@ -1633,10 +1730,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 30ab9e84eae4344cf31ab0c158706972671f9bbfa709664e4924e26a189ffc15
+    bytes: 198412
   collision:
-  - mesh: assets/g1/left_wrist_roll_link.STL
-    mesh_name: left_wrist_roll_link.STL
+  - mesh: assets/g1/left_wrist_roll_link.glb
+    mesh_name: left_wrist_roll_link
+    source_file: left_wrist_roll_link.STL
     origin:
       xyz:
       - 0.0
@@ -1678,8 +1778,9 @@ links:
     iyz: 8.1417712e-07
     izz: 0.00042953697654
   visual:
-  - mesh: assets/g1/left_wrist_pitch_link.STL
-    mesh_name: left_wrist_pitch_link.STL
+  - mesh: assets/g1/left_wrist_pitch_link.glb
+    mesh_name: left_wrist_pitch_link
+    source_file: left_wrist_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -1695,10 +1796,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 6bfc4f6579448039389aebc8819eb4eeb42c90412bd0a5c080b2dedb3ad0349a
+    bytes: 60916
   collision:
-  - mesh: assets/g1/left_wrist_pitch_link.STL
-    mesh_name: left_wrist_pitch_link.STL
+  - mesh: assets/g1/left_wrist_pitch_link.glb
+    mesh_name: left_wrist_pitch_link
+    source_file: left_wrist_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -1740,8 +1844,9 @@ links:
     iyz: 4.3217198e-07
     izz: 3.928083826e-05
   visual:
-  - mesh: assets/g1/left_wrist_yaw_link.STL
-    mesh_name: left_wrist_yaw_link.STL
+  - mesh: assets/g1/left_wrist_yaw_link.glb
+    mesh_name: left_wrist_yaw_link
+    source_file: left_wrist_yaw_link.STL
     origin:
       xyz:
       - 0.0
@@ -1757,10 +1862,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 2da4ec06d7a3cdec3e74cbda8e4d04ff39fe0a91584a3e780b1573d3a7f9fc8f
+    bytes: 180816
   collision:
-  - mesh: assets/g1/left_wrist_yaw_link.STL
-    mesh_name: left_wrist_yaw_link.STL
+  - mesh: assets/g1/left_wrist_yaw_link.glb
+    mesh_name: left_wrist_yaw_link
+    source_file: left_wrist_yaw_link.STL
     origin:
       xyz:
       - 0.0
@@ -1802,8 +1910,9 @@ links:
     iyz: 3.30189743286e-06
     izz: 0.00021894770413514
   visual:
-  - mesh: assets/g1/left_rubber_hand.STL
-    mesh_name: left_rubber_hand.STL
+  - mesh: assets/g1/left_rubber_hand.glb
+    mesh_name: left_rubber_hand
+    source_file: left_rubber_hand.STL
     origin:
       xyz:
       - 0.0
@@ -1819,7 +1928,9 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 904148b6f4a28338f861f306deee0ef5bd173ef31bdfd9679558f40211c25d53
+    bytes: 1066228
   collision: []
 - name: right_shoulder_pitch_link
   parent: torso_link
@@ -1846,8 +1957,9 @@ links:
     iyz: -2.26e-05
     izz: 0.000423
   visual:
-  - mesh: assets/g1/right_shoulder_pitch_link.STL
-    mesh_name: right_shoulder_pitch_link.STL
+  - mesh: assets/g1/right_shoulder_pitch_link.glb
+    mesh_name: right_shoulder_pitch_link
+    source_file: right_shoulder_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -1863,10 +1975,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 7c3f0e55a5f11570217a693d6bff12be2eb9e7aa825184629adb1215331856b5
+    bytes: 90708
   collision:
   - mesh: null
     mesh_name: null
+    source_file: null
     origin:
       xyz:
       - 0.0
@@ -1908,8 +2023,9 @@ links:
     iyz: 5.3e-06
     izz: 0.0003894
   visual:
-  - mesh: assets/g1/right_shoulder_roll_link.STL
-    mesh_name: right_shoulder_roll_link.STL
+  - mesh: assets/g1/right_shoulder_roll_link.glb
+    mesh_name: right_shoulder_roll_link
+    source_file: right_shoulder_roll_link.STL
     origin:
       xyz:
       - 0.0
@@ -1925,10 +2041,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: ebc4af7104a2d94f0fbf84bfd049ed742368bf427150788fd506830d53cb9909
+    bytes: 223280
   collision:
   - mesh: null
     mesh_name: null
+    source_file: null
     origin:
       xyz:
       - -0.004
@@ -1970,8 +2089,9 @@ links:
     iyz: 2.86e-05
     izz: 0.0004354
   visual:
-  - mesh: assets/g1/right_shoulder_yaw_link.STL
-    mesh_name: right_shoulder_yaw_link.STL
+  - mesh: assets/g1/right_shoulder_yaw_link.glb
+    mesh_name: right_shoulder_yaw_link
+    source_file: right_shoulder_yaw_link.STL
     origin:
       xyz:
       - 0.0
@@ -1987,10 +2107,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 23127f25f986320d1a376214dc60ff4de43db62810395a1c424636b0216a83dc
+    bytes: 138776
   collision:
-  - mesh: assets/g1/right_shoulder_yaw_link.STL
-    mesh_name: right_shoulder_yaw_link.STL
+  - mesh: assets/g1/right_shoulder_yaw_link.glb
+    mesh_name: right_shoulder_yaw_link
+    source_file: right_shoulder_yaw_link.STL
     origin:
       xyz:
       - 0.0
@@ -2032,8 +2155,9 @@ links:
     iyz: 5.6e-06
     izz: 0.0004197
   visual:
-  - mesh: assets/g1/right_elbow_link.STL
-    mesh_name: right_elbow_link.STL
+  - mesh: assets/g1/right_elbow_link.glb
+    mesh_name: right_elbow_link
+    source_file: right_elbow_link.STL
     origin:
       xyz:
       - 0.0
@@ -2049,10 +2173,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 69cd0d8c3f2b648339c3d03ccbdae3cde2cbe55a4498a2b5493b3c37eb6230e9
+    bytes: 58240
   collision:
-  - mesh: assets/g1/right_elbow_link.STL
-    mesh_name: right_elbow_link.STL
+  - mesh: assets/g1/right_elbow_link.glb
+    mesh_name: right_elbow_link
+    source_file: right_elbow_link.STL
     origin:
       xyz:
       - 0.0
@@ -2094,8 +2221,9 @@ links:
     iyz: 1.23525e-09
     izz: 5.482106541e-05
   visual:
-  - mesh: assets/g1/right_wrist_roll_link.STL
-    mesh_name: right_wrist_roll_link.STL
+  - mesh: assets/g1/right_wrist_roll_link.glb
+    mesh_name: right_wrist_roll_link
+    source_file: right_wrist_roll_link.STL
     origin:
       xyz:
       - 0.0
@@ -2111,10 +2239,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: fe4468b483cc4093d41b05bd78a50a5f3a7cb0fbf0749ea4221a3698bd479c94
+    bytes: 198128
   collision:
-  - mesh: assets/g1/right_wrist_roll_link.STL
-    mesh_name: right_wrist_roll_link.STL
+  - mesh: assets/g1/right_wrist_roll_link.glb
+    mesh_name: right_wrist_roll_link
+    source_file: right_wrist_roll_link.STL
     origin:
       xyz:
       - 0.0
@@ -2156,8 +2287,9 @@ links:
     iyz: -8.1417712e-07
     izz: 0.00042953697654
   visual:
-  - mesh: assets/g1/right_wrist_pitch_link.STL
-    mesh_name: right_wrist_pitch_link.STL
+  - mesh: assets/g1/right_wrist_pitch_link.glb
+    mesh_name: right_wrist_pitch_link
+    source_file: right_wrist_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -2173,10 +2305,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: abfb27eb51fa3724a1471f800a13580d656374940be85093eddd1b0e9b830076
+    bytes: 57580
   collision:
-  - mesh: assets/g1/right_wrist_pitch_link.STL
-    mesh_name: right_wrist_pitch_link.STL
+  - mesh: assets/g1/right_wrist_pitch_link.glb
+    mesh_name: right_wrist_pitch_link
+    source_file: right_wrist_pitch_link.STL
     origin:
       xyz:
       - 0.0
@@ -2218,8 +2353,9 @@ links:
     iyz: -4.3217198e-07
     izz: 3.928083826e-05
   visual:
-  - mesh: assets/g1/right_wrist_yaw_link.STL
-    mesh_name: right_wrist_yaw_link.STL
+  - mesh: assets/g1/right_wrist_yaw_link.glb
+    mesh_name: right_wrist_yaw_link
+    source_file: right_wrist_yaw_link.STL
     origin:
       xyz:
       - 0.0
@@ -2235,10 +2371,13 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 5e0a174800319db556623153cc5f1ccd6e548862ab844baba910659340a40051
+    bytes: 191284
   collision:
-  - mesh: assets/g1/right_wrist_yaw_link.STL
-    mesh_name: right_wrist_yaw_link.STL
+  - mesh: assets/g1/right_wrist_yaw_link.glb
+    mesh_name: right_wrist_yaw_link
+    source_file: right_wrist_yaw_link.STL
     origin:
       xyz:
       - 0.0
@@ -2280,8 +2419,9 @@ links:
     iyz: -3.30189743286e-06
     izz: 0.00021894770413514
   visual:
-  - mesh: assets/g1/right_rubber_hand.STL
-    mesh_name: right_rubber_hand.STL
+  - mesh: assets/g1/right_rubber_hand.glb
+    mesh_name: right_rubber_hand
+    source_file: right_rubber_hand.STL
     origin:
       xyz:
       - 0.0
@@ -2297,7 +2437,9 @@ links:
       - 0.0
       - 0.0
     material: *id002
-    vendored: false
+    vendored: true
+    sha256: 1955645ef4d5ace21ea89f768a625aabf6137c49ccf41c09d25c503f28086346
+    bytes: 1045040
   collision: []
 joints:
 - name: pelvis_contour_joint
@@ -5029,17 +5171,18 @@ warnings:
   path: links[*].visual[*].mesh
   message: 35 个 mesh 只有引用、没有入库
   meshes:
-  - assets/g1/head_link.STL
-  - assets/g1/left_ankle_pitch_link.STL
-  - assets/g1/left_ankle_roll_link.STL
-  - assets/g1/left_elbow_link.STL
-  - assets/g1/left_hip_pitch_link.STL
-  - assets/g1/left_hip_roll_link.STL
-  - assets/g1/left_hip_yaw_link.STL
-  - assets/g1/left_knee_link.STL
+  - assets/g1/head_link.glb
+  - assets/g1/left_ankle_pitch_link.glb
+  - assets/g1/left_ankle_roll_link.glb
+  - assets/g1/left_elbow_link.glb
+  - assets/g1/left_hip_pitch_link.glb
+  - assets/g1/left_hip_roll_link.glb
+  - assets/g1/left_hip_yaw_link.glb
+  - assets/g1/left_knee_link.glb
 summary:
   links: 39
   joints: 38
   actuated_joints: 29
   actuators: 0
   total_mass: 33.34114202
+  visual_meshes_vendored: 35

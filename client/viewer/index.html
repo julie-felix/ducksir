@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ducksir · 数字描述查看器</title>
+<style>
+  :root {
+    --bg: #0f1216; --panel: #171c22; --line: #262e38; --text: #d8dee7;
+    --dim: #8b97a7; --accent: #4da3ff; --warn: #e0a33a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 13px/1.5 -apple-system, "Noto Sans SC", "PingFang SC", system-ui, sans-serif; }
+  #app { display: grid; grid-template-columns: 268px 1fr; height: 100%; }
+  @media (max-width: 760px) { #app { grid-template-columns: 1fr; grid-template-rows: 1fr 260px; } }
+  aside { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; padding: 12px; }
+  header { display: flex; gap: 8px; align-items: center; padding: 10px 12px;
+    border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+  header h1 { font-size: 13px; margin: 0 8px 0 0; font-weight: 600; letter-spacing: .02em; }
+  select, button {
+    background: #1e252d; color: var(--text); border: 1px solid var(--line);
+    border-radius: 6px; padding: 5px 9px; font: inherit; cursor: pointer;
+  }
+  button:hover, select:hover { border-color: var(--accent); }
+  #stage { position: relative; min-height: 0; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .sec { color: var(--dim); font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+    margin: 14px 0 6px; }
+  .row { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; color: var(--dim); }
+  .row b { color: var(--text); font-weight: 500; }
+  .joint { margin-bottom: 11px; }
+  .joint .name { display: flex; justify-content: space-between; font-size: 12px; }
+  .joint .name span:last-child { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .joint input[type=range] { width: 100%; accent-color: var(--accent); }
+  .tree { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px;
+    color: var(--dim); white-space: pre; line-height: 1.45; }
+  .warn { color: var(--warn); font-size: 11.5px; margin: 4px 0; }
+  #hint { position: absolute; left: 12px; bottom: 10px; color: var(--dim); font-size: 11.5px; }
+  #busy { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside>
+    <div class="sec">机器人</div>
+    <select id="robot"></select>
+    <div id="summary"></div>
+    <div class="sec">关节（拖动即预览）</div>
+    <div id="joints"></div>
+    <div class="sec">骨架</div>
+    <div class="tree" id="tree"></div>
+    <div class="sec">描述缺口</div>
+    <div id="warnings"></div>
+  </aside>
+  <div id="stage">
+    <header>
+      <h1>ducksir · 数字描述</h1>
+      <span style="flex:1"></span>
+      <label style="display:flex;gap:5px;align-items:center;color:var(--dim);font-size:12px">
+        <input type="checkbox" id="ground" checked /> 贴地
+      </label>
+      <button id="reset">回零</button>
+      <button id="fit">重置视角</button>
+    </header>
+    <canvas id="c"></canvas>
+    <div id="busy">加载中…</div>
+    <div id="hint">左键旋转 · 滚轮缩放 · 右键平移</div>
+  </div>
+</div>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/" } }
+</script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
