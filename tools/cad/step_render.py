@@ -15,7 +15,7 @@ import math
 import os
 import re
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 ENTITY_RE = re.compile(r"#(\d+)\s*=\s*([A-Z0-9_]+)\s*\((.*)\)\s*$", re.S)
 PALETTE = [(235, 110, 110), (110, 170, 235), (120, 205, 130), (240, 185, 80),
@@ -203,7 +203,7 @@ def render_assembly(size, solids, view, shade=True):
     return img
 
 
-def rasterize(solids, view, W=900, H=900, annotations=None):
+def rasterize(solids, view, W=900, H=900, annotations=None, base_override=None, label_size=26):
     """真·z-buffer 软件光栅化：面三角化后逐像素比较深度，画出实体感。"""
     from array import array
 
@@ -224,7 +224,7 @@ def rasterize(solids, view, W=900, H=900, annotations=None):
     tris = []  # (p0,p1,p2,color)
     allp = []
     for idx, (_edges, loops) in enumerate(solids):
-        base = PALETTE[idx % len(PALETTE)]
+        base = base_override or PALETTE[idx % len(PALETTE)]
         for loop in loops:
             for i in range(1, len(loop) - 1):
                 n = newell([loop[0], loop[i], loop[i + 1]])
@@ -282,12 +282,17 @@ def rasterize(solids, view, W=900, H=900, annotations=None):
     img = Image.frombytes("RGB", (W, H), bytes(buf))
     if annotations:
         d = ImageDraw.Draw(img)
+        try:
+            font = ImageFont.load_default(size=label_size)
+        except TypeError:
+            font = ImageFont.load_default()
         for p0, p1, color, label in annotations:
             a, b = to_px(p0), to_px(p1)
             d.line([(a[0], a[1]), (b[0], b[1])], fill=color, width=3)
-            mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
-            d.rectangle([mx - 2, my - 9, mx + 8 * len(label) + 2, my + 8], fill=(10, 12, 16))
-            d.text((mx, my - 7), label, fill=(255, 255, 255))
+            tx, ty = b[0] + 6, b[1] - label_size * 0.6
+            bbox = d.textbbox((tx, ty), label, font=font)
+            d.rectangle([bbox[0] - 3, bbox[1] - 2, bbox[2] + 3, bbox[3] + 2], fill=(8, 10, 14))
+            d.text((tx, ty), label, fill=color, font=font)
     return img
 
 

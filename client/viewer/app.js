@@ -289,36 +289,63 @@ async function showStatic(meta) {
   const box = new THREE.Box3().setFromObject(gltf.scene);
   const size = box.getSize(new THREE.Vector3());
   robotGroup.position.y -= box.min.y;
-  // 轴线叠加：毫米 → 米，长度按 60 mm 半长画；标签用 canvas 贴图做 Sprite
+  // 轴线叠加：毫米 → 米；点侧栏条目可以「只看这一条」，静态图看不清的靠这个解决
   if (meta.axes && meta.axes.length) {
     const group = new THREE.Group();
+    window.__axisObjs = new Map();
     for (const a of meta.axes) {
       const p = new THREE.Vector3(a.point[0] / 1000, a.point[1] / 1000, a.point[2] / 1000);
       const d = new THREE.Vector3(a.dir[0], a.dir[1], a.dir[2]).normalize();
-      const half = 0.06;
+      const half = 0.09;
       const geo = new THREE.BufferGeometry().setFromPoints([
         p.clone().addScaledVector(d, -half), p.clone().addScaledVector(d, half)]);
-      group.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color: a.color })));
+      const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: a.color, linewidth: 2 }));
       const c = document.createElement('canvas');
-      c.width = 128; c.height = 64;
+      c.width = 160; c.height = 80;
       const ctx = c.getContext('2d');
-      ctx.fillStyle = 'rgba(10,12,16,0.75)'; ctx.fillRect(0, 0, 128, 64);
-      ctx.fillStyle = a.color; ctx.font = 'bold 40px sans-serif';
-      ctx.fillText(a.label, 14, 46);
+      ctx.fillStyle = 'rgba(8,10,14,0.85)'; ctx.fillRect(0, 0, 160, 80);
+      ctx.fillStyle = a.color; ctx.font = 'bold 46px monospace';
+      ctx.fillText(a.label, 10, 56);
       const tex = new THREE.CanvasTexture(c);
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
-      sprite.scale.set(0.05, 0.025, 1);
-      sprite.position.copy(p.clone().addScaledVector(d, half * 1.05));
+      sprite.scale.set(0.075, 0.0375, 1);
+      sprite.position.copy(p.clone().addScaledVector(d, half));
+      group.add(line);
       group.add(sprite);
+      window.__axisObjs.set(a.label, { line, sprite, base: a.color });
     }
     robotGroup.add(group);
-    // 关掉 Z-up 旋转（GLB 已经是 Y 上）
   }
 
-  $('joints').innerHTML = (meta.axes || []).length
-    ? meta.axes.map((a) => `<div class="row" style="font-size:11.5px"><span style="color:${a.color}">${a.label}</span>` +
-        `<b>r=${a.r_mm}mm</b></div>`).join('')
+  // 默认只显示第一条：这个机构 17 条轴挤在 10 cm 里，全显示必然重叠
+  let selectedAxis = (meta.axes && meta.axes[0] && meta.axes[0].label) || null;
+  const axisRows = (meta.axes || []).map((a) =>
+    `<div class="row axis-row" data-axis="${a.label}" style="cursor:pointer;font-size:11.5px">` +
+    `<span style="color:${a.color}">${a.label}</span><b>r=${a.r_mm}mm</b></div>`).join('');
+  $('joints').innerHTML = axisRows
+    ? '<div class="row" style="font-size:11px">点一条 = 只看它，再点恢复</div>' + axisRows
     : '<div class="row">静态模型（无关节）</div>';
+  function applyAxisSelection() {
+    for (const [name, o] of window.__axisObjs) {
+      const on = !selectedAxis || selectedAxis === name;
+      o.line.material.color.set(on ? o.base : '#232a33');
+      o.sprite.visible = on;
+      o.line.scale.setScalar(on ? 1 : 0.55);
+    }
+    for (const row of document.querySelectorAll('.axis-row')) {
+      const on = row.dataset.axis === selectedAxis;
+      row.style.background = on ? 'rgba(77,163,255,0.14)' : 'transparent';
+      row.style.borderRadius = '4px';
+    }
+  }
+  for (const row of document.querySelectorAll('.axis-row')) {
+    row.addEventListener('click', () => {
+      const label = row.dataset.axis;
+      selectedAxis = selectedAxis === label ? null : label;
+      applyAxisSelection();
+    });
+  }
+  applyAxisSelection();
   $('mechanisms').innerHTML = '<div class="row">—</div>';
   $('tree').textContent = '（静态 GLB，无骨架）';
   $('summary').innerHTML = `
