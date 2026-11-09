@@ -1,6 +1,20 @@
 {
  "robots": [
   {
+   "id": "ankle-rig-g1",
+   "name": "g1_ankle",
+   "file": "ankle-rig-g1.json",
+   "links": 9,
+   "joints": 8
+  },
+  {
+   "id": "ankle-rig-tg10",
+   "name": "TG10-00-ankle",
+   "file": "ankle-rig-tg10.json",
+   "links": 7,
+   "joints": 4
+  },
+  {
    "id": "duck-hd1910",
    "name": "microduck",
    "file": "duck-hd1910.json",

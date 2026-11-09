@@ -209,7 +209,33 @@ python3 tools/cad/mechanism.py "<x.stp>" --out /tmp/cadout   # → mechanism.md 
 3. **牛顿残差要对齐雅可比的形式**：用「杆长差」配「平方约束的雅可比」，步长被放大 2L 倍，80 次迭代全不收敛。
 
 
-### 3.9 下一步（几何 → `f`）
+### 3.9 coupling 回填（2026-11-10）
+
+`g1-29dof` 的两个踝从 `unresolved` 改成 `analytic`，几何写在
+`contract/robot/specs/g1-parallel.yaml` 的 `mechanisms[].coupling.params`（踝 pitch 关节系，单位 m）：
+
+| 机构 | 状态 | 依据 |
+|---|---|---|
+| `ankle_left` | analytic | rig 的几何（讲者按 G1 踝坐标系装配）。**锚点：** rig 的 `roll_link` 位移 `(0,0,-0.017558)` 与 G1 URDF 的 `left_ankle_roll_joint` 完全一致 |
+| `ankle_right` | analytic | `ankle_left` 关于 `y=0` 的几何镜像 |
+| `waist_pitch_roll` | **unresolved** | 腰部与踝不同构，且没有腰部 CAD，映射不能照抄 |
+
+`params` 的字段就是解算器要的四个量：每条链 `a`（电机轴心）、`axis`（转轴方向）、`v`（销相对轴心的点）、
+`rod`（杆长）；平台给 `pitch/roll` 的轴与支点、以及两个销在零位的点 `c0`。
+
+**三处 `assumed` 必须一直挂着**（写进实体，不是写在注释里）：
+
+1. `crank_radius_from_rig` —— 曲柄半径与电机轴位置取自 rig，真机未核；
+2. `roll_sign` —— 左右 roll 的符号约定，右侧写关节时取反；
+3. `ab_mapping` —— rig 的 `right/left_motor` 与 SDK 的 A/B 谁对谁，未核实（暂按 `chains` 顺序 = index 4 / 5）。
+
+C6 现在会检查 analytic 的四件事：恰好两条链、`a/axis/v` 都是三个数、`rod` 为正、平台字段齐全，
+并且**必须带 `assumed`**——没有例外就说明该写成 `measured`，不允许含糊。
+
+查看器不再单独存一份几何：`initParallelOverlay()` 直接读实体里的 `coupling.params`。
+
+
+### 3.10 下一步（几何 → `f`）
 
 零件身份一确认，就能提「铰点表」：每个圆柱面 → (轴点, 轴向, 半径) → 按配对关系连成机构 →
 量出曲柄长、连杆长、平台两孔距 → 写 2-DOF 平面并联的闭式解。这些数全部来自同一个坐标系，

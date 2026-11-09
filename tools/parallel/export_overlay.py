@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""导出「并联踝叠加层」数据：几何（挂在 G1 踝 pitch link 坐标系里）+ MuJoCo 查表。
+"""一次性推导工具：把 rig 的连杆几何算成「踝 pitch 系」里的参数。
+
+**产物已经写进** `contract/robot/specs/g1-parallel.yaml` 的 `mechanisms[].coupling.params`，
+查看器现在直接读实体，不再读这里导出的 JSON。保留这个脚本是为了说明那组数字怎么来的、以及能重算。
+
+导出「并联踝叠加层」数据：几何（挂在 G1 踝 pitch link 坐标系里）+ MuJoCo 查表。
 
     PYTHONPATH=/tmp/pylibs python3 tools/parallel/export_overlay.py \
         contract/robot/types/ankle-rig-g1.yaml /tmp/rig_g1_nomesh.xml \

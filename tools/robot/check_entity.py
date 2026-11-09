@@ -146,7 +146,32 @@ def check(doc: dict) -> list[tuple[str, bool, str]]:
         coupling = (m.get("coupling") or {}).get("kind")
         if coupling == "unresolved":
             infos.append(f"{mid}: coupling 未解")
-        elif coupling not in ("analytic", "table"):
+        elif coupling == "analytic":
+            prm = (m.get("coupling") or {}).get("params") or {}
+            chs = prm.get("chains") or []
+            if len(chs) != 2:
+                problems.append(f"{mid}: analytic 需要恰好 2 条链，实际 {len(chs)}")
+            for k, ch in enumerate(chs):
+                for key in ("a", "axis", "v"):
+                    val = ch.get(key)
+                    if not isinstance(val, list) or len(val) != 3:
+                        problems.append(f"{mid}: chains[{k}].{key} 必须是 3 个数")
+                if not isinstance(ch.get("rod"), (int, float)) or ch["rod"] <= 0:
+                    problems.append(f"{mid}: chains[{k}].rod 必须是正数")
+            plat = prm.get("platform") or {}
+            for key in ("pitch_axis", "pitch_pivot", "roll_axis", "roll_pivot"):
+                if not isinstance(plat.get(key), list) or len(plat[key]) != 3:
+                    problems.append(f"{mid}: platform.{key} 必须是 3 个数")
+            c0 = plat.get("c0") or []
+            if len(c0) != 2 or any(len(c) != 3 for c in c0):
+                problems.append(f"{mid}: platform.c0 必须是 2 个三元组")
+            if not (m.get("coupling") or {}).get("assumed"):
+                problems.append(f"{mid}: analytic 但没有 assumed —— 参数若全是实测就该写 measured，别混")
+        elif coupling == "table":
+            prm = (m.get("coupling") or {}).get("params") or {}
+            if not (prm.get("axes") or prm.get("file")):
+                problems.append(f"{mid}: table 需要 params.axes 或 params.file")
+        else:
             problems.append(f"{mid}: coupling.kind 非法 {coupling!r}")
     detail = "; ".join(problems) if problems else (
         f"{len(seen_mech)} 个并联机构" + (f"（{len(infos)} 个 coupling 未解：{'、'.join(infos)}）" if infos else ""))

@@ -52,9 +52,28 @@ mechanisms:
       measured_from: "tools/cad/mechanism.py（STEP 共轴判据，2026-11-09）"
       unknown: [which_motor_drives_which_crank, crank_radius_mm]
     coupling:
-      kind: unresolved
-      anchor_zero: {A: 0.0, B: 0.0, roll: 0.0, pitch: 0.0}
-      todo: 连杆长度已量出(156.9mm)，还缺曲柄半径与哪台电机驱动哪根，需实物或官方装配图
+      kind: analytic
+      params:
+        frame: ankle_pitch          # 原点=踝 pitch 关节中心，轴对齐 G1 ankle_pitch_link
+        units: m
+        # chains 的顺序 = [index 4, index 5]；rig 里对应的关节名见下（与 A/B 的对应未核实）
+        motor_joints: [right_motor_joint, left_motor_joint]
+        chains:
+          - {a: [0.022, 0, 0.21587], axis: [1, 0, 0], v: [0.0175, -0.016359, -0.004624], rod: 0.2215}
+          - {a: [0.022, 0, 0.15087], axis: [1, 0, 0], v: [0.013, 0.016529, -0.003975], rod: 0.157}
+        platform:
+          pitch_axis: [0, 1, 0]
+          pitch_pivot: [0, 0, 0]
+          roll_axis: [1, 0, 0]
+          roll_pivot: [0, 0, -0.017558]
+          c0: [[0.022, -0.015, -0.009558], [0.022, 0.015, -0.009558]]
+      source: "ankle-rig-g1（讲者按 G1 踝坐标系装配的 rig，MIT）；其 roll_link 位移 (0,0,-0.017558) 与 G1 URDF 的 left_ankle_roll_joint 完全一致"
+      assumed:
+        - "crank_radius_from_rig: 曲柄半径与电机轴位置取自 rig，真机未核"
+        - "roll_sign: 左侧 roll 与 URDF 的 left_ankle_roll_joint 同向（未在实物上验）"
+        - "ab_mapping: rig 的 right/left_motor 与 SDK 的 A/B 谁对谁，未核实；暂按 chains 顺序 = [index 4, index 5]"
+      anchor_zero: {A: 0, B: 0, roll: 0, pitch: 0}
+      todo: "曲柄半径 / 电机轴位置需实物或官方装配图确认后替换 assumed"
 
   - id: ankle_right
     kind: parallel_2dof
@@ -69,9 +88,28 @@ mechanisms:
           - {ab: B, index: 10}
           - {ab: A, index: 11}
     coupling:
-      kind: unresolved
-      anchor_zero: {A: 0.0, B: 0.0, roll: 0.0, pitch: 0.0}
-      todo: 同 ankle_left；左右是否镜像未核实
+      kind: analytic
+      params:
+        frame: ankle_pitch          # 原点=踝 pitch 关节中心，轴对齐 G1 ankle_pitch_link
+        units: m
+        # chains 的顺序 = [index 4, index 5]；rig 里对应的关节名见下（与 A/B 的对应未核实）
+        motor_joints: [right_motor_joint, left_motor_joint]
+        chains:
+          - {a: [0.022, 0, 0.21587], axis: [1, 0, 0], v: [0.0175, 0.016359, -0.004624], rod: 0.2215}
+          - {a: [0.022, 0, 0.15087], axis: [1, 0, 0], v: [0.013, -0.016529, -0.003975], rod: 0.157}
+        platform:
+          pitch_axis: [0, 1, 0]
+          pitch_pivot: [0, 0, 0]
+          roll_axis: [1, 0, 0]
+          roll_pivot: [0, 0, -0.017558]
+          c0: [[0.022, 0.015, -0.009558], [0.022, -0.015, -0.009558]]
+      source: "ankle_left 关于矢状面 y=0 的镜像（几何镜像，未在实物上确认）"
+      assumed:
+        - "left_right_mirror: 右侧按左侧关于 y=0 镜像"
+        - "roll_sign: 右侧写关节时 roll 取反，需实物确认"
+        - "ab_mapping: 同 ankle_left，未核实"
+      anchor_zero: {A: 0, B: 0, roll: 0, pitch: 0}
+      todo: "确认右侧是否真为镜像；确认 roll 符号"
 
   - id: waist_pitch_roll
     kind: parallel_2dof
@@ -87,8 +125,8 @@ mechanisms:
           - {ab: B, index: 14}
     coupling:
       kind: unresolved
-      anchor_zero: {A: 0.0, B: 0.0, roll: 0.0, pitch: 0.0}
-      todo: 腰部连杆与踝不同构，映射不能照抄踝
+      anchor_zero: {A: 0, B: 0, roll: 0, pitch: 0}
+      todo: 腰部连杆与踝不同构，且没有腰部 CAD；映射不能照抄踝
 
 presets:
   ab:
