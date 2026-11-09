@@ -147,7 +147,7 @@ python3 tools/robot/compare_entities.py contract/robot/types/g1-29dof.yaml /tmp/
 4. **原始 STL 不进库**（41 MB），只入库转换后的 GLB（22 MB）；`fetch_meshes.py` 可重拉，manifest 里有 sha256。
 5. **`bus` 块空着**：等 SDK 的统一 interface 规范。
 6. **执行器单位**：`kp` 记成 `N*m/rad`、力限幅用 `N*m`；`ctrlrange` 对 position 执行器是角度，对 motor 是力矩——现在没区分，导 G1 的 `motor` 时会混。
-7. **查看器还没进 DSH 面板**：现在是 `client/viewer/` 静态页，挂在插件的面板里需要 host 侧一条静态路由 + 客户端 bundle。
+7. ~~查看器还没进 DSH 面板~~ → 2026-11-09 已进：host 侧 `/ducksir-static` 只读前缀路由 + 客户端「机器人」面板（iframe），见 `client/README.md`。
 
 ## 相关
 

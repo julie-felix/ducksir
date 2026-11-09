@@ -7,10 +7,12 @@
   "main": "./src/index.mjs",
   "exports": {
     ".": "./src/index.mjs",
+    "./client": "./lib/client.js",
     "./package.json": "./package.json"
   },
   "files": [
     "src",
+    "lib",
     "cordis.patch.yml",
     "README.md"
   ],
@@ -20,10 +22,13 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
     }
   },
   "scripts": {
-    "check": "node --check src/index.mjs",
+    "check": "node --check src/index.mjs && node --check lib/client.js",
     "smoke": "node scripts/smoke.mjs"
   },
   "license": "MIT"
