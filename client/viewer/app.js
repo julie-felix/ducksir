@@ -665,7 +665,7 @@ function parMakeUI(side, host) {
     paint();
   }));
 
-  side.state = state; side.paint = paint;
+  side.state = state; side.paint = paint; side.wrap = wrap;
   paint();
 }
 
@@ -715,11 +715,13 @@ async function initParallelOverlay(data) {
     if (childLink) side.group.position.set(...childLink.xyz);
     current.joints.get(pitchJoint).obj.parent.add(side.group);
 
+    side.traceFile = params.mujoco_trace || null;
     parMakeUI(side, panel);
     PAR.sides[mech.id] = side;
   }
   if (!Object.keys(PAR.sides).length) { sec.style.display = 'none'; panel.style.display = 'none'; return; }
 
+  await parSetupTraces(panel);
   const tbox = document.getElementById('translucent');
   if (tbox && tbox.checked) setTranslucent(true);
   const qs = new URLSearchParams(location.search);
@@ -745,6 +747,117 @@ async function initParallelOverlay(data) {
           'err=', Math.max(Math.abs(back[0] - x[0]), Math.abs(back[1] - x[1])).toExponential(2));
       }
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// MuJoCo 对照：直接在这台机器人上播 MuJoCo 的动力学轨迹，叠加层画我们的解。
+// 数据来自 tools/parallel/export_viz.py（同一串电机角 θ(t)，两边各自算 x）。
+// ---------------------------------------------------------------------------
+const PAR_TRACE = { cache: new Map(), playing: false, t: 0 };
+
+async function parSetupTraces(panel) {
+  const sides = Object.values(PAR.sides).filter((s) => s.traceFile);
+  if (!sides.length) return;
+  for (const side of sides) {
+    if (!PAR_TRACE.cache.has(side.traceFile)) {
+      try {
+        PAR_TRACE.cache.set(side.traceFile,
+          await (await fetch(`./data/${side.traceFile}`)).json());
+      } catch (e) { console.warn('MuJoCo 轨迹缺失', side.traceFile, e); continue; }
+    }
+    side.trace = PAR_TRACE.cache.get(side.traceFile);
+    side.trace.idx = 0;
+    side.trace.on = false;
+
+    const box = document.createElement('div');
+    box.className = 'par-trace';
+    box.innerHTML = `
+      <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:#9aa6b5">
+        <input type="checkbox" data-trace-on> MuJoCo 对照（${side.trace.samples.length} 帧）
+      </label>
+      <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+        <button data-trace-play style="padding:2px 8px;font-size:12px">播放</button>
+        <input type="range" data-trace-seek min="0" max="${side.trace.samples.length - 1}" value="0" style="flex:1"/>
+      </div>
+      <div class="par-out" data-trace-out></div>`;
+    panel.appendChild(box);
+    side.traceNode = box;
+
+    box.querySelector('[data-trace-on]').addEventListener('change', (e) => {
+      side.trace.on = e.target.checked;
+      for (const k of box.querySelectorAll('.par-side input, input')) k.disabled = side.trace.on;
+      if (side.trace.on) { parTraceApply(side); PAR_TRACE.playing = true; box.querySelector('[data-trace-play]').textContent = '暂停'; }
+      else { PAR_TRACE.playing = false; side.paint(); }
+    });
+    box.querySelector('[data-trace-play]').addEventListener('click', () => {
+      PAR_TRACE.playing = !PAR_TRACE.playing;
+      box.querySelector('[data-trace-play]').textContent = PAR_TRACE.playing ? '暂停' : '播放';
+    });
+    box.querySelector('[data-trace-seek]').addEventListener('input', (e) => {
+      side.trace.idx = +e.target.value;
+      parTraceApply(side);
+    });
+  }
+  // ?trace=N：自动打开 MuJoCo 对照并停在第 N 帧（截图/分享用）
+  const tq = new URLSearchParams(location.search).get('trace');
+  if (tq !== null) {
+    const frame = Math.max(0, parseInt(tq, 10) || 0);
+    for (const side of sides) {
+      if (!side.traceNode) continue;
+      side.trace.on = true;
+      side.trace.idx = Math.min(frame, side.trace.samples.length - 1);
+      const cb = side.traceNode.querySelector('[data-trace-on]');
+      cb.checked = true;
+      parTraceApply(side);
+    }
+    PAR_TRACE.playing = false;
+  }
+  // 播放时钟
+  let last = performance.now();
+  const tick = (now) => {
+    const dt = (now - last) / 1000; last = now;
+    if (PAR_TRACE.playing) {
+      PAR_TRACE.t += dt;
+      if (PAR_TRACE.t > 1 / 25) {
+        PAR_TRACE.t = 0;
+        for (const side of Object.values(PAR.sides)) {
+          if (!side.trace || !side.trace.on) continue;
+          side.trace.idx = (side.trace.idx + 1) % side.trace.samples.length;
+          parTraceApply(side);
+        }
+      }
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+/** 某一帧：模型按 MuJoCo 的位姿动，叠加层画我们的解，并显示差值。 */
+function parTraceApply(side) {
+  const s = side.trace.samples[side.trace.idx];
+  if (!s) return;
+  applyJointPair(side, [s.mj.roll, s.mj.pitch]);          // 模型 = MuJoCo
+  parApply(side, s.th, [s.ours.roll, s.ours.pitch]);      // 叠加层 = 我们
+  const dr = s.ours.roll - s.mj.roll, dp = s.ours.pitch - s.mj.pitch;
+  side.traceNode.querySelector('[data-trace-out]').innerHTML =
+    `t=${s.t.toFixed(2)}s · MuJoCo roll/pitch `
+    + `<b>${(s.mj.roll * 180 / Math.PI).toFixed(2)}°/${(s.mj.pitch * 180 / Math.PI).toFixed(2)}°</b><br>`
+    + `<span style="color:#5ad1a0">我们</span> `
+    + `${(s.ours.roll * 180 / Math.PI).toFixed(2)}°/${(s.ours.pitch * 180 / Math.PI).toFixed(2)}° · `
+    + `差 <b>${(Math.max(Math.abs(dr), Math.abs(dp)) * 1e3).toFixed(2)} mrad</b>`;
+  side.traceNode.querySelector('[data-trace-seek]').value = String(side.trace.idx);
+  // 四个滑条跟着显示「我们的解」，让人一眼看出两边各是多少
+  side.state.th = [...s.th];
+  side.state.x = [s.ours.roll, s.ours.pitch];
+  const inputs = [...(side.wrap || document).querySelectorAll('input[data-k]')];
+  for (const el of inputs) {
+    const k = +el.dataset.k;
+    const v = k < 2 ? s.th[k] : (k === 2 ? s.ours.roll : s.ours.pitch);
+    const degv = (v * 180 / Math.PI).toFixed(1);
+    el.value = degv;
+    const out = el.parentElement.querySelector('[data-v]');
+    if (out) out.textContent = `${degv}°`;
   }
 }
 

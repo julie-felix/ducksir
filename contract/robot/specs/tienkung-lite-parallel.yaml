@@ -23,6 +23,7 @@ mechanisms:
         frame: ankle_pitch
         units: m
         passive_pr: true      # 两个踝关节是被动的，驱动来自电机 + 连杆
+        mujoco_trace: parallel-tg10.json   # MuJoCo 轨迹（rig 的几何）
         ab_unresolved: true   # AB 槽位与关节名未定，先只给 PR→电机角的映射
         chains:
           - {a: [0, -0.043247, 0.14], axis: [0, 1, 0], v: [-0.055821, 0, 0.022], rod: 0.14}
@@ -57,6 +58,7 @@ mechanisms:
         units: m
         mirror: true
         passive_pr: true
+        mujoco_trace: parallel-tg10.json
         ab_unresolved: true
         chains:
           - {a: [0, 0.043247, 0.14], axis: [0, 1, 0], v: [-0.055821, 0, 0.022], rod: 0.14}

@@ -9,25 +9,25 @@
 
 阈值来自计划 Q9：PR 误差 ≤ 1e-4 rad。tg10 通过；g1 未通过，原因见计划文档 §3.8。
 
-## 可视化（左边解算 / 右边 MuJoCo）
+## MuJoCo 对照（在机器人页面里）
 
-打开：
+对照不再单独开页，直接就在查看器里：侧栏每个并联机构下面有「**MuJoCo 对照（400 帧）**」。
 
-```
-https://100.110.238.101:3080/ducksir-static/client/viewer/parallel.html
-```
+- 勾上之后**模型按 MuJoCo 的位姿动**，叠加层（推杆/销/平台）画的是**我们的解**；
+- 时间轴、播放/暂停都在那里，读数给出这一帧两边的 roll/pitch 与差值（典型 0.5 mrad）；
+- 四个滑条会同步显示我们的解，方便对照；
+- URL 参数 `?trace=120` 可以直接钉在某一帧。
 
-同一串电机角 θ(t) 同时喂两边：左边平台的位姿由我们的解算给出，右边直接用 MuJoCo 报的位姿。
-两边的推杆销 B、平台点 C 都画出来，所以能直接看见差别在哪。右上角实时显示两边的 roll/pitch 与**杆长误差**
-（我们 0 nm，MuJoCo 是 µm 级），下方是两条曲线的对比。
-
-数据由 `tools/parallel/export_viz.py` 生成：
+轨迹数据由 `tools/parallel/export_viz.py` 生成（同一串电机角 θ(t) 喂两边）：
 
 ```bash
 PYTHONPATH=/tmp/pylibs python3 tools/parallel/export_viz.py \
     contract/robot/types/ankle-rig-tg10.yaml /tmp/rig_tg10_nomesh.xml \
     -o client/viewer/data/parallel-tg10.json
 ```
+
+数据挂在 spec 的 `coupling.params.mujoco_trace` 上：G1 两个踝用 `parallel-g1.json`，
+天工 Lite 两个踝用 `parallel-tg10.json`（几何来自 rig，标 assumed）。
 
 ## 实时叠加层（在 G1 模型上拖 A/B）
 

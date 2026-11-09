@@ -2080,6 +2080,7 @@ mechanisms:
       frame: ankle_pitch
       units: m
       passive_pr: true
+      mujoco_trace: parallel-tg10.json
       ab_unresolved: true
       chains:
       - a:
@@ -2163,6 +2164,7 @@ mechanisms:
       units: m
       mirror: true
       passive_pr: true
+      mujoco_trace: parallel-tg10.json
       ab_unresolved: true
       chains:
       - a:
