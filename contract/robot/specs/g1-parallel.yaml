@@ -25,6 +25,13 @@ cad:
   note: 7 个实体、无装配树、无零件名；按包围盒判读见 docs/plans/2026-11-09-parallel-mechanism.md
   redistributable: unknown
 
+# 拓扑（2026-11-09 从官方 CAD 的几何量出：共轴判据 + 孔心距）
+# 数据来源：tools/cad/mechanism.py（跨零件共轴的销只有三根）
+#   P7  = 连杆 1 + 销 3            → 连杆下端
+#   P8  = 连杆 1 + 销 2 + 电机座 6 → 连杆上端（在电机座上）
+#   P12 = 平台 4 + 小腿 7          → 踝的转轴
+# 由此：连杆两销中心距 156.9 mm；两个电机轴(P17/P21)间距 65.0 mm；平台-小腿共用 P12。
+# 仍未知：哪个电机驱动哪根曲柄、曲柄半径。这两项需要实物或官方装配图，几何反推会变成编。
 mechanisms:
   - id: ankle_left
     kind: parallel_2dof
@@ -38,10 +45,16 @@ mechanisms:
         motors:
           - {ab: B, index: 4, note: 同一槽位在 PR 模式下叫 L_LEG_ANKLE_PITCH}
           - {ab: A, index: 5, note: 同一槽位在 PR 模式下叫 L_LEG_ANKLE_ROLL}
+    topology:
+      chain: motor -> link -> platform
+      pins: {lower: P7, upper: P8, platform_pivot: P12}
+      link_center_distance_mm: 156.9
+      measured_from: "tools/cad/mechanism.py（STEP 共轴判据，2026-11-09）"
+      unknown: [which_motor_drives_which_crank, crank_radius_mm]
     coupling:
       kind: unresolved
       anchor_zero: {A: 0.0, B: 0.0, roll: 0.0, pitch: 0.0}
-      todo: 需要连杆几何（CAD 无装配树）+ 真机扫点标定，才谈得上解析解或查表
+      todo: 连杆长度已量出(156.9mm)，还缺曲柄半径与哪台电机驱动哪根，需实物或官方装配图
 
   - id: ankle_right
     kind: parallel_2dof

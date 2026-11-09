@@ -3473,6 +3473,17 @@ mechanisms:
       - ab: A
         index: 5
         note: 同一槽位在 PR 模式下叫 L_LEG_ANKLE_ROLL
+  topology:
+    chain: motor -> link -> platform
+    pins:
+      lower: P7
+      upper: P8
+      platform_pivot: P12
+    link_center_distance_mm: 156.9
+    measured_from: tools/cad/mechanism.py（STEP 共轴判据，2026-11-09）
+    unknown:
+    - which_motor_drives_which_crank
+    - crank_radius_mm
   coupling:
     kind: unresolved
     anchor_zero:
@@ -3480,7 +3491,7 @@ mechanisms:
       B: 0.0
       roll: 0.0
       pitch: 0.0
-    todo: 需要连杆几何（CAD 无装配树）+ 真机扫点标定，才谈得上解析解或查表
+    todo: 连杆长度已量出(156.9mm)，还缺曲柄半径与哪台电机驱动哪根，需实物或官方装配图
 - id: ankle_right
   kind: parallel_2dof
   mount: right_knee_link

@@ -389,6 +389,24 @@ async function show(meta) {
   $('busy').style.display = 'none';
 }
 
+/** 一键切到标准视角：alongX（沿销轴看）/ alongY（侧看）/ top（俯视）。 */
+function setView(kind) {
+  const box = new THREE.Box3().setFromObject(robotGroup);
+  if (box.isEmpty()) return;
+  const c = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const dist = Math.max(size.x, size.y, size.z) * 1.9;
+  const dir = kind === 'alongX' ? new THREE.Vector3(1, 0, 0)
+    : kind === 'alongY' ? new THREE.Vector3(0, 1, 0)
+      : new THREE.Vector3(0, 0, 1);
+  camera.position.copy(c).addScaledVector(dir, dist);
+  camera.up.set(0, kind === 'top' ? 1 : 0, kind === 'top' ? 0 : 1);
+  if (kind === 'top') camera.up.set(0, 1, 0);
+  camera.lookAt(c);
+  controls.target.copy(c);
+  controls.update();
+}
+
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
@@ -419,6 +437,10 @@ function animate() {
     }
   });
   $('fit').addEventListener('click', () => fitView());
+  for (const [id, kind] of [['view-x', 'alongX'], ['view-y', 'alongY'], ['view-top', 'top']]) {
+    const el = $(id);
+    if (el) el.addEventListener('click', () => setView(kind));
+  }
   $('ground').addEventListener('change', (e) => {
     groundClamp = e.target.checked;
     if (!current) return;
