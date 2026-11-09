@@ -68,3 +68,15 @@ https://100.110.238.101:3080/ducksir-static/client/viewer/index.html?robot=ankle
 - 侧栏会标「N 项假设」，点开 spec 能看到具体是哪几条。
 
 两个 rig 的 spec 在 `contract/robot/specs/ankle-rig-parallel.yaml`，按机型 id 分组。
+
+## 天工 Lite（官方 URDF）
+
+```
+https://100.110.238.101:3080/ducksir-static/client/viewer/index.html?robot=tienkung-lite&focus=ankle_pitch_l_joint&parL=20,12
+```
+
+- 机型来自官方仓库 [Open-X-Humanoid/TienKung_URDF](https://github.com/Open-X-Humanoid/TienKung_URDF) 的 `lite_urdf_publish`（OpenAtom OHL 1.0）；
+- 22 link / 21 joint / 20 驱动 / 42.52 kg；踝在 URDF 里是串联的 `ankle_pitch → ankle_roll`；
+- 并联结构补在 `contract/robot/specs/tienkung-lite-parallel.yaml`：左右踝 analytic，连杆几何沿用
+  讲者的 TC10-00 装配 rig —— 依据是 rig 的 roll 相对 pitch 位移 `(0,0,0)` 与 Lite 的 `ankle_roll_*_joint` origin 一致；
+- `ab_unresolved: true`：Lite URDF 里没有电机关节，A/B 槽位尚未确定，所以侧栏 AB 读数显示「-」。

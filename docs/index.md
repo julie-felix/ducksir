@@ -28,3 +28,4 @@
 - 训练方案：运动学重定向 / 优化式 / 学习式；mjlab PPO / SuperMimic 世界模型。
 - 参考动作来源：自采 / 视频 / 公开数据（LAFAN1 是 CC BY-NC-ND，SMPL-X 非商用）。
 - 开源版本到底给了哪些结构件、哪些要自己补。
+- `contract/robot/types/tienkung-lite.yaml` — 天工 Lite（官方 URDF 导入，22 link / 20 驱动），并联踝见 `specs/tienkung-lite-parallel.yaml`
