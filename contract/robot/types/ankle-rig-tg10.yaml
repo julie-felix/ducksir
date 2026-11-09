@@ -530,7 +530,6 @@ mechanisms:
     params:
       frame: pitch_joint
       units: m
-      mujoco_trace: parallel-tg10.json
       mujoco_grid: mujoco-grid-tg10.json
       passive_pr: true
       motor_joints:

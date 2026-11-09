@@ -56,7 +56,6 @@ mechanisms:
       params:
         frame: ankle_pitch          # 原点=踝 pitch 关节中心，轴对齐 G1 ankle_pitch_link
         units: m
-        mujoco_trace: parallel-g1.json
         mujoco_grid: mujoco-grid-g1.json      # MuJoCo 动力学轨迹（rig 几何相同）
         # chains 的顺序 = [index 4, index 5]；rig 里对应的关节名见下（与 A/B 的对应未核实）
         motor_joints: [right_motor_joint, left_motor_joint]
@@ -95,7 +94,6 @@ mechanisms:
         frame: ankle_pitch          # 原点=踝 pitch 关节中心，轴对齐 G1 ankle_pitch_link
         units: m
         mirror: true
-        mujoco_trace: parallel-g1.json
         mujoco_grid: mujoco-grid-g1.json
         # chains 的顺序 = [index 4, index 5]；rig 里对应的关节名见下（与 A/B 的对应未核实）
         motor_joints: [right_motor_joint, left_motor_joint]

@@ -123,8 +123,8 @@ function fitView(padding = 1.7) {
   controls.update();
 }
 
-function setJointAngle(jointName, angle) {
-  const j = current.joints.get(jointName);
+function setJointIn(joints, jointName, angle) {
+  const j = joints.get(jointName);
   if (!j) return;
   j.angle = angle;
   if (j.type === 'prismatic') {
@@ -134,11 +134,16 @@ function setJointAngle(jointName, angle) {
     j.obj.quaternion.copy(j.qOrigin).multiply(
       new THREE.Quaternion().setFromAxisAngle(j.axis, angle));
   }
+}
+
+function setJointAngle(jointName, angle) {
+  if (!current) return;
+  setJointIn(current.joints, jointName, angle);
   scheduleGroundClamp();
 }
 
-async function buildRobot(data) {
-  robotGroup.clear();
+async function buildInto(data, group) {
+  group.clear();
   const jointsByChild = new Map();
   for (const j of data.joints) jointsByChild.set(j.child, j);
 
@@ -195,7 +200,7 @@ async function buildRobot(data) {
 
   const rootLink = byName.get(data.root) || data.links.find((l) => !l.parent || l.parent === 'world');
   const build = (link) => {
-    const parentObj = link.parent && link.parent !== 'world' ? objects.get(link.parent) : robotGroup;
+    const parentObj = link.parent && link.parent !== 'world' ? objects.get(link.parent) : group;
     const obj = walk(link, parentObj);
     for (const child of data.links) {
       if (child.parent === link.name) build(child);
@@ -203,18 +208,19 @@ async function buildRobot(data) {
     return obj;
   };
   build(rootLink);
-
-  current = { data, joints: jointState, groundOffset: 0 };
-  // 第一次赋值：需要 current 已就绪
-  for (const name of jointState.keys()) setJointAngle(name, 0);
-
   await Promise.all(jobs);
+  return { joints: jointState, objects };
+}
 
-  // 落地：把最低点挪到 y=0，并把偏移记下来给「贴地」用
+async function buildRobot(data) {
+  robotGroup.clear();
+  const { joints } = await buildInto(data, robotGroup);
+  current = { data, joints, groundOffset: 0 };
+  for (const name of joints.keys()) setJointAngle(name, 0);
   const lift = measureLift();
   robotGroup.position.y = lift;
   if (current) current.groundOffset = lift;
-  return jointState;
+  return joints;
 }
 
 function renderJointList(data) {
@@ -450,7 +456,6 @@ function animate() {
 (async function main() {
   resize();
   $('split').addEventListener('click', () => splitToggle());
-  if (new URLSearchParams(location.search).has('split')) setTimeout(() => { if (!SPLIT.on) splitToggle(); }, 800);
   animate();
   const index = await (await fetch('./data/index.json')).json();
   const sel = $('robot');
@@ -669,14 +674,7 @@ function parMakeUI(side, host) {
       + (side.assumed ? ` · ${side.assumed} 项假设` : '') + `</span>`;
     parApply(side, state.th, state.x);
     applyJointPair(side, state.x);
-    if (SPLIT.on && SPLIT.objs.length && side.gridFile) {
-      const g = SPLIT.data.get(side.gridFile);
-      if (g) {
-        const mj = splitLookup(g, state.th);
-        splitApply([{ side, x: mj }]);
-        parTraceCaption(side, mj, g);
-      }
-    }
+    if (SPLIT.on && SPLIT.ready && side.gridFile) splitUpdate(side);
   };
 
   inputs.forEach((input) => input.addEventListener('input', () => {
@@ -711,6 +709,20 @@ function setTranslucent(on) {
   });
 }
 
+/** 把叠加层挂到某套 joints 的 pitch 关节父 link 上；返回 side 对象。 */
+function parAttach(sideDef, joints, data, tint) {
+  const side = { ...sideDef };
+  Object.assign(side, parBuildSide(side.geom, side.mirror, tint));
+  const jdef = data.joints.find((j) => j.name === side.pitchJoint) || {};
+  const childLink = data.links.find((l) => l.name === jdef.child);
+  const pj = joints.get(side.pitchJoint);
+  if (!pj) return null;
+  side.group.position.set(0, 0, 0);
+  if (childLink) side.group.position.set(...childLink.xyz);
+  pj.obj.parent.add(side.group);
+  return side;
+}
+
 async function initParallelOverlay(data) {
   const sec = $('par-sec'), panel = $('par-panel');
   if (!sec || !panel) return;
@@ -719,40 +731,33 @@ async function initParallelOverlay(data) {
   sec.style.display = ''; panel.style.display = '';
   panel.innerHTML = '';
   PAR.sides = {};
+  PAR.mechs = [];
 
   for (const mech of mechs) {
     const params = mech.coupling.params || {};
     const pr = (mech.charts || {}).pr || {};
-    const joints = pr.joints || [];
+    const seq = pr.joints || [];
     const sem = pr.semantic || [];
-    const pitchJoint = joints[sem.indexOf('pitch')];
-    const rollJoint = joints[sem.indexOf('roll')];
+    const pitchJoint = seq[sem.indexOf('pitch')];
+    const rollJoint = seq[sem.indexOf('roll')];
     if (!pitchJoint || !rollJoint || !current.joints.get(pitchJoint)) continue;
 
-    const mirror = !!params.mirror;
-    const side = { prefix: mech.id, label: mech.id, mirror, pitchJoint, rollJoint,
-                   geom: parGeom(params), assumed: (mech.coupling.assumed || []).length };
-    Object.assign(side, parBuildSide(side.geom, mirror));
-
-    // 挂在 pitch 关节的父 link 上（不跟着 pitch 转），偏移 = pitch 子 link 在父系里的位置
-    const jdef = data.joints.find((j) => j.name === pitchJoint) || {};
-    const childLink = data.links.find((l) => l.name === jdef.child);
-    side.group.position.set(0, 0, 0);
-    if (childLink) side.group.position.set(...childLink.xyz);
-    current.joints.get(pitchJoint).obj.parent.add(side.group);
-
-    side.traceFile = params.mujoco_trace || null;
-    side.gridFile = params.mujoco_grid || null;
+    const sideDef = { prefix: mech.id, label: mech.id, mirror: !!params.mirror,
+                      pitchJoint, rollJoint, geom: parGeom(params),
+                      assumed: (mech.coupling.assumed || []).length,
+                      gridFile: params.mujoco_grid || null };
+    const side = parAttach(sideDef, current.joints, data);
+    if (!side) continue;
     parMakeUI(side, panel);
     PAR.sides[mech.id] = side;
+    PAR.mechs.push({ side, data, mech });
   }
   if (!Object.keys(PAR.sides).length) { sec.style.display = 'none'; panel.style.display = 'none'; return; }
 
-  await parSetupTraces(panel);
   const tbox = document.getElementById('translucent');
   if (tbox && tbox.checked) setTranslucent(true);
   const qs = new URLSearchParams(location.search);
-  for (const [key, id] of [['parL', null], ['par', null], ['parR', null]]) {
+  for (const [key] of [['parL'], ['par'], ['parR']]) {
     const v = qs.get(key);
     if (!v) continue;
     const ids = Object.keys(PAR.sides);
@@ -775,122 +780,13 @@ async function initParallelOverlay(data) {
       }
     }
   }
+  if (qs.has('split')) setTimeout(() => { if (!SPLIT.on) splitToggle(); }, 600);
 }
 
-// ---------------------------------------------------------------------------
-// MuJoCo 对照：直接在这台机器人上播 MuJoCo 的动力学轨迹，叠加层画我们的解。
-// 数据来自 tools/parallel/export_viz.py（同一串电机角 θ(t)，两边各自算 x）。
-// ---------------------------------------------------------------------------
-const PAR_TRACE = { cache: new Map(), playing: false, t: 0 };
-
-async function parSetupTraces(panel) {
-  const sides = Object.values(PAR.sides).filter((s) => s.traceFile);
-  if (!sides.length) return;
-  for (const side of sides) {
-    if (!PAR_TRACE.cache.has(side.traceFile)) {
-      try {
-        PAR_TRACE.cache.set(side.traceFile,
-          await (await fetch(`./data/${side.traceFile}`)).json());
-      } catch (e) { console.warn('MuJoCo 轨迹缺失', side.traceFile, e); continue; }
-    }
-    side.trace = PAR_TRACE.cache.get(side.traceFile);
-    side.trace.idx = 0;
-    side.trace.on = false;
-
-    const box = document.createElement('div');
-    box.className = 'par-trace';
-    box.innerHTML = `
-      <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:#9aa6b5">
-        <input type="checkbox" data-trace-on> MuJoCo 对照（${side.trace.samples.length} 帧）
-      </label>
-      <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
-        <button data-trace-play style="padding:2px 8px;font-size:12px">播放</button>
-        <input type="range" data-trace-seek min="0" max="${side.trace.samples.length - 1}" value="0" style="flex:1"/>
-      </div>
-      <div class="par-out" data-trace-out></div>`;
-    panel.appendChild(box);
-    side.traceNode = box;
-
-    box.querySelector('[data-trace-on]').addEventListener('change', (e) => {
-      side.trace.on = e.target.checked;
-      for (const k of box.querySelectorAll('.par-side input, input')) k.disabled = side.trace.on;
-      if (side.trace.on) { parTraceApply(side); PAR_TRACE.playing = true; box.querySelector('[data-trace-play]').textContent = '暂停'; }
-      else { PAR_TRACE.playing = false; side.paint(); }
-    });
-    box.querySelector('[data-trace-play]').addEventListener('click', () => {
-      PAR_TRACE.playing = !PAR_TRACE.playing;
-      box.querySelector('[data-trace-play]').textContent = PAR_TRACE.playing ? '暂停' : '播放';
-    });
-    box.querySelector('[data-trace-seek]').addEventListener('input', (e) => {
-      side.trace.idx = +e.target.value;
-      parTraceApply(side);
-    });
-  }
-  // ?trace=N：自动打开 MuJoCo 对照并停在第 N 帧（截图/分享用）
-  const tq = new URLSearchParams(location.search).get('trace');
-  if (tq !== null) {
-    const frame = Math.max(0, parseInt(tq, 10) || 0);
-    for (const side of sides) {
-      if (!side.traceNode) continue;
-      side.trace.on = true;
-      side.trace.idx = Math.min(frame, side.trace.samples.length - 1);
-      const cb = side.traceNode.querySelector('[data-trace-on]');
-      cb.checked = true;
-      parTraceApply(side);
-    }
-    PAR_TRACE.playing = false;
-  }
-  // 播放时钟
-  let last = performance.now();
-  const tick = (now) => {
-    const dt = (now - last) / 1000; last = now;
-    if (PAR_TRACE.playing) {
-      PAR_TRACE.t += dt;
-      if (PAR_TRACE.t > 1 / 25) {
-        PAR_TRACE.t = 0;
-        for (const side of Object.values(PAR.sides)) {
-          if (!side.trace || !side.trace.on) continue;
-          side.trace.idx = (side.trace.idx + 1) % side.trace.samples.length;
-          parTraceApply(side);
-        }
-      }
-    }
-    requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
-}
-
-/** 某一帧：模型按 MuJoCo 的位姿动，叠加层画我们的解，并显示差值。 */
-function parTraceApply(side) {
-  const s = side.trace.samples[side.trace.idx];
-  if (!s) return;
-  applyJointPair(side, [s.mj.roll, s.mj.pitch]);          // 模型 = MuJoCo
-  parApply(side, s.th, [s.ours.roll, s.ours.pitch]);      // 叠加层 = 我们
-  const dr = s.ours.roll - s.mj.roll, dp = s.ours.pitch - s.mj.pitch;
-  side.traceNode.querySelector('[data-trace-out]').innerHTML =
-    `t=${s.t.toFixed(2)}s · MuJoCo roll/pitch `
-    + `<b>${(s.mj.roll * 180 / Math.PI).toFixed(2)}°/${(s.mj.pitch * 180 / Math.PI).toFixed(2)}°</b><br>`
-    + `<span style="color:#5ad1a0">我们</span> `
-    + `${(s.ours.roll * 180 / Math.PI).toFixed(2)}°/${(s.ours.pitch * 180 / Math.PI).toFixed(2)}° · `
-    + `差 <b>${(Math.max(Math.abs(dr), Math.abs(dp)) * 1e3).toFixed(2)} mrad</b>`;
-  side.traceNode.querySelector('[data-trace-seek]').value = String(side.trace.idx);
-  // 四个滑条跟着显示「我们的解」，让人一眼看出两边各是多少
-  side.state.th = [...s.th];
-  side.state.x = [s.ours.roll, s.ours.pitch];
-  const inputs = [...(side.wrap || document).querySelectorAll('input[data-k]')];
-  for (const el of inputs) {
-    const k = +el.dataset.k;
-    const v = k < 2 ? s.th[k] : (k === 2 ? s.ours.roll : s.ours.pitch);
-    const degv = (v * 180 / Math.PI).toFixed(1);
-    el.value = degv;
-    const out = el.parentElement.querySelector('[data-v]');
-    if (out) out.textContent = `${degv}°`;
-  }
-}
 
 // ---------------------------------------------------------------------------
-// 并排对比：左边是我们的解算（机器人模型 + 绿色连杆），右边只画 MuJoCo 的连杆（橙色）。
-// MuJoCo 那边用 41×41 的 (θA,θB)→(roll,pitch) 查表（tools/parallel/export_mujoco_grid.py）。
+// 并排对比：左边我们的解算（模型 + 绿色连杆），右边 MuJoCo（同一台机器人 + 橙色连杆）。
+// MuJoCo 侧用 41×41 的 (θA,θB)→(roll,pitch) 查表双线性插值。
 // ---------------------------------------------------------------------------
 function splitInit() {
   if (SPLIT.renderer) return;
@@ -900,21 +796,28 @@ function splitInit() {
   SPLIT.scene = new THREE.Scene();
   SPLIT.scene.background = new THREE.Color(0x0b0e12);
   SPLIT.scene.add(new THREE.HemisphereLight(0xdfe9f5, 0x1a2230, 1.2));
-  const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-  dir.position.set(0.6, -0.8, 1.1);
-  SPLIT.scene.add(dir);
-  SPLIT.camera = new THREE.PerspectiveCamera(38, 1, 0.005, 20);
+  const dl = new THREE.DirectionalLight(0xffffff, 1.0);
+  dl.position.set(0.6, -0.8, 1.1);
+  SPLIT.scene.add(dl);
+  const grid = new THREE.GridHelper(2, 40, 0x1c2632, 0x161e28);
+  grid.position.y = -0.001;
+  SPLIT.scene.add(grid);
+  SPLIT.camera = new THREE.PerspectiveCamera(38, 1, 0.004, 50);
   SPLIT.controls = new OrbitControls(SPLIT.camera, cv);
   SPLIT.controls.enableDamping = true;
+  SPLIT.data = new Map();
+  SPLIT.sides = [];
+  SPLIT.ready = false;
 }
 
-async function splitLoadGrid(side, file) {
-  if (SPLIT.data.has(file)) return SPLIT.data.get(file);
-  try {
-    const g = await (await fetch(`./data/${file}`)).json();
-    SPLIT.data.set(file, g);
-    return g;
-  } catch (e) { console.warn('MuJoCo 查表缺失', file, e); return null; }
+async function splitGrid(side) {
+  if (!side.gridFile) return null;
+  if (!SPLIT.data.has(side.gridFile)) {
+    try {
+      SPLIT.data.set(side.gridFile, await (await fetch(`./data/${side.gridFile}`)).json());
+    } catch (e) { console.warn('MuJoCo 查表缺失', side.gridFile, e); return null; }
+  }
+  return SPLIT.data.get(side.gridFile);
 }
 
 /** 双线性插值：电机角 → MuJoCo 的 roll/pitch。 */
@@ -932,81 +835,68 @@ function splitLookup(g, th) {
     lerp(at(i, j + 1)[k], at(i + 1, j + 1)[k], fu), fv));
 }
 
-function splitBuild(geoms) {
-  SPLIT.objs = [];
-  SPLIT.scene.children.filter((c) => c.userData.splitLink).forEach((c) => SPLIT.scene.remove(c));
-  let anchor = null;
-  geoms.forEach((geom, si) => {
-    const built = parBuildSide(geom, false, 0xffb35a);
-    built.group.userData.splitLink = true;
-    SPLIT.scene.add(built.group);
-    SPLIT.objs.push({ geom, nodes: built.nodes, plate: built.plate, group: built.group });
-    if (!anchor) anchor = geom;
-  });
-  // 取景：包住所有 A 与 c0
-  const box = new THREE.Box3();
-  geoms.forEach((g) => {
-    g.chains.forEach((c) => box.expandByPoint(parV(c.A)));
-    g.platform.c0.forEach((c) => box.expandByPoint(parV(c)));
-  });
-  const c = box.getCenter(new THREE.Vector3());
-  const r = Math.max(box.getSize(new THREE.Vector3()).length() * 0.5, 0.1);
-  SPLIT.controls.target.copy(c);
-  // 和左边同一个朝向、同样的距离，方便两边逐点对照
-  SPLIT.camera.position.copy(c)
-    .add(new THREE.Vector3(0.6, -0.7, 0.45).normalize().multiplyScalar(0.55));
-  SPLIT.camera.near = 0.004; SPLIT.camera.far = 20;
-  SPLIT.camera.updateProjectionMatrix();
-  SPLIT.controls.update();
-}
-
-function splitApply(sideList) {
-  sideList.forEach(({ side, x }) => {
-    const obj = SPLIT.objs.find((o) => o.geom === side.geom);
-    if (!obj) return;
-    const fake = { ...side, nodes: obj.nodes, plate: obj.plate };
-    parApply(fake, side.state.th, x);
-  });
-}
-
 async function splitToggle() {
   SPLIT.on = !SPLIT.on;
   $('split').classList.toggle('on', SPLIT.on);
+  document.body.classList.toggle('split-on', SPLIT.on);
   $('view-r').style.display = SPLIT.on ? '' : 'none';
-  $('cap-l').textContent = SPLIT.on ? '我们的解算（机器人模型 + 绿色连杆）' : '我们的解算';
+  $('cap-l').textContent = SPLIT.on ? '我们的解算' : '我们的解算';
   if (!SPLIT.on) return;
   splitInit();
-  const sides = Object.values(PAR.sides);
-  const first = sides[0];
-  const geoms = sides.map((s) => s.geom);
-  if (!geoms.length) return;
-  splitBuild(geoms);
-  // 左边镜头怼到这颗踝上，和右边同一个方向，方便逐点对照
-  const pj = current.joints.get(first.pitchJoint);
-  if (pj) {
-    const wp = new THREE.Vector3();
-    pj.obj.getWorldPosition(wp);
-    const dir = new THREE.Vector3(0.6, -0.7, 0.45).normalize();
-    controls.target.copy(wp);
-    camera.position.copy(wp).addScaledVector(dir, 0.55);
-    camera.near = 0.004; camera.far = 20; camera.updateProjectionMatrix();
-    controls.update();
-  }
-  const file = first.gridFile;
-  if (file) {
-    const g = await splitLoadGrid(first, file);
-    if (g) {
-      const mj = splitLookup(g, first.state.th);
-      splitApply(sides.map((s) => ({ side: s, x: mj })));
-      parTraceCaption(first, mj, g);
+  if (!SPLIT.ready && current) {
+    SPLIT.root = new THREE.Group();
+    SPLIT.scene.add(SPLIT.root);
+    const { joints } = await buildInto(current.data, SPLIT.root);
+    SPLIT.joints = joints;
+    SPLIT.root.position.y = current.groundOffset || 0;
+    SPLIT.root.traverse((o) => {          // 右半边机器人做半透明，能看见连杆
+      if (!o.isMesh) return;
+      o.material = o.material.clone();
+      o.material.transparent = true;
+      o.material.opacity = 0.18;
+      o.material.depthWrite = false;
+    });
+    for (const m of PAR.mechs || []) {
+      const side = parAttach({ ...m.side, geom: m.side.geom }, joints, m.data, 0xffb35a);
+      if (side) SPLIT.sides.push(side);
     }
+    SPLIT.ready = true;
   }
+  // 两边镜头同朝向同距离
+  const focusOn = (joints, cam, ctl) => {
+    const pj = joints && joints.get((PAR.mechs[0] || {}).side.pitchJoint);
+    const p = new THREE.Vector3();
+    if (pj) pj.obj.getWorldPosition(p);
+    else p.set(0, 0, 0);
+    const dir = new THREE.Vector3(0.6, -0.7, 0.45).normalize();
+    ctl.target.copy(p);
+    cam.position.copy(p).addScaledVector(dir, 0.62);
+    cam.near = 0.004; cam.far = 50; cam.updateProjectionMatrix();
+    ctl.update();
+  };
+  focusOn(current.joints, camera, controls);
+  focusOn(SPLIT.joints, SPLIT.camera, SPLIT.controls);
+  for (const side of Object.values(PAR.sides)) splitUpdate(side);
 }
-let sideRef = null;
+
+/** 更新右半边：机器人与连杆都按 MuJoCo 的 roll/pitch。 */
+async function splitUpdate(side) {
+  if (!SPLIT.on || !SPLIT.ready || !side.gridFile) return;
+  const g = await splitGrid(side);
+  if (!g) return;
+  const twin = SPLIT.sides.find((s) => s.prefix === side.prefix);
+  const mj = splitLookup(g, side.state.th);
+  if (twin) {
+    setJointIn(SPLIT.joints, twin.rollJoint, twin.mirror ? -mj[0] : mj[0]);
+    setJointIn(SPLIT.joints, twin.pitchJoint, mj[1]);
+    parApply(twin, side.state.th, mj);
+  }
+  const firstId = (PAR.mechs && PAR.mechs[0]) ? PAR.mechs[0].side.prefix : null;
+  if (!firstId || side.prefix === firstId) parTraceCaption(side, mj, g);
+}
 
 function parTraceCaption(side, mj, g) {
-  const ours = side.state.x;
-  const dr = ours[0] - mj[0], dp = ours[1] - mj[1];
+  const dr = side.state.x[0] - mj[0], dp = side.state.x[1] - mj[1];
   $('cap-r').textContent = `MuJoCo · roll ${(mj[0] * 180 / Math.PI).toFixed(2)}° `
     + `pitch ${(mj[1] * 180 / Math.PI).toFixed(2)}° · 差 `
     + `${(Math.max(Math.abs(dr), Math.abs(dp)) * 1e3).toFixed(2)} mrad`

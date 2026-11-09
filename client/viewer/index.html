@@ -13,7 +13,16 @@
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
     font: 13px/1.5 -apple-system, "Noto Sans SC", "PingFang SC", system-ui, sans-serif; }
   #app { display: grid; grid-template-columns: 268px 1fr; height: 100%; }
-  @media (max-width: 760px) { #app { grid-template-columns: 1fr; grid-template-rows: 1fr 260px; } }
+  @media (max-width: 760px) {
+    #app { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+    aside { order: 2; max-height: 46vh; border-right: 0; border-top: 1px solid var(--line); }
+    #stage { order: 1; min-height: 54vh; }
+    body.split-on #views { flex-direction: column; }
+    body.split-on #views > .view { flex: 1 1 50%; }
+    header { padding: 8px; gap: 6px; }
+    header h1 { display: none; }
+    .vcap { font-size: 11px; left: 8px; top: 6px; }
+  }
   aside { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; padding: 12px; }
   header { display: flex; gap: 8px; align-items: center; padding: 10px 12px;
     border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }

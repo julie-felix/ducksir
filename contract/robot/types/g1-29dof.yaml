@@ -3489,7 +3489,6 @@ mechanisms:
     params:
       frame: ankle_pitch
       units: m
-      mujoco_trace: parallel-g1.json
       mujoco_grid: mujoco-grid-g1.json
       motor_joints:
       - right_motor_joint
@@ -3581,7 +3580,6 @@ mechanisms:
       frame: ankle_pitch
       units: m
       mirror: true
-      mujoco_trace: parallel-g1.json
       mujoco_grid: mujoco-grid-g1.json
       motor_joints:
       - right_motor_joint
