@@ -3578,6 +3578,7 @@ mechanisms:
     params:
       frame: ankle_pitch
       units: m
+      mirror: true
       motor_joints:
       - right_motor_joint
       - left_motor_joint

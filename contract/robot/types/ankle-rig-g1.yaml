@@ -3,7 +3,7 @@ robot:
   id: ankle-rig-g1
   name: g1_ankle
   type: ankle-rig-g1
-  source_ref: refs/parallel-ankle/2_g1_ankle/urdf_23urdf311.xml (MIT, feidedao/Parallel_Ankle_Joint)
+  source_ref: refs/parallel-ankle/2_g1_ankle/urdf_23urdf311.xml (MIT)
   license: MIT
   generator:
     name: importer_mjcf
@@ -12,6 +12,7 @@ robot:
     sha256: 0e7c4d595c363c3459b82ff507a5a60a4ba3cc984e1ab5be3dc787573d6ab928
   created_at: '2026-11-09'
   assets_dir: assets/rigs
+  mechanisms_spec: contract/robot/specs/ankle-rig-parallel.yaml
 frames:
   root: base_link
   world_attachment: floating
@@ -651,7 +652,95 @@ actuators:
   frictionloss: null
   armature: 0.001
   class: null
-mechanisms: []
+mechanisms:
+- id: g1_ankle
+  kind: parallel_2dof
+  mount: base_link
+  platform: roll_link
+  charts:
+    pr:
+      joints:
+      - pitch_joint
+      - roll_joint
+      semantic:
+      - pitch
+      - roll
+    ab:
+      motors:
+      - ab: B
+        joint: right_motor_joint
+      - ab: A
+        joint: left_motor_joint
+  coupling:
+    kind: analytic
+    params:
+      frame: pitch_joint
+      units: m
+      passive_pr: true
+      motor_joints:
+      - right_motor_joint
+      - left_motor_joint
+      chains:
+      - a:
+        - 0.022
+        - 0
+        - 0.21587
+        axis:
+        - 1
+        - 0
+        - 0
+        v:
+        - 0.0175
+        - -0.016359
+        - -0.004624
+        rod: 0.2215
+      - a:
+        - 0.022
+        - 0
+        - 0.15087
+        axis:
+        - 1
+        - 0
+        - 0
+        v:
+        - 0.013
+        - 0.016529
+        - -0.003975
+        rod: 0.157
+      platform:
+        pitch_axis:
+        - 0
+        - 1
+        - 0
+        pitch_pivot:
+        - 0
+        - 0
+        - 0
+        roll_axis:
+        - 1
+        - 0
+        - 0
+        roll_pivot:
+        - 0
+        - 0
+        - -0.017558
+        c0:
+        - - 0.022
+          - -0.015
+          - -0.009558
+        - - 0.022
+          - 0.015
+          - -0.009558
+    source: rig 自己的 XML（MIT, feidedao/Parallel_Ankle_Joint）
+    assumed:
+    - 'ab_mapping: rig 的 right/left_motor 与 SDK 的 A/B 未核实'
+    - 'geometry_from_rig: 这是他手搓装配的模型，不是官方 TC10-00 / G1'
+    anchor_zero:
+      A: 0
+      B: 0
+      roll: 0
+      pitch: 0
+    todo: 接到真机前需换官方几何并核实 A/B 对应
 loops:
 - id: c1
   kind: connect
@@ -1224,6 +1313,9 @@ warnings:
 - code: W005
   path: presets
   message: fanhao 仓库有 6 个 MJCF 变体（collision×rollers×backlash），本实体只按导入的那一份生成 preset；其余 5 个按需再加
+- code: W007
+  path: mechanisms[]
+  message: 并联机构的坐标与耦合来自手写 spec（contract/robot/specs/ankle-rig-parallel.yaml），不是导入产物
 - code: W008
   path: dynamics
   message: 源文件自述动力学参数不可信（手工装配的试验模型），只可用于运动学/结构参考

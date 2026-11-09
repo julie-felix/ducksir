@@ -52,3 +52,19 @@ https://100.110.238.101:3080/ducksir-static/client/viewer/index.html?robot=g1-29
 - 右侧按矢状面镜像；写关节时 roll 取反（`left_ankle_roll_joint = -x.roll`），这是镜像机构的约定，
   与真机符号是否一致需要实物确认（未定）。
 - URL 参数：`?robot=g1-29dof&focus=left_ankle_pitch_joint&parL=20,10&parR=-20,-10`。
+
+## 天工（TG10-00）也接进来了
+
+`ankle-rig-tg10` 现在是查看器里的一台机型（下拉里叫 `TG10-00-ankle`），
+并联机构 `tg10_ankle` 是 analytic，几何来自 rig 自己的 XML：
+
+```
+https://100.110.238.101:3080/ducksir-static/client/viewer/index.html?robot=ankle-rig-tg10&par=25,18
+```
+
+- 拖 A/B（或不拖，直接拖 roll/pitch）看两根推杆怎么把脚带起来；
+- `passive_pr: true`：rig 里踝的两个关节是被动的，真正驱动的是两个电机，闭链靠 `<connect>` 闭合；
+- rig 的 STL 不在仓库里，所以模型用**示意盒**（每个 link 一个 14 mm 灰盒）表示，几何点仍然准确；
+- 侧栏会标「N 项假设」，点开 spec 能看到具体是哪几条。
+
+两个 rig 的 spec 在 `contract/robot/specs/ankle-rig-parallel.yaml`，按机型 id 分组。

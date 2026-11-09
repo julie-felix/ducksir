@@ -177,7 +177,14 @@ async function buildRobot(data) {
           if (o.isMesh) { o.material = mat; o.castShadow = false; o.receiveShadow = false; }
         });
         obj.add(inst);
-      }).catch((err) => console.warn('mesh 加载失败', g.mesh, err)));
+      }).catch((err) => {
+        console.warn('mesh 加载失败，用示意盒兜底', g.mesh, err);
+        const box = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.014, 0.014),
+          new THREE.MeshStandardMaterial({ color: 0x8593a6, metalness: .2, roughness: .6 }));
+        box.position.fromArray(g.xyz);
+        box.quaternion.copy(q(g.quat));
+        obj.add(box);
+      }));
     }
     return obj;
   };
@@ -266,7 +273,7 @@ function renderMeta(data) {
       return `<div class="joint"><div class="name"><span>${m.id}</span><span>${kind}</span></div>
         <div class="row" style="font-size:11.5px"><span>平台</span><b>${m.platform || '-'}</b></div>
         <div class="row" style="font-size:11.5px"><span>PR 关节</span><b>${pr.join(' / ') || '-'}</b></div>
-        <div class="row" style="font-size:11.5px"><span>AB 电机</span><b>${motors.map((x) => x.ab + '@' + x.index).join(' / ') || '-'}</b></div>
+        <div class="row" style="font-size:11.5px"><span>AB 电机</span><b>${motors.map((x) => x.ab + '@' + (x.index ?? x.joint ?? '?')).join(' / ') || '-'}</b></div>
         <div class="warn">${label}</div></div>`
     }).join('')
     : '<div class="row">无（开链机型）</div>'
@@ -610,8 +617,8 @@ function parApply(side, th, x) {
 
 /** 把解算出的 roll/pitch 写到模型关节上（右侧按镜像取反 roll）。 */
 function applyJointPair(side, x) {
-  setJointAngle(`${side.prefix}_ankle_roll_joint`, side.mirror ? -x[0] : x[0]);
-  setJointAngle(`${side.prefix}_ankle_pitch_joint`, x[1]);
+  setJointAngle(side.rollJoint, side.mirror ? -x[0] : x[0]);
+  setJointAngle(side.pitchJoint, x[1]);
 }
 
 function parMakeUI(side, host) {
@@ -681,48 +688,59 @@ function setTranslucent(on) {
 async function initParallelOverlay(data) {
   const sec = $('par-sec'), panel = $('par-panel');
   if (!sec || !panel) return;
-  const mechs = data.mechanisms || [];
-  const analytical = mechs.filter((m) => (m.coupling || {}).kind === 'analytic');
-  if (!analytical.length) { sec.style.display = 'none'; panel.style.display = 'none'; return; }
+  const mechs = (data.mechanisms || []).filter((m) => (m.coupling || {}).kind === 'analytic');
+  if (!mechs.length) { sec.style.display = 'none'; panel.style.display = 'none'; return; }
   sec.style.display = ''; panel.style.display = '';
   panel.innerHTML = '';
   PAR.sides = {};
 
-  for (const [prefix, label, mirror] of [['left', '左踝', false], ['right', '右踝', true]]) {
-    const mech = mechs.find((m) => m.id === `ankle_${prefix}`);
-    const params = mech && (mech.coupling || {}).kind === 'analytic' && mech.coupling.params;
-    if (!params) continue;
-    const pj = current.joints.get(`${prefix}_ankle_pitch_joint`);
-    const link = data.links.find((l) => l.name === `${prefix}_ankle_pitch_link`);
-    if (!pj) continue;
-    const side = { prefix, label, mirror, geom: parGeom(params),
-                   assumed: (mech.coupling.assumed || []).length };
+  for (const mech of mechs) {
+    const params = mech.coupling.params || {};
+    const pr = (mech.charts || {}).pr || {};
+    const joints = pr.joints || [];
+    const sem = pr.semantic || [];
+    const pitchJoint = joints[sem.indexOf('pitch')];
+    const rollJoint = joints[sem.indexOf('roll')];
+    if (!pitchJoint || !rollJoint || !current.joints.get(pitchJoint)) continue;
+
+    const mirror = !!params.mirror;
+    const side = { prefix: mech.id, label: mech.id, mirror, pitchJoint, rollJoint,
+                   geom: parGeom(params), assumed: (mech.coupling.assumed || []).length };
     Object.assign(side, parBuildSide(side.geom, mirror));
+
+    // 挂在 pitch 关节的父 link 上（不跟着 pitch 转），偏移 = pitch 子 link 在父系里的位置
+    const jdef = data.joints.find((j) => j.name === pitchJoint) || {};
+    const childLink = data.links.find((l) => l.name === jdef.child);
     side.group.position.set(0, 0, 0);
-    if (link) side.group.position.set(...link.xyz);
-    pj.obj.parent.add(side.group);           // 挂在膝 link，不跟着 pitch 转
+    if (childLink) side.group.position.set(...childLink.xyz);
+    current.joints.get(pitchJoint).obj.parent.add(side.group);
+
     parMakeUI(side, panel);
-    PAR.sides[prefix] = side;
+    PAR.sides[mech.id] = side;
   }
+  if (!Object.keys(PAR.sides).length) { sec.style.display = 'none'; panel.style.display = 'none'; return; }
 
   const tbox = document.getElementById('translucent');
   if (tbox && tbox.checked) setTranslucent(true);
   const qs = new URLSearchParams(location.search);
-  for (const [key, prefix] of [['parL', 'left'], ['par', 'left'], ['parR', 'right']]) {
+  for (const [key, id] of [['parL', null], ['par', null], ['parR', null]]) {
     const v = qs.get(key);
-    if (!v || !PAR.sides[prefix]) continue;
+    if (!v) continue;
+    const ids = Object.keys(PAR.sides);
+    const target = key === 'parR' ? ids[1] : ids[0];
+    if (!target) continue;
     const [a, b] = v.split(',').map((x) => parseFloat(x) || 0);
-    const st = PAR.sides[prefix].state;
+    const st = PAR.sides[target].state;
     st.th = [a * Math.PI / 180, b * Math.PI / 180];
-    st.x = parFw(PAR.sides[prefix].geom, st.th, st.x);
-    PAR.sides[prefix].paint();
+    st.x = parFw(PAR.sides[target].geom, st.th, st.x);
+    PAR.sides[target].paint();
   }
   if (qs.has('selftest')) {
-    for (const [prefix, side] of Object.entries(PAR.sides)) {
+    for (const [id, side] of Object.entries(PAR.sides)) {
       for (const x of [[0.2, 0.1], [-0.15, 0.25], [0.3, -0.2]]) {
         const th = parIk(side.geom, x, [0, 0]);
         const back = parFw(side.geom, th, x);
-        console.log(`SELFTEST ${prefix} x=`, x.map((v) => +v.toFixed(4)),
+        console.log(`SELFTEST ${id} x=`, x.map((v) => +v.toFixed(4)),
           'th=', th.map((v) => +v.toFixed(5)), 'roundtrip=', back.map((v) => +v.toFixed(6)),
           'err=', Math.max(Math.abs(back[0] - x[0]), Math.abs(back[1] - x[1])).toExponential(2));
       }

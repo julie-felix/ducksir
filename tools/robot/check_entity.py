@@ -131,18 +131,28 @@ def check(doc: dict) -> list[tuple[str, bool, str]]:
         seen_mech.add(mid)
         charts = m.get("charts") or {}
         pr_joints = (charts.get("pr") or {}).get("joints") or []
+        passive_ok = bool(((m.get("coupling") or {}).get("params") or {}).get("passive_pr"))
         for name in pr_joints:
             if name not in {j["name"] for j in joints}:
                 problems.append(f"{mid}: PR 关节 {name} 不存在")
-            elif name not in actuated:
-                problems.append(f"{mid}: PR 关节 {name} 不是 actuated")
+            elif name not in actuated and not passive_ok:
+                problems.append(f"{mid}: PR 关节 {name} 不是 actuated（若机构是「电机驱动 + 关节被动」，"
+                                "在 coupling.params 里写 passive_pr: true）")
         motors = (charts.get("ab") or {}).get("motors") or []
         letters = [x.get("ab") for x in motors]
         if sorted(letters) != ["A", "B"]:
             problems.append(f"{mid}: AB 电机必须恰好是 A 和 B，实际 {letters}")
-        idx = [x.get("index") for x in motors]
-        if len(set(idx)) != len(idx):
-            problems.append(f"{mid}: AB 电机 index 重复 {idx}")
+        if any(x.get("index") is not None for x in motors):
+            idx = [x.get("index") for x in motors]
+            if None in idx or len(set(idx)) != len(idx):
+                problems.append(f"{mid}: AB 电机 index 缺失或重复 {idx}")
+        else:                                   # 没有 SDK 索引时用关节名标识
+            js = [x.get("joint") for x in motors]
+            if None in js or len(set(js)) != len(js):
+                problems.append(f"{mid}: AB 电机既没 index 也没唯一 joint {js}")
+            for jn in js:
+                if jn not in {j["name"] for j in joints}:
+                    problems.append(f"{mid}: AB 电机关节 {jn} 不存在")
         coupling = (m.get("coupling") or {}).get("kind")
         if coupling == "unresolved":
             infos.append(f"{mid}: coupling 未解")

@@ -380,6 +380,8 @@ def main() -> int:
     ap.add_argument("--bam-json", default=None)
     ap.add_argument("--bam-ref", default=None)
     ap.add_argument("--mesh-manifest", default=None)
+    ap.add_argument("--mechanisms", default=None,
+                    help="手写 spec（按机型的并联机构）；键可以是机型 id 或直接一个列表")
     ap.add_argument("--known-defect", action="append", default=[],
                     help="源文件自述的缺陷，如 dynamics（手工装配的试验模型）")
     args = ap.parse_args()
@@ -387,6 +389,16 @@ def main() -> int:
                       license_id=args.license, source_ref=args.source_ref,
                       preset=args.preset, assets_dir=args.assets_dir,
                       bam_json=args.bam_json, bam_ref=args.bam_ref)
+    if args.mechanisms:
+        spec = E.read_yaml(args.mechanisms)
+        mech = spec.get("mechanisms") or []
+        if isinstance(mech, dict):
+            mech = mech.get(args.entity_id) or []
+        doc["mechanisms"] = mech
+        doc["presets"].update(spec.get("presets") or {})
+        doc["robot"]["mechanisms_spec"] = args.mechanisms
+        E.warn(doc["warnings"], "W007", "mechanisms[]",
+               f"并联机构的坐标与耦合来自手写 spec（{args.mechanisms}），不是导入产物")
     for defect in args.known_defect:
         if defect == "dynamics":
             E.warn(doc["warnings"], "W008", "dynamics",
