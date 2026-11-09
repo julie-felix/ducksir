@@ -177,12 +177,21 @@ def main() -> int:
     ap.add_argument("--source-ref", default="")
     ap.add_argument("--assets-dir", default="assets/g1")
     ap.add_argument("--mesh-manifest", default=None)
+    ap.add_argument("--mechanisms", default=None)
     args = ap.parse_args()
     doc = import_urdf(args.input, entity_id=args.entity_id, type_id=args.type_id,
                       license_id=args.license, source_ref=args.source_ref,
                       assets_dir=args.assets_dir)
     if args.mesh_manifest:
         E.attach_meshes(doc, args.mesh_manifest)
+    if args.mechanisms:
+        spec = E.read_yaml(args.mechanisms)
+        doc["mechanisms"] = spec.get("mechanisms") or []
+        doc["presets"].update(spec.get("presets") or {})
+        doc["robot"]["mechanisms_spec"] = args.mechanisms
+        E.warn(doc["warnings"], "W007", "mechanisms[]",
+               f"并联机构的坐标与耦合来自手写 spec（{args.mechanisms}），不是 URDF 导入产物；"
+               "URDF 只有 PR 串联等效，实物是并联")
     E.write_yaml(args.output, doc)
     print(f"写入 {args.output}: {doc['summary']}；warnings={len(doc['warnings'])}")
     return 0

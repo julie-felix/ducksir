@@ -65,6 +65,8 @@ def slim(doc: dict) -> dict:
         "world_attachment": doc["frames"].get("world_attachment"),
         "links": links,
         "joints": joints,
+        "mechanisms": doc.get("mechanisms") or [],
+        "presets": doc.get("presets") or {},
         "summary": doc.get("summary"),
         "warnings": doc.get("warnings", []),
     }

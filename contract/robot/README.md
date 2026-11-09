@@ -4,7 +4,8 @@
 而且 CI 会比对「重跑结果」和「入库文件」，对不上就报错。
 
 ```
-types/<type>.yaml        base：结构真相（links / joints / actuators / frames / presets / provenance）
+specs/<type>-parallel.yaml  手写：并联机构（AB/PR 两套坐标 + coupling），不是导入产物
+types/<type>.yaml        base：结构真相（links / joints / actuators / mechanisms / frames / presets / provenance）
 instances/<ID>.yaml      overlay：这台机器的增量（零位、方向、实测限位、辨识值）。鸭子还没有真机，暂缺
 ```
 
@@ -19,6 +20,11 @@ python3 tools/robot/importer_mjcf.py third_party/fanhao-microduck-replica/robot_
 python3 tools/robot/importer_urdf.py third_party/unitree-g1/g1_29dof_rev_1_0.urdf \
   -o contract/robot/types/g1-29dof.yaml --entity-id g1-29dof --type-id g1-29dof \
   --license BSD-3-Clause --assets-dir assets/g1
+
+python3 tools/robot/importer_urdf.py third_party/unitree-g1/g1_29dof_rev_1_0.urdf \
+  -o contract/robot/types/g1-29dof.yaml --entity-id g1-29dof --type-id g1-29dof \
+  --license BSD-3-Clause --assets-dir assets/g1 --mesh-manifest assets/g1/manifest.json \
+  --mechanisms contract/robot/specs/g1-parallel.yaml
 
 python3 tools/robot/check_entity.py "contract/robot/types/*.yaml"
 ```

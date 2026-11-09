@@ -44,6 +44,16 @@ _避免_：数字孪生（那是「一直跟着真机跑」的东西，本仓库
 **provenance**
 ：逐值的「凭什么算数」。每个数值带 `source ∈ {measured, identified, spec, cad, mjcf, urdf, guessed}`；同 path 出现两个不同值且没有显式 `override` 时**报错**，不静默取高等级。
 
+**并联机构 / AB / PR** (parallel mechanism / AB / PR)
+：G1 的踝与腰**实物是并联**（两个电机经连杆驱动一块 2-DOF 平台），官方 URDF/MJCF 却只给**串联等效**（pitch→roll）。
+：SDK 的 `mode_pr` 不是机型，是这批电机被怎么解释：`Mode.PR=0` 读平台角（对应 URDF），`Mode.AB=1` 读电机角（需自行算并联运动学）。索引规律：**A ↔ roll，B ↔ pitch**。
+：在实体里，PR 是 `joints[]`（导入来的），AB 是 `mechanisms[].charts.ab`，两者之间是 `coupling`。
+_避免_：把 AB 说成「另一种机型」
+
+**耦合** (coupling)
+：两套坐标之间的映射。`kind ∈ {analytic, table, unresolved}`。`unresolved` 是**合法状态**，意思是「这里欠一条映射」，不是缺失。
+：宇树没公开 AB↔PR 的解析式，所以 G1 现在是 `unresolved`；写这个状态比假装知道强。
+
 **canonical order**
 ：动作向量与观测向量里关节的排列顺序里被指定为权威的那一份。按运动链分组、组内近端到远端的语义顺序；其余各处（MJCF actuator、SDK、动画骨架）都写成显式映射，禁止按 index 直拷。
 

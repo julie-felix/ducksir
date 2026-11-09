@@ -121,6 +121,37 @@ def check(doc: dict) -> list[tuple[str, bool, str]]:
             problems.append(f"preset {name} 改变了 actuated 集合")
     results.append(("C5", not problems, "; ".join(problems) or f"{len(doc.get('presets') or {})} 个 preset 不动驱动集"))
 
+    # C6 并联机构
+    problems, infos = [], []
+    seen_mech = set()
+    for m in doc.get("mechanisms") or []:
+        mid = m.get("id")
+        if mid in seen_mech:
+            problems.append(f"mechanism 重名: {mid}")
+        seen_mech.add(mid)
+        charts = m.get("charts") or {}
+        pr_joints = (charts.get("pr") or {}).get("joints") or []
+        for name in pr_joints:
+            if name not in {j["name"] for j in joints}:
+                problems.append(f"{mid}: PR 关节 {name} 不存在")
+            elif name not in actuated:
+                problems.append(f"{mid}: PR 关节 {name} 不是 actuated")
+        motors = (charts.get("ab") or {}).get("motors") or []
+        letters = [x.get("ab") for x in motors]
+        if sorted(letters) != ["A", "B"]:
+            problems.append(f"{mid}: AB 电机必须恰好是 A 和 B，实际 {letters}")
+        idx = [x.get("index") for x in motors]
+        if len(set(idx)) != len(idx):
+            problems.append(f"{mid}: AB 电机 index 重复 {idx}")
+        coupling = (m.get("coupling") or {}).get("kind")
+        if coupling == "unresolved":
+            infos.append(f"{mid}: coupling 未解")
+        elif coupling not in ("analytic", "table"):
+            problems.append(f"{mid}: coupling.kind 非法 {coupling!r}")
+    detail = "; ".join(problems) if problems else (
+        f"{len(seen_mech)} 个并联机构" + (f"（{len(infos)} 个 coupling 未解：{'、'.join(infos)}）" if infos else ""))
+    results.append(("C6", not problems, detail))
+
     return results
 
 

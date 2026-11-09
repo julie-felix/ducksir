@@ -13,6 +13,7 @@ robot:
   created_at: '2026-11-09'
   assets_dir: assets/g1
   mesh_manifest: assets/g1/manifest.json
+  mechanisms_spec: contract/robot/specs/g1-parallel.yaml
 frames:
   root: pelvis
   world_attachment: floating
@@ -3451,10 +3452,94 @@ joints:
     velocity: null
   actuated: false
 actuators: []
+mechanisms:
+- id: ankle_left
+  kind: parallel_2dof
+  mount: left_knee_link
+  platform: left_ankle_roll_link
+  charts:
+    pr:
+      joints:
+      - left_ankle_pitch_joint
+      - left_ankle_roll_joint
+      semantic:
+      - pitch
+      - roll
+    ab:
+      motors:
+      - ab: B
+        index: 4
+        note: 同一槽位在 PR 模式下叫 L_LEG_ANKLE_PITCH
+      - ab: A
+        index: 5
+        note: 同一槽位在 PR 模式下叫 L_LEG_ANKLE_ROLL
+  coupling:
+    kind: unresolved
+    anchor_zero:
+      A: 0.0
+      B: 0.0
+      roll: 0.0
+      pitch: 0.0
+    todo: 需要连杆几何（CAD 无装配树）+ 真机扫点标定，才谈得上解析解或查表
+- id: ankle_right
+  kind: parallel_2dof
+  mount: right_knee_link
+  platform: right_ankle_roll_link
+  charts:
+    pr:
+      joints:
+      - right_ankle_pitch_joint
+      - right_ankle_roll_joint
+      semantic:
+      - pitch
+      - roll
+    ab:
+      motors:
+      - ab: B
+        index: 10
+      - ab: A
+        index: 11
+  coupling:
+    kind: unresolved
+    anchor_zero:
+      A: 0.0
+      B: 0.0
+      roll: 0.0
+      pitch: 0.0
+    todo: 同 ankle_left；左右是否镜像未核实
+- id: waist_pitch_roll
+  kind: parallel_2dof
+  mount: pelvis
+  platform: torso_link
+  charts:
+    pr:
+      joints:
+      - waist_pitch_joint
+      - waist_roll_joint
+      semantic:
+      - pitch
+      - roll
+    ab:
+      motors:
+      - ab: A
+        index: 13
+      - ab: B
+        index: 14
+  coupling:
+    kind: unresolved
+    anchor_zero:
+      A: 0.0
+      B: 0.0
+      roll: 0.0
+      pitch: 0.0
+    todo: 腰部连杆与踝不同构，映射不能照抄踝
 sensors: []
 bus:
   note: 未定：SDK 的统一 interface 还没拿到，字段等那份规范
-presets: {}
+presets:
+  ab:
+    chart: ab
+    note: 切到 AB 坐标后，动作向量里的 4/5、10/11、13/14 被解释成两个电机的角度；限位与驱动仍按 PR 关节定义
 provenance:
 - path: links[pelvis].mass
   value: 3.813
@@ -5179,6 +5264,9 @@ warnings:
   - assets/g1/left_hip_roll_link.glb
   - assets/g1/left_hip_yaw_link.glb
   - assets/g1/left_knee_link.glb
+- code: W007
+  path: mechanisms[]
+  message: 并联机构的坐标与耦合来自手写 spec（contract/robot/specs/g1-parallel.yaml），不是 URDF 导入产物；URDF 只有 PR 串联等效，实物是并联
 summary:
   links: 39
   joints: 38

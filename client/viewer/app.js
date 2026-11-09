@@ -252,6 +252,21 @@ function renderMeta(data) {
     <div class="row"><span>关节（驱动）</span><b>${s.joints ?? '-'}（${s.actuated_joints ?? '-'}）</b></div>
     <div class="row"><span>整机质量</span><b>${s.total_mass ? (s.total_mass * 1000).toFixed(1) + ' g' : '-'}</b></div>
     <div class="row"><span>根 / 挂接</span><b>${data.root} / ${data.world_attachment}</b></div>`;
+  const mechs = data.mechanisms || []
+  $('mechanisms').innerHTML = mechs.length
+    ? mechs.map((m) => {
+      const pr = ((m.charts || {}).pr || {}).joints || []
+      const motors = ((m.charts || {}).ab || {}).motors || []
+      const kind = ((m.coupling || {}).kind) || '?'
+      const label = kind === 'unresolved' ? '未解算（只显示 PR 串联等效）' : kind
+      return `<div class="joint"><div class="name"><span>${m.id}</span><span>${kind}</span></div>
+        <div class="row" style="font-size:11.5px"><span>平台</span><b>${m.platform || '-'}</b></div>
+        <div class="row" style="font-size:11.5px"><span>PR 关节</span><b>${pr.join(' / ') || '-'}</b></div>
+        <div class="row" style="font-size:11.5px"><span>AB 电机</span><b>${motors.map((x) => x.ab + '@' + x.index).join(' / ') || '-'}</b></div>
+        <div class="warn">${label}</div></div>`
+    }).join('')
+    : '<div class="row">无（开链机型）</div>'
+
   $('warnings').innerHTML = (data.warnings || []).length
     ? data.warnings.map((w) => `<div class="warn">${w.code} · ${w.path}<br>${w.message}</div>`).join('')
     : '<div class="row">无</div>';

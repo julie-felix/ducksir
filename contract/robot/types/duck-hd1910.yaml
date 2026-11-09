@@ -4,7 +4,7 @@ robot:
   name: microduck
   type: duck-hd1910
   source_ref: https://github.com/fanhao375/microduck-replica/blob/master/software/training/src/mjlab_microduck/robot/microduck/robot_walk.xml
-  license: Apache-2.0 (双许可，见 third_party/fanhao-microduck-replica/REPO-LICENSE)
+  license: Apache-2.0 (双许可)
   generator:
     name: importer_mjcf
     version: 0.1.0
@@ -2690,6 +2690,7 @@ actuators:
   resistance: 4.910191564179625
   command_delay: 0.006005265953265889
   params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+mechanisms: []
 sensors:
 - name: imu
   kind: site
