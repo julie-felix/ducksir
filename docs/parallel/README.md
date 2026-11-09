@@ -28,3 +28,18 @@ PYTHONPATH=/tmp/pylibs python3 tools/parallel/export_viz.py \
     contract/robot/types/ankle-rig-tg10.yaml /tmp/rig_tg10_nomesh.xml \
     -o client/viewer/data/parallel-tg10.json
 ```
+
+## 实时叠加层（在 G1 模型上拖 A/B）
+
+主查看器打开 G1 后，侧栏会出现「并联踝（实时解算，拖 A/B 看脚怎么动）」：
+
+```
+https://100.110.238.101:3080/ducksir-static/client/viewer/index.html?robot=g1-29dof&focus=left_ankle_pitch_joint&par=18,12
+```
+
+- 两根推杆、曲柄、销、平台画在 **G1 左踝的 pitch 关节坐标系里**，和模型同框；
+- 拖 A/B 两个滑条（角度制），浏览器里跑和 Python 同一套牛顿解算，脚掌的 roll/pitch 跟着变；
+- 坐标系对齐的依据：rig 的 `roll_link` 位移 `(0,0,-0.017558)` 与 G1 URDF 的 `left_ankle_roll_joint` **完全一致**，
+  所以 rig 的踝就是按 G1 踝的坐标系装的。
+
+几何数据由 `tools/parallel/export_overlay.py` 导出（含一份 MuJoCo 查表，暂未用于交互）。

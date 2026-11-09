@@ -386,7 +386,20 @@ async function show(meta) {
   renderTree(data);
   renderMeta(data);
   fitView();
+  const focus = new URLSearchParams(location.search).get('focus');
+  if (focus) {
+    const jn = current.joints.get(focus);
+    if (jn) {
+      const p = new THREE.Vector3();
+      jn.obj.getWorldPosition(p);
+      controls.target.copy(p);
+      camera.position.copy(p).add(new THREE.Vector3(0.34, -0.42, 0.16));
+      camera.near = 0.005; camera.far = 20; camera.updateProjectionMatrix();
+      controls.update();
+    }
+  }
   $('busy').style.display = 'none';
+  initParallelOverlay(data).catch((e) => console.warn('并联叠加层初始化失败', e));
 }
 
 /** 一键切到标准视角：alongX（沿销轴看）/ alongY（侧看）/ top（俯视）。 */
@@ -450,3 +463,169 @@ function animate() {
   const first = index.robots.find((r) => r.id === wanted) || index.robots[0];
   if (first) { sel.value = first.id; await show(first); }
 })();
+
+// ---------------------------------------------------------------------------
+// 并联踝叠加层：把两根定长推杆画到模型上，拖 A/B 电机角，脚掌按解算动。
+// 几何数据来自 tools/parallel/export_overlay.py（坐标系 = ankle pitch 关节中心）。
+// ---------------------------------------------------------------------------
+const PAR = { data: null, group: null, th: [0, 0], meshes: null, roll: 0, pitch: 0 };
+
+const rotAxis = (axis, ang) => new THREE.Quaternion().setFromAxisAngle(
+  new THREE.Vector3(axis[0], axis[1], axis[2]).normalize(), ang);
+
+function parPlatformPoint(x, c0) {
+  const P = PAR.data.platform;
+  const Pp = new THREE.Vector3(...P.pitch_pivot);
+  const Pr = new THREE.Vector3(...P.roll_pivot);
+  const qp = rotAxis(P.pitch_axis, x[1]);
+  const qr = rotAxis(P.roll_axis, x[0]);
+  const v = new THREE.Vector3(...c0).sub(Pr).applyQuaternion(qr).add(Pr).sub(Pp)
+    .applyQuaternion(qp).add(Pp);
+  return v;
+}
+
+function parPinPoint(i, theta) {
+  const ch = PAR.data.chains[i];
+  const A = new THREE.Vector3(...ch.A);
+  return new THREE.Vector3(...ch.v).applyQuaternion(rotAxis(ch.axis, theta)).add(A);
+}
+
+function parRodErr(th, i, x) {
+  const c = parPlatformPoint(x, PAR.data.platform.c0[i]);
+  return parPinPoint(i, th[i]).distanceTo(c) - PAR.data.chains[i].rod;
+}
+
+/** 正解：牛顿迭代（平方残差），和 Python 里 solver.fw 同一套。 */
+function parFw(th, x0 = [0, 0]) {
+  let x = [...x0];
+  for (let it = 0; it < 40; it++) {
+    const r = [0, 1].map((i) => {
+      const c = parPlatformPoint(x, PAR.data.platform.c0[i]);
+      const d = parPinPoint(i, th[i]).sub(c);
+      return d.dot(d) - PAR.data.chains[i].rod ** 2;
+    });
+    if (Math.hypot(r[0], r[1]) < 1e-14) return x;
+    const eps = 1e-6, J = [[0, 0], [0, 0]];
+    for (let i = 0; i < 2; i++) {
+      for (let k = 0; k < 2; k++) {
+        const xp = [...x], xm = [...x];
+        xp[k] += eps; xm[k] -= eps;
+        J[i][k] = (parRodErr2(th, i, xp) - parRodErr2(th, i, xm)) / (2 * eps);
+      }
+    }
+    const det = J[0][0] * J[1][1] - J[0][1] * J[1][0];
+    if (Math.abs(det) < 1e-18) break;
+    const dx = [-(J[1][1] * r[0] - J[0][1] * r[1]) / det,
+                -(-J[1][0] * r[0] + J[0][0] * r[1]) / det];
+    x = [x[0] + dx[0], x[1] + dx[1]];
+  }
+  return x;
+}
+function parRodErr2(th, i, x) {              // 平方形式，给牛顿用
+  const c = parPlatformPoint(x, PAR.data.platform.c0[i]);
+  const d = parPinPoint(i, th[i]).sub(c);
+  return d.dot(d) - PAR.data.chains[i].rod ** 2;
+}
+
+function buildOverlayGeometry() {
+  const g = new THREE.Group();
+  const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, metalness: .2, roughness: .5, ...o });
+  const cyl = (r) => { const geo = new THREE.CylinderGeometry(r, r, 1, 10, 1, true);
+    geo.translate(0, 0.5, 0); return geo; };
+  const nodes = [];
+  PAR.data.chains.forEach((ch, i) => {
+    const A = new THREE.Vector3(...ch.A);
+    const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.034, 18), mat(0x2c3644));
+    motor.position.copy(A);
+    motor.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(...ch.axis).normalize());
+    g.add(motor);
+    const crank = new THREE.Mesh(cyl(0.0028), mat(0x9fb0c4));
+    const rod = new THREE.Mesh(cyl(0.0035), mat(0x5ad1a0, { emissive: 0x143528 }));
+    const pinB = new THREE.Mesh(new THREE.SphereGeometry(0.005, 12, 10), mat(0xeef4fa));
+    const pinC = new THREE.Mesh(new THREE.SphereGeometry(0.005, 12, 10), mat(0xeef4fa));
+    g.add(crank, rod, pinB, pinC);
+    nodes.push({ A, crank, rod, pinB, pinC });
+  });
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, 0.008), mat(0x39505f, { transparent: true, opacity: .85 }));
+  g.add(plate);
+  return { group: g, nodes, plate };
+}
+
+function updateOverlay() {
+  if (!PAR.meshes) return;
+  const th = PAR.th;
+  const x = parFw(th, [PAR.roll, PAR.pitch]);
+  PAR.roll = x[0]; PAR.pitch = x[1];
+  const C = [0, 1].map((i) => parPlatformPoint(x, PAR.data.platform.c0[i]));
+  PAR.meshes.nodes.forEach((n, i) => {
+    const B = parPinPoint(i, th[i]);
+    const place = (mesh, a, b, r) => {
+      const dir = b.clone().sub(a);
+      mesh.position.copy(a);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+      mesh.scale.set(1, dir.length(), 1);
+    };
+    place(n.crank, n.A, B);
+    place(n.rod, B, C[i]);
+    n.pinB.position.copy(B);
+    n.pinC.position.copy(C[i]);
+  });
+  const P = PAR.data.platform;
+  const Pp = new THREE.Vector3(...P.pitch_pivot), Pr = new THREE.Vector3(...P.roll_pivot);
+  const mid = C[0].clone().add(C[1]).multiplyScalar(0.5);
+  const ex = C[1].clone().sub(C[0]).normalize();
+  const ey = new THREE.Vector3(...P.pitch_axis).applyQuaternion(rotAxis(P.pitch_axis, x[1]));
+  ey.addScaledVector(ex, -ey.dot(ex)).normalize();
+  const ez = new THREE.Vector3().crossVectors(ex, ey).normalize();
+  PAR.meshes.plate.matrixAutoUpdate = false;
+  PAR.meshes.plate.matrix.copy(new THREE.Matrix4().makeBasis(ex, ey, ez).setPosition(mid));
+  // 把脚掌摆到解出来的 roll/pitch
+  setJointAngle('left_ankle_roll_joint', x[0]);
+  setJointAngle('left_ankle_pitch_joint', x[1]);
+  const out = $('par-out');
+  if (out) out.innerHTML = `roll <b>${(x[0] * 180 / Math.PI).toFixed(1)}°</b> · `
+    + `pitch <b>${(x[1] * 180 / Math.PI).toFixed(1)}°</b><br>`
+    + `<span style="color:#7f8b9b">杆长误差 ${(Math.max(Math.abs(parRodErr(th, 0, x)), Math.abs(parRodErr(th, 1, x))) * 1e9).toFixed(1)} nm</span>`;
+}
+
+async function initParallelOverlay(data) {
+  const sec = $('par-sec'), panel = $('par-panel');
+  if (!sec || !panel) return;
+  if (data.id !== 'g1-29dof') { sec.style.display = 'none'; panel.style.display = 'none'; return; }
+  if (!PAR.data) {
+    try {
+      PAR.data = await (await fetch('./data/parallel-g1-overlay.json')).json();
+    } catch (e) { console.warn('并联叠加层数据缺失', e); return; }
+  }
+  const pitchJoint = current.joints.get('left_ankle_pitch_joint');
+  if (!pitchJoint) return;
+  const parentObj = pitchJoint.obj.parent;      // 挂在膝 link 上，避免跟着 pitch 转
+  if (PAR.group) parentObj.remove(PAR.group);
+  PAR.meshes = buildOverlayGeometry();
+  PAR.group = PAR.meshes.group;
+  PAR.group.position.set(0, -9.4445e-5, -0.30001);   // ankle pitch 关节中心在膝坐标系里的位置
+  parentObj.add(PAR.group);
+  sec.style.display = ''; panel.style.display = '';
+
+  panel.innerHTML = `
+    <div class="joint"><div class="name"><span>A 电机（右）</span><span data-a>0.0°</span></div>
+      <input type="range" min="-35" max="35" step="0.5" value="0" id="par-a"></div>
+    <div class="joint"><div class="name"><span>B 电机（左）</span><span data-b>0.0°</span></div>
+      <input type="range" min="-35" max="35" step="0.5" value="0" id="par-b"></div>
+    <div id="par-out" style="font-size:12px;color:#d7dee8;padding:4px 2px"></div>`;
+  const sync = () => {
+    PAR.th = [+$('par-a').value * Math.PI / 180, +$('par-b').value * Math.PI / 180];
+    panel.querySelector('[data-a]').textContent = `${$('par-a').value}°`;
+    panel.querySelector('[data-b]').textContent = `${$('par-b').value}°`;
+    updateOverlay();
+  };
+  const preset = new URLSearchParams(location.search).get('par');
+  if (preset) {
+    const [a, b] = preset.split(',').map((v) => parseFloat(v) || 0);
+    $('par-a').value = String(a); $('par-b').value = String(b);
+  }
+  $('par-a').addEventListener('input', sync);
+  $('par-b').addEventListener('input', sync);
+  sync();
+}
