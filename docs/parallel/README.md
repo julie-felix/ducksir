@@ -37,9 +37,18 @@ PYTHONPATH=/tmp/pylibs python3 tools/parallel/export_viz.py \
 https://100.110.238.101:3080/ducksir-static/client/viewer/index.html?robot=g1-29dof&focus=left_ankle_pitch_joint&par=18,12
 ```
 
-- 两根推杆、曲柄、销、平台画在 **G1 左踝的 pitch 关节坐标系里**，和模型同框；
-- 拖 A/B 两个滑条（角度制），浏览器里跑和 Python 同一套牛顿解算，脚掌的 roll/pitch 跟着变；
+- **左右踝各一组**（左绿、右橙），推杆/曲柄/销/平台画在各自的 ankle pitch 关节坐标系里，和模型同框；
+- **四个滑条双向联动**：拖 A/B 电机 → 正解出 roll/pitch；拖 roll/pitch → 逆解回 A/B。浏览器里跑的是和 Python 同一套解算；
+- 头部「模型半透明」开关把机体压到 22% 不透明，方便看里面的连杆；
 - 坐标系对齐的依据：rig 的 `roll_link` 位移 `(0,0,-0.017558)` 与 G1 URDF 的 `left_ankle_roll_joint` **完全一致**，
   所以 rig 的踝就是按 G1 踝的坐标系装的。
 
 几何数据由 `tools/parallel/export_overlay.py` 导出（含一份 MuJoCo 查表，暂未用于交互）。
+
+## 交互细节
+
+- 左侧模型半透明后能看到踝内的两根推杆；绿灯=左踝、橙灯=右踝。
+- 四个滑条任意拖，另一边自动跟着算（`parFw` / `parIk`，浮点往返误差 0）。
+- 右侧按矢状面镜像；写关节时 roll 取反（`left_ankle_roll_joint = -x.roll`），这是镜像机构的约定，
+  与真机符号是否一致需要实物确认（未定）。
+- URL 参数：`?robot=g1-29dof&focus=left_ankle_pitch_joint&parL=20,10&parR=-20,-10`。
