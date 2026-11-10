@@ -79,6 +79,31 @@ def step(doc: dict, obs, state: dict | None = None, backend=None):
                 value = np.asarray(backend(ins[0]), dtype=F32)
                 if value.shape != (out["len"],):
                     raise ValueError(f"model 输出维度 {value.shape} != {out['len']}")
+        elif name == "constant":
+            value = np.array(p, dtype=F32)
+        elif name == "select":
+            mode_val = float(ins[0][0])
+            n_choices = len(ins) - 1
+            width = int(p[-2])
+            passive = int(p[-1])
+            picked = None
+            for i in range(n_choices):
+                if float(p[i]) == mode_val:
+                    picked = ins[1 + i]
+                    break
+            if picked is None:
+                picked = ins[1 + passive] if 0 <= passive < n_choices else np.zeros(width, dtype=F32)
+            value = picked
+        elif name == "where":
+            value = ins[1] if float(ins[0][0]) != 0.0 else ins[2]
+        elif name == "phase_clock":
+            period = float(p[0])
+            steps = float(ins[0][0])
+            value = np.array([(steps % period) / period], dtype=F32)
+        elif name == "add":
+            value = np.zeros(out["len"], dtype=F32)
+            for x in ins:
+                value = value + x
         elif name == "out_action":
             value = ins[0]
             action = value.copy()

@@ -75,6 +75,11 @@ required 表：required_count × 4B  { u16 type, u16 min_version }
 | 6 | `history` | 环形缓冲，输出最近 `frames` 帧按 **by-frame** 铺开（最老在前） | `[frames]` |
 | 7 | `model` | 调宿主推理后端：`onnx_run(model_id, in, out)` | `[model_id]` |
 | 8 | `out_action` | 唯一的 sink，`action = x` | — |
+| 9 | `constant` | 常值向量 | 值本身 |
+| 10 | `select` | 按 mode 选一路（≤3 路）；不匹配输出全零或 passive 那一路 | `mode值×n, width, passive` |
+| 11 | `where` | `cond ? a : b`（两边都算，不短路） | — |
+| 12 | `phase_clock` | `fmod(steps, period)/period`，落在 [0,1) | `[period_steps]` |
+| 13 | `add` | 逐元素相加（≤4 路），分块 select 后用它消零 | — |
 
 两条容易踩的：
 

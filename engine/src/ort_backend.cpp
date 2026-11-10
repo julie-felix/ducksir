@@ -33,7 +33,8 @@ struct OrtCtx {
 
 struct Backend {
     ds_backend be{};
-    OrtCtx ctx{};
+    OrtCtx ctx{};                 // 单模型时为 0 号；多模型时每个槽一份，共享 env/opts
+    std::vector<OrtCtx> slots;
 };
 
 void set_err(char* err, size_t err_len, const char* msg) {
@@ -154,25 +155,33 @@ bool describe(const OrtApi* api, Backend* b, char* err, size_t err_len, const ch
 }
 
 int ort_run(void* raw_ctx, int model_id, const float* in, int in_len, float* out, int out_len) {
-    (void)model_id;  // 一个后端实例绑一份模型；多模型就建多个实例
     auto* b = static_cast<Backend*>(raw_ctx);
     if (!b || !in || !out) return 1;
-    if (in_len != b->ctx.in_len || out_len != b->ctx.out_len) return 2;
+    // 多模型时按 model_id 取槽；单模型时就是 b->ctx。
+    // 注意：**不能**把槽拷回 b->ctx —— 那样析构会把同一个 session 释放两次（踩过，free(): invalid pointer）。
+    OrtCtx* c = nullptr;
+    if (b->slots.empty()) {
+        if (model_id != 0) return 6;
+        c = &b->ctx;
+    } else {
+        if (model_id < 0 || model_id >= static_cast<int>(b->slots.size())) return 6;
+        c = &b->slots[static_cast<size_t>(model_id)];
+    }
+    if (in_len != c->in_len || out_len != c->out_len) return 2;
 
-    const OrtApi* api = b->ctx.api;
+    const OrtApi* api = c->api;
     OrtValue* input = nullptr;
     OrtStatus* st = api->CreateTensorWithDataAsOrtValue(
-        b->ctx.mem, const_cast<float*>(in), static_cast<size_t>(in_len) * sizeof(float),
-        b->ctx.in_dims.data(), b->ctx.in_dims.size(),
-        ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT, &input);
+        c->mem, const_cast<float*>(in), static_cast<size_t>(in_len) * sizeof(float),
+        c->in_dims.data(), c->in_dims.size(), ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT, &input);
     if (st) {
         api->ReleaseStatus(st);
         return 3;
     }
-    const char* in_names[1] = {b->ctx.in_name.c_str()};
-    const char* out_names[1] = {b->ctx.out_name.c_str()};
+    const char* in_names[1] = {c->in_name.c_str()};
+    const char* out_names[1] = {c->out_name.c_str()};
     OrtValue* output = nullptr;
-    st = api->Run(b->ctx.session, nullptr, in_names, &input, 1, out_names, 1, &output);
+    st = api->Run(c->session, nullptr, in_names, &input, 1, out_names, 1, &output);
     api->ReleaseValue(input);
     if (st) {
         api->ReleaseStatus(st);
@@ -192,7 +201,84 @@ int ort_run(void* raw_ctx, int model_id, const float* in, int in_len, float* out
 
 }  // namespace
 
+namespace {
+
+// 把一份模型装进 ctx（共享 env/opts，独立 session/名字/维度）
+bool load_into(const OrtApi* api, Backend* b, OrtCtx* c, const char* path, char* err, size_t err_len) {
+    c->api = api;
+    c->env = b->ctx.env;
+    c->opts = b->ctx.opts;
+    OrtStatus* st = api->CreateSession(c->env, path, c->opts, &c->session);
+    if (st) {
+        set_ort_err(err, err_len, api, st, "CreateSession");
+        return false;
+    }
+    if ((st = api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &c->mem))) {
+        set_ort_err(err, err_len, api, st, "CreateCpuMemoryInfo");
+        return false;
+    }
+    // describe() 读的是 Backend 上的 ctx，这里临时把它指到 c
+    OrtCtx saved = b->ctx;
+    b->ctx = *c;
+    const bool ok = describe(api, b, err, err_len, "模型");
+    *c = b->ctx;
+    b->ctx = saved;
+    return ok;
+}
+
+}  // namespace
+
 extern "C" {
+
+ds_backend* ds_ort_create_multi(const char* const* paths, int count, char* err, size_t err_len) {
+    if (!paths || count < 1) {
+        set_err(err, err_len, "paths 为空");
+        return nullptr;
+    }
+    auto* b = new (std::nothrow) Backend();
+    if (!b) {
+        set_err(err, err_len, "分配 backend 失败");
+        return nullptr;
+    }
+    const OrtApi* api = OrtGetApiBase()->GetApi(ORT_API_VERSION);
+    if (!api) {
+        delete b;
+        set_err(err, err_len, "OrtGetApiBase 失败（ABI 不匹配？）");
+        return nullptr;
+    }
+    b->ctx.api = api;
+    OrtStatus* st = nullptr;
+    if ((st = api->CreateEnv(ORT_LOGGING_LEVEL_WARNING, "ducksim", &b->ctx.env))) {
+        set_ort_err(err, err_len, api, st, "CreateEnv");
+        delete b;
+        return nullptr;
+    }
+    if ((st = api->CreateSessionOptions(&b->ctx.opts))) {
+        set_ort_err(err, err_len, api, st, "CreateSessionOptions");
+        ds_ort_destroy(reinterpret_cast<ds_backend*>(b));
+        return nullptr;
+    }
+    if ((st = api->SetIntraOpNumThreads(b->ctx.opts, 1))) {
+        set_ort_err(err, err_len, api, st, "SetIntraOpNumThreads");
+        ds_ort_destroy(reinterpret_cast<ds_backend*>(b));
+        return nullptr;
+    }
+    if ((st = api->SetSessionGraphOptimizationLevel(b->ctx.opts, ORT_ENABLE_ALL))) {
+        set_ort_err(err, err_len, api, st, "SetSessionGraphOptimizationLevel");
+        ds_ort_destroy(reinterpret_cast<ds_backend*>(b));
+        return nullptr;
+    }
+    b->slots.resize(static_cast<size_t>(count));
+    for (int i = 0; i < count; ++i) {
+        if (!load_into(api, b, &b->slots[static_cast<size_t>(i)], paths[i], err, err_len)) {
+            ds_ort_destroy(reinterpret_cast<ds_backend*>(b));
+            return nullptr;
+        }
+    }
+    b->be.ctx = b;
+    b->be.onnx_run = &ort_run;
+    return &b->be;
+}
 
 ds_backend* ds_ort_create(const char* model_path, char* err, size_t err_len) {
     if (!model_path) {
@@ -256,6 +342,10 @@ void ds_ort_destroy(ds_backend* be) {
     auto* b = reinterpret_cast<Backend*>(be);
     const OrtApi* api = b->ctx.api;
     if (api) {
+        for (auto& c : b->slots) {
+            if (c.mem) api->ReleaseMemoryInfo(c.mem);
+            if (c.session) api->ReleaseSession(c.session);
+        }
         if (b->ctx.mem) api->ReleaseMemoryInfo(b->ctx.mem);
         if (b->ctx.session) api->ReleaseSession(b->ctx.session);
         if (b->ctx.opts) api->ReleaseSessionOptions(b->ctx.opts);
@@ -266,12 +356,14 @@ void ds_ort_destroy(ds_backend* be) {
 
 int64_t ds_ort_input_len(const ds_backend* be) {
     if (!be) return 0;
-    return reinterpret_cast<const Backend*>(be)->ctx.in_len;
+    const auto* b = reinterpret_cast<const Backend*>(be);
+    return b->slots.empty() ? b->ctx.in_len : b->slots[0].in_len;
 }
 
 int64_t ds_ort_output_len(const ds_backend* be) {
     if (!be) return 0;
-    return reinterpret_cast<const Backend*>(be)->ctx.out_len;
+    const auto* b = reinterpret_cast<const Backend*>(be);
+    return b->slots.empty() ? b->ctx.out_len : b->slots[0].out_len;
 }
 
 }  // extern "C"

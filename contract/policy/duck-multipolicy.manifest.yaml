@@ -1,0 +1,38 @@
+# botlab 的 MicroDuck 多策略：同一个 61 维观测喂给 7 个 ONNX，按 mode 选一路。
+# 对应它的 policy_bank(mode, inputs={key: observation}) + state_machine 的 policy_mode。
+kind: ducksir-policy-manifest
+version: 1
+policy_id: duck-multipolicy
+
+# 多策略：mode 值 = botlab 的 POLICY_*（walk=0, sitstand=1, kick_left=2, kick_right=3, roll=4, ground_pick=5, stand=6）
+policies:
+  - {key: walk,        mode: 0, file: build/models/walking.onnx}
+  - {key: sitstand,    mode: 1, file: build/models/sitstand.onnx}
+  - {key: kick_left,   mode: 2, file: build/models/kick-left.onnx}
+  - {key: kick_right,  mode: 3, file: build/models/kick-right.onnx}
+  - {key: roll,        mode: 4, file: build/models/roll.onnx}
+  - {key: ground_pick, mode: 5, file: build/models/ground-pick.onnx}
+  - {key: stand,       mode: 6, file: build/models/stand.onnx}
+
+model:
+  input: {name: obs, shape: [1, 61]}
+  output: {name: actions, shape: [1, 14]}
+
+mode: 0        # 默认 WALK；--mode 覆盖
+
+obs:
+  - {slot: imu_ang_vel, len: 3, scale: 1.0}
+  - {slot: projected_gravity, len: 3, target: trunk_base, scale: 1.0}
+  - {slot: joint_pos, len: 14, minus: default, scale: 1.0}
+  - {slot: joint_vel, len: 14, scale: 1.0}
+  - {slot: last_action, len: 14, scale: 1.0}
+  - {slot: command, len: 13, values: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
+
+history: {length: 0, layout: by-frame}
+action: {mapping: default_plus_scale, order: motor, clip: ctrlrange}
+rates: {control_hz: 50, physics_hz: 200, inference_decimation: 1}
+
+provenance:
+  source: botlab 模板 microduck · assets/models/*.onnx（2026-11-10 取）
+  upstream: https://huggingface.co/spaces/pollen-robotics/microduck-simulator
+  note: 上游无根 LICENSE；只做本地兼容性对照，模型不入库、不对外分发。

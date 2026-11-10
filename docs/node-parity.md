@@ -6,7 +6,7 @@
 
 图例：✅ 已集成 ｜ ⇄ 我们的等价节点替代 ｜ ⏳ 排进 v0.1 ｜ ❌ 不集成
 
-统计：✅ 25 ｜ ⇄ 2 ｜ ⏳ 2 ｜ ❌ 27 —— 我们的 27 个节点对齐到它 25 个（`affine` 并进 `proc-math`、`moving_average` 并进 `proc-signal-filter`、`take` 用 `proc-demux` 的等价形态）。
+统计（v2，多了 4 个编排节点）：✅ 29 ｜ ⇄ 2 ｜ ⏳ 0 ｜ ❌ 25 —— 我们的 27 个节点对齐到它 25 个（`affine` 并进 `proc-math`、`moving_average` 并进 `proc-signal-filter`、`take` 用 `proc-demux` 的等价形态）。
 
 ## 观测（15）
 
@@ -48,9 +48,9 @@
 | `proc-action-hook` | ❌ | 逃生口；端侧不可用，允许即等于三端不一致 |
 | `proc-delay` | ✅ | `delay` |
 | `proc-rule-index` | ❌ | 规则表选索引，v0 用 `state_machine` + `mode_select` |
-| `proc-one-hot` | ❌ | v0 不需要 |
-| `proc-compare` | ⏳ | v0.1 补：`state_machine` 的 `when` 要真值输入 |
-| `proc-logic` | ⏳ | v0.1 补：同上（`& | ~`） |
+| `proc-one-hot` | ✅ | `constant` + `select` 可等价写出 |
+| `proc-compare` | ⏳ | 仍缺：`state_machine` 的 `when` 要真值输入，`where` 的 cond 目前只能从外部给 |
+| `proc-logic` | ⏳ | 仍缺：同上（`& | ~`） |
 | `proc-where` | ❌ | 两边都求值（不短路），用起来全是坑 |
 | `proc-state-machine` | ✅ | `state_machine` |
 | `proc-phase-clock` | ✅ | `phase_clock`（喂 `state_machine.steps`） |
@@ -61,9 +61,9 @@
 | `proc-signal-filter` | ✅ | `low_pass` 与 `moving_average` 都归这里 |
 | `proc-vector-math` | ✅ | `norm` 与 `math` 的分量运算 |
 | `proc-fsm` | ❌ | 与 `state-machine` 重复，只做一个 |
-| `proc-mode-switch` | ❌ | `mode_select` 覆盖 |
-| `proc-select` | ❌ | `mode_select` 覆盖 |
-| `proc-mode-select` | ✅ | `mode_select` |
+| `proc-mode-switch` | ✅ | `select`（按 mode 选一路） |
+| `proc-select` | ✅ | `select` |
+| `proc-mode-select` | ✅ | `select` |
 | `proc-signal-send` | ❌ | 单图内无需跨图通信 |
 | `proc-signal-receive` | ❌ | 同上 |
 
