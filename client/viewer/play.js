@@ -237,6 +237,9 @@ async function main() {
       pendingCmd = 0;
       state.fsm = { state: fsmOut[0], mode: fsmOut[1] };
       const cmd13 = fsmOut.slice(2, 15);
+      // botlab 的 `where(clear_last_action, 0, last_action)`：SIT_ENTER 第一步 / WALK_RESET / RECOVER_ENTER 要清零。
+      // 漏了它，坐完站起来的第一帧会把坐姿策略的动作喂给行走策略，直接顶飞（2026-11-10 踩过）。
+      if (fsmOut[15]) state.lastAction.fill(0);
       if (!manual) active = modeToKey[fsmOut[1]] || active;
 
       // 2) obs（61 维）：指令段用状态机给的 command
