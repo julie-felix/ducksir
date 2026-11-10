@@ -685,9 +685,15 @@ function parApply(side, th, x) {
 }
 
 /** 把解算出的 roll/pitch 写到模型关节上（右侧按镜像取反 roll）。 */
+/** 机构坐标系 → 机器人坐标系。镜像侧 roll 与 pitch 都要取反（镜像反转手性，单反一个轴会变成不对称）。 */
+function parToRobot(side, v) {
+  return side.mirror ? [-v[0], -v[1]] : [v[0], v[1]];
+}
+
 function applyJointPair(side, x) {
-  setJointAngle(side.rollJoint, side.mirror ? -x[0] : x[0]);
-  setJointAngle(side.pitchJoint, x[1]);
+  const [roll, pitch] = parToRobot(side, x);
+  setJointAngle(side.rollJoint, roll);
+  setJointAngle(side.pitchJoint, pitch);
 }
 
 function parMakeUI(side, host) {
@@ -722,8 +728,10 @@ function parMakeUI(side, host) {
   };
 
   const paint = () => {
+    const thr = parToRobot(side, state.th);          // 面板一律显示机身系
+    const xr = parToRobot(side, state.x);
     [0, 1, 2, 3].forEach((k) => {
-      const v = k < 2 ? deg(state.th[k]) : deg(state.x[k - 2]);
+      const v = k < 2 ? deg(thr[k]) : deg(xr[k - 2]);
       inputs[k].value = String(v.toFixed(1));
       outs[k].textContent = `${v.toFixed(1)}°`;
     });
@@ -739,11 +747,12 @@ function parMakeUI(side, host) {
   inputs.forEach((input) => input.addEventListener('input', () => {
     const k = +input.dataset.k;
     const prev = { th: [...state.th], x: [...state.x] };
+    const v = rad(parseFloat(input.value));
     if (k < 2) {
-      state.th[k] = rad(parseFloat(input.value));
+      state.th[k] = side.mirror ? -v : v;            // 面板是机身系，换回机构系
       state.x = parFw(side.geom, state.th, state.x);
     } else {
-      state.x[k - 2] = rad(parseFloat(input.value));
+      state.x[k - 2] = side.mirror ? -v : v;
       state.th = parIk(side.geom, state.x, state.th);
     }
     // 解出来的另一侧超出滑条行程 → 不接受这一步，把输入退回去并提示
@@ -752,7 +761,8 @@ function parMakeUI(side, host) {
       paint();
       const which = [0, 1].some((i) => Math.abs(state.th[i]) > LIM_TH) ? '电机' : '关节';
       showLim(`⚠ 这一步会让${which}超出滑条行程，已退回上一步`);
-      input.value = String(deg(k < 2 ? state.th[k] : state.x[k - 2]).toFixed(1));
+      input.value = String(deg(k < 2 ? parToRobot(side, state.th)[k]
+        : parToRobot(side, state.x)[k - 2]).toFixed(1));
       return;
     }
     showLim('');
@@ -1037,8 +1047,9 @@ async function splitUpdate(side) {
   const twin = SPLIT.sides.find((s) => s.prefix === side.prefix);
   const mj = splitLookup(g, side.state.th);
   if (twin) {
-    setJointIn(SPLIT.joints, twin.rollJoint, twin.mirror ? -mj[0] : mj[0]);
-    setJointIn(SPLIT.joints, twin.pitchJoint, mj[1]);
+    const [roll, pitch] = parToRobot(twin, mj);
+    setJointIn(SPLIT.joints, twin.rollJoint, roll);
+    setJointIn(SPLIT.joints, twin.pitchJoint, pitch);
     parApply(twin, side.state.th, mj);
   }
   const firstId = (PAR.mechs && PAR.mechs[0]) ? PAR.mechs[0].side.prefix : null;
@@ -1046,7 +1057,8 @@ async function splitUpdate(side) {
 }
 
 function parTraceCaption(side, mj, g) {
-  const dr = side.state.x[0] - mj[0], dp = side.state.x[1] - mj[1];
+  const ours = parToRobot(side, side.state.x), eq = parToRobot(side, mj);
+  const dr = ours[0] - eq[0], dp = ours[1] - eq[1];
   $('cap-r').textContent = `MuJoCo · roll ${(mj[0] * 180 / Math.PI).toFixed(2)}° `
     + `pitch ${(mj[1] * 180 / Math.PI).toFixed(2)}° · 差 `
     + `${(Math.max(Math.abs(dr), Math.abs(dp)) * 1e3).toFixed(2)} mrad`
