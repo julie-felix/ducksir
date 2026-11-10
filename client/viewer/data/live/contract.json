@@ -1,0 +1,317 @@
+{
+  "kind": "ducksir-contract",
+  "version": 1,
+  "rates": {
+    "control_hz": 50,
+    "physics_hz": 200,
+    "inference_decimation": 1
+  },
+  "plans": {
+    "pre": {
+      "name": "pre",
+      "file": "pre.blob",
+      "bytes": 428,
+      "input_dim": 61,
+      "output_dim": 61,
+      "nodes": 10,
+      "digest": "5f491eb963fd1e99ec8d1d7d71860004ecc7af2b2e0c0977672418ce45fbc775",
+      "slots": {
+        "in:obs": [
+          0,
+          61
+        ]
+      }
+    },
+    "post": {
+      "name": "post",
+      "file": "post.blob",
+      "bytes": 424,
+      "input_dim": 14,
+      "output_dim": 14,
+      "nodes": 4,
+      "digest": "7d4d3d987e09526e0b0e4991e038e2bda322b3ef351598f34bfadccdf8608cb9",
+      "slots": {
+        "in:action": [
+          0,
+          14
+        ],
+        "out:ctrl": [
+          0,
+          14
+        ]
+      }
+    },
+    "fsm": {
+      "name": "fsm",
+      "file": "fsm.blob",
+      "bytes": 3164,
+      "input_dim": 4,
+      "output_dim": 16,
+      "nodes": 66,
+      "digest": "2497335eb4c8ad192da188c4e9ca7418896133415d2a07c73231bc74b4ab7746",
+      "slots": {
+        "in:policy_command": [
+          0,
+          1
+        ],
+        "in:gravity_z": [
+          1,
+          1
+        ],
+        "in:vx": [
+          2,
+          1
+        ],
+        "in:wz": [
+          3,
+          1
+        ],
+        "out:state": [
+          0,
+          1
+        ],
+        "out:mode": [
+          1,
+          1
+        ],
+        "out:command": [
+          2,
+          13
+        ],
+        "out:clear_last_action": [
+          15,
+          1
+        ]
+      }
+    }
+  },
+  "policies": [
+    {
+      "key": "walking",
+      "mode": 0,
+      "file": "walking.onnx"
+    },
+    {
+      "key": "sitstand",
+      "mode": 1,
+      "file": "sitstand.onnx"
+    },
+    {
+      "key": "kick-left",
+      "mode": 2,
+      "file": "kick-left.onnx"
+    },
+    {
+      "key": "kick-right",
+      "mode": 3,
+      "file": "kick-right.onnx"
+    },
+    {
+      "key": "roll",
+      "mode": 4,
+      "file": "roll.onnx"
+    },
+    {
+      "key": "ground-pick",
+      "mode": 5,
+      "file": "ground-pick.onnx"
+    },
+    {
+      "key": "stand",
+      "mode": 6,
+      "file": "stand.onnx"
+    }
+  ],
+  "obs": [
+    {
+      "name": "imu_ang_vel",
+      "slot": [
+        0,
+        3
+      ],
+      "source": "sensor:imu_ang_vel"
+    },
+    {
+      "name": "projected_gravity",
+      "slot": [
+        3,
+        3
+      ],
+      "source": "gravity:body:trunk_base"
+    },
+    {
+      "name": "joint_pos",
+      "slot": [
+        6,
+        14
+      ],
+      "source": "qpos:joints",
+      "minus": "default"
+    },
+    {
+      "name": "joint_vel",
+      "slot": [
+        20,
+        14
+      ],
+      "source": "qvel:joints"
+    },
+    {
+      "name": "last_action",
+      "slot": [
+        34,
+        14
+      ],
+      "source": "last_action"
+    },
+    {
+      "name": "command",
+      "slot": [
+        48,
+        13
+      ],
+      "source": "fsm_slot:command"
+    }
+  ],
+  "states": {
+    "count": 14,
+    "initial": 0
+  },
+  "robot": {
+    "id": "duck-hd1910",
+    "joints": [
+      "left_hip_yaw",
+      "left_hip_roll",
+      "left_hip_pitch",
+      "left_knee",
+      "left_ankle",
+      "neck_pitch",
+      "head_pitch",
+      "head_yaw",
+      "head_roll",
+      "right_hip_yaw",
+      "right_hip_roll",
+      "right_hip_pitch",
+      "right_knee",
+      "right_ankle"
+    ],
+    "default_q": [
+      0.0,
+      -0.08726646259971647,
+      -0.457924,
+      -0.00494,
+      0.452984,
+      0.3490658503988659,
+      0.3490658503988659,
+      0.0,
+      0.0,
+      0.0,
+      0.08726646259971647,
+      0.457924,
+      0.00494,
+      -0.452984
+    ],
+    "initial_qpos": [
+      0.0,
+      0.0,
+      0.12,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -0.08726646259971647,
+      -0.457924,
+      -0.00494,
+      0.452984,
+      0.3490658503988659,
+      0.3490658503988659,
+      0.0,
+      0.0,
+      0.0,
+      0.08726646259971647,
+      0.457924,
+      0.00494,
+      -0.452984
+    ],
+    "action_scale": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "ctrlrange": [
+      [
+        -10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ]
+    ],
+    "commands": {
+      "forward_max": 0.25,
+      "back_max": -0.2,
+      "yaw_max": 1.0
+    }
+  }
+}

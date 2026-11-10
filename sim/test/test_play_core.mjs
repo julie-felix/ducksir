@@ -3,7 +3,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { loadDuck, makeObs, stepPhysics } from '../../client/viewer/play-core.mjs';
+import { loadDuck, makeObs, stepPhysics, setContract } from '../../client/viewer/play-core.mjs';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 const MJCF = resolve(ROOT, 'client/viewer/data/mjcf-browser/duck.xml');
@@ -22,17 +22,19 @@ const duck = await loadDuck({ loadMujoco, xml: readFileSync(MJCF, 'utf8'), asset
 const { mj, model, data } = duck;
 console.log(`模型：nbody=${model.nbody} njnt=${model.njnt} nq=${model.nq} nu=${model.nu} nsensor=${model.nsensor}`);
 
-const meta = JSON.parse(readFileSync(resolve(LIVE, 'duck.json'), 'utf8'));
-for (let i = 0; i < model.nq; i++) data.qpos[i] = meta.initialQpos[i];
+const contract = JSON.parse(readFileSync(resolve(LIVE, 'contract.json'), 'utf8'));
+setContract(contract);
+const meta = contract.robot;
+for (let i = 0; i < model.nq; i++) data.qpos[i] = meta.initial_qpos[i];
 mj.mj_forward(model, data);
 
 // 用一个「保住站姿」的最简控制器代替策略，只为验证物理与观测能跑通
-const obs0 = makeObs(duck, { joints: meta.joints, defaultQ: meta.defaultQ, lastAction: null, vx: 0 });
+const obs0 = makeObs(duck, { lastAction: null, vx: 0, command: new Array(13).fill(0) });
 console.log(`观测：${obs0.length} 维｜前 6 项 ${Array.from(obs0.slice(0, 6)).map((v) => v.toFixed(3)).join(', ')}`);
 
 for (let k = 0; k < 200; k++) {
   for (let j = 0; j < model.nu; j++) {
-    data.ctrl[j] = meta.defaultQ[j];
+    data.ctrl[j] = meta.default_q[j];
   }
   stepPhysics(mj, model, data);
 }

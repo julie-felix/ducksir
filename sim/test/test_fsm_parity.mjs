@@ -8,7 +8,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { loadDuck, makeObs, stepPhysics, read } from '../../client/viewer/play-core.mjs';
+import { loadDuck, makeObs, stepPhysics, read, setContract, getContract, slot, readSlot } from '../../client/viewer/play-core.mjs';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 const LIVE = resolve(ROOT, 'client/viewer/data/live');
@@ -30,8 +30,10 @@ const hostFrames = host.frames;
 const hostStates = host.states ?? [];
 
 // ── 2) 浏览器那套跑一遍 ─────────────────────────────────────────
-const meta = JSON.parse(readFileSync(resolve(LIVE, 'duck.json'), 'utf8'));
-const { policies } = JSON.parse(readFileSync(resolve(LIVE, 'policies.json'), 'utf8'));
+const contract = JSON.parse(readFileSync(resolve(LIVE, 'contract.json'), 'utf8'));
+setContract(contract);
+const meta = contract.robot;
+const policies = contract.policies;
 const modeToKey = Object.fromEntries(policies.map((p) => [p.mode, p.key]));
 const { default: loadMujoco } = await import(pathToFileURL(resolve(ROOT, 'client/viewer/vendor/mujoco/mujoco.js')).href);
 const { default: createDucksim } = await import(pathToFileURL(resolve(ROOT, 'client/viewer/vendor/ducksim/ducksim.mjs')).href);
@@ -44,7 +46,7 @@ const assets = {};
 for (const f of readdirSync(STL)) if (f.toLowerCase().endsWith('.stl')) assets[f] = new Uint8Array(readFileSync(resolve(STL, f)));
 const duck = await loadDuck({ loadMujoco, xml: readFileSync(resolve(ROOT, 'client/viewer/data/mjcf-browser/duck.xml'), 'utf8'), assets });
 const { mj, model, data } = duck;
-for (let i = 0; i < model.nq; i++) data.qpos[i] = meta.initialQpos[i];
+for (let i = 0; i < model.nq; i++) data.qpos[i] = meta.initial_qpos[i];
 mj.mj_forward(model, data);
 
 const wasm = await createDucksim();
@@ -58,6 +60,14 @@ const loadPlan = (file) => {
   const i = new Uint16Array(wasm.HEAPU8.buffer, ip, 12);
   const o = { handle: h, inDim: i[3], outDim: i[4] }; wasm._free(ip); return o;
 };
+// fsm 的输入按契约槽位塞，不写偏移
+function fsmInput(pulse, gz, vx, wz) {
+  const buf = new Array(slot('fsm', 'in:vx')[0] + 2).fill(0);
+  const put = (name, v) => { buf[slot('fsm', name)[0]] = v; };
+  put('in:policy_command', pulse); put('in:gravity_z', gz); put('in:vx', vx); put('in:wz', wz);
+  return buf;
+}
+
 const runPlan = (pl, input) => {
   const ip = wasm._malloc(pl.inDim * 4), op = wasm._malloc(pl.outDim * 4);
   wasm.HEAPF32.set(Float32Array.from(input), ip >> 2);
@@ -83,12 +93,12 @@ for (let k = 0; k < SECONDS * 50; k++) {
   // 脉冲的 key 是「秒」，这里是控制步，要换算
   if (pulses[k / 50] !== undefined) pulse = pulses[k / 50];   // 秒 key 精确命中该控制步
   const qx = read(data.xquat, bid * 4 + 1), qy = read(data.xquat, bid * 4 + 2);
-  const f = runPlan(fsm, [pulse, -(1 - 2 * (qx * qx + qy * qy)), 0.25, 0]);
+  const f = runPlan(fsm, fsmInput(pulse, -(1 - 2 * (qx * qx + qy * qy)), 0.25, 0));
   pulse = 0;
   browserStates.push(f[0]);
-  if (f[15]) lastAction.fill(0);
-  const active = modeToKey[f[1]] || 'walk';
-  const obs = makeObs(duck, { joints: meta.joints, defaultQ: meta.defaultQ, lastAction, vx: 0.25, command: f.slice(2, 15) });
+  if (readSlot(f, 'fsm', 'out:clear_last_action')[0]) lastAction.fill(0);
+  const active = modeToKey[readSlot(f, 'fsm', 'out:mode')[0]] || 'walk';
+  const obs = makeObs(duck, { lastAction, vx: 0.25, command: readSlot(f, 'fsm', 'out:command') });
   const inp = runPlan(pre, obs);
   const sess = sessions[active];
   const res = await sess.run({ [sess.inputNames[0]]: new ort.Tensor('float32', Float32Array.from(inp), [1, inp.length]) });

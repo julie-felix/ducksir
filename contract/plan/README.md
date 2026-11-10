@@ -116,3 +116,49 @@ PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 sim/test/test_core_vs_oracl
 ```
 
 当前结果：`simple` / `rich` 两个图各 40 步，**最大偏差 0.000e+00**（float32 逐位一致）。
+
+## 契约（`contract.json`）
+
+图编译出来是一组 blob，但**光有 blob 端侧没法用**——它还得知道「输入第几维是什么、输出第几段是什么」。
+以前这些偏移写在消费端代码里（浏览器 `play-core.mjs` / `play.js`），结果是：改 Python 生成新 IR 之后，
+端侧用旧偏移读新 blob，**不报错，只是行为诡异**（2026-11-10 的指令映射漂移就是这么来的）。
+
+现在编译时把这些形状一并产出。`sim/plan/contract.py` 生成、`sim/host/export_artifacts.py` 落盘：
+
+```json
+{
+  "kind": "ducksir-contract",
+  "version": 1,
+  "rates": { "control_hz": 50, "physics_hz": 200, "inference_decimation": 1 },
+  "plans": {
+    "pre":  { "file": "pre.blob",  "input_dim": 61, "output_dim": 61, "digest": "…",
+              "slots": { "in:obs": [0, 61] } },
+    "post": { "file": "post.blob", "input_dim": 14, "output_dim": 14, "digest": "…",
+              "slots": { "in:action": [0, 14], "out:ctrl": [0, 14] } },
+    "fsm":  { "file": "fsm.blob",  "input_dim": 4,  "output_dim": 16, "digest": "…",
+              "slots": { "in:policy_command": [0,1], "in:gravity_z": [1,1],
+                         "in:vx": [2,1], "in:wz": [3,1],
+                         "out:state": [0,1], "out:mode": [1,1],
+                         "out:command": [2,13], "out:clear_last_action": [15,1] } }
+  },
+  "policies": [{ "key": "walking", "mode": 0, "file": "walking.onnx" }],
+  "obs": [{ "name": "imu_ang_vel", "slot": [0,3], "source": "sensor:imu_ang_vel" }],
+  "states": { "count": 14, "initial": 0 },
+  "robot": { "joints": [...], "default_q": [...], "initial_qpos": [...], "ctrlrange": [...] }
+}
+```
+
+消费方（浏览器 / 宿主 / 板端）只做三件事：
+
+1. 读契约；
+2. `ds_load` 之后核对 `ds_info` 的维度与契约一致（不一致直接拒绝启动）；
+3. 按**名字**取槽位（`slots["out:command"]`），不写任何偏移数字。
+
+`obs` 是**观测配方**：端侧照 `source` 取值（`sensor:<名>` / `gravity:body:<名>` / `qpos:joints` /
+`qvel:joints` / `last_action` / `fsm_slot:<槽位>`），所以改观测顺序也不用动端侧代码。
+
+**收益**：加策略、改 `fsm` 输出维度、换观测布局——全部只改 Python/YAML 后重新导出；
+端侧零改动，且「漂移」从静默失败变成加载即报错。守卫测试：`node sim/test/test_contract_guard.mjs`。
+
+**已知边界**：宿主侧 `run_policy.py` / `run_fsm.py` 目前仍按 manifest 自己组观测（不走契约），
+两边口径靠对拍测试（`test_fsm_parity.mjs`）钉住，尚未合并到契约驱动。

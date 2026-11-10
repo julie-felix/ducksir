@@ -19,7 +19,8 @@ if (ort.env.wasm.proxy !== undefined) ort.env.wasm.proxy = false;
 const pre = read(resolve(LIVE, 'pre.blob'));
 const post = read(resolve(LIVE, 'post.blob'));
 const obsSeq = JSON.parse(readFileSync(resolve(LIVE, 'obs.json'), 'utf8')).slice(0, 5);
-const { policies } = JSON.parse(readFileSync(resolve(LIVE, 'policies.json'), 'utf8'));
+const contract = JSON.parse(readFileSync(resolve(LIVE, 'contract.json'), 'utf8'));
+const policies = contract.policies;
 
 let bad = 0;
 for (const pol of policies) {
