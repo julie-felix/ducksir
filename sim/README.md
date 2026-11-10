@@ -40,3 +40,10 @@ python3 sim/host/pd_hold.py --mjcf build/mjcf/duck-hd1910.xml \
 
 回放这条链路：`pd_hold.py --trajectory client/viewer/data/replay-duck-pd.json` →
 查看器工具栏「回放」。这样 W4 之后写 C++ 核时，验收除了报告里的数字，还有一个能用眼睛看的东西。
+
+回放链路验一次（把「看着对不对」变成数字）：
+
+```bash
+python3 tools/robot/check_replay_fk.py client/viewer/data/duck-hd1910.json \
+    client/viewer/data/replay-duck-pd.json build/mjcf/duck-hd1910.xml
+```

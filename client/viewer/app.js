@@ -214,8 +214,14 @@ async function buildInto(data, group) {
 
 async function buildRobot(data) {
   robotGroup.clear();
-  const { joints } = await buildInto(data, robotGroup);
-  current = { data, joints, groundOffset: 0 };
+  const { joints, objects } = await buildInto(data, robotGroup);
+  const rootObj = objects.get(data.root) || null;
+  const rootLink = data.links.find((l) => l.name === data.root);
+  current = {
+    data, joints, groundOffset: 0, rootObj,
+    // 根节点自己的原始变换：回放要接管它，退出时要能还原
+    rootBase: rootObj && rootLink ? { pos: rootLink.xyz.slice(), quat: rootLink.quat.slice() } : null,
+  };
   for (const name of joints.keys()) setJointAngle(name, 0);
   const lift = measureLift();
   robotGroup.position.y = lift;
@@ -491,9 +497,13 @@ function applyReplayFrame(i) {
   const f = REPLAY.frames[Math.max(0, Math.min(i, REPLAY.frames.length - 1))];
   const names = REPLAY.meta.joints;
   for (let k = 0; k < names.length; k++) setJointIn(current.joints, names[k], f.q[k]);
-  // 实体坐标 (x,y,z) → three 世界 (x, z, -y)
-  robotGroup.position.set(f.pos[0], f.pos[2], -f.pos[1]);
-  robotGroup.quaternion.copy(replayQuat(f.quat));
+  // 根节点直接吃「自由基座位姿」：它在实体坐标系里，robotGroup 那层已经负责 Z-up → Y-up。
+  // 注意不能写到 robotGroup.position 上——根 link 自己还带着 link.xyz（鸭子的 trunk_base 是 +0.12），
+  // 两边都加会把整机抬高一截（2026-11-10 截图里就是这个问题）。
+  if (current.rootObj) {
+    current.rootObj.position.set(f.pos[0], f.pos[1], f.pos[2]);
+    current.rootObj.quaternion.copy(new THREE.Quaternion(f.quat[1], f.quat[2], f.quat[3], f.quat[0]));
+  }
   REPLAY.i = i;
   const slider = $('replay-t');
   if (slider && Number(slider.value) !== i) slider.value = String(i);
@@ -504,10 +514,17 @@ function applyReplayFrame(i) {
 function stopReplay() {
   REPLAY.on = false; REPLAY.playing = false; REPLAY.frames = []; REPLAY.meta = null;
   if ($('replay-box')) $('replay-box').style.display = 'none';
+  if (typeof setTranslucent === 'function' && REPLAY.prevTrans !== undefined) {
+    $('translucent').checked = REPLAY.prevTrans;
+    setTranslucent(REPLAY.prevTrans);
+  }
   if ($('replay')) $('replay').textContent = '回放';
+  if (current && current.rootObj && current.rootBase) {
+    current.rootObj.position.fromArray(current.rootBase.pos);
+    current.rootObj.quaternion.copy(q(current.rootBase.quat));
+  }
   $('ground').checked = true; groundClamp = true;
   robotGroup.position.set(0, groundClamp ? (current?.groundOffset ?? 0) : 0, 0);
-  robotGroup.quaternion.setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
 }
 
 async function startReplay(url, preloaded) {
@@ -524,6 +541,10 @@ async function startReplay(url, preloaded) {
   REPLAY.on = true;
   REPLAY.playing = true;
   REPLAY.acc = 0;
+  // 回放时半透明会让人看不清「到底躺在哪」，先关掉，退出再还原
+  REPLAY.prevTrans = $('translucent').checked;
+  $('translucent').checked = false;
+  if (typeof setTranslucent === 'function') setTranslucent(false);
   groundClamp = false;
   $('ground').checked = false;
   $('replay-box').style.display = 'flex';
@@ -538,6 +559,7 @@ async function startReplay(url, preloaded) {
     info.textContent = `${m.target} amp=${m.amp} gravity=${m.gravity} · 0.00 s`;
   }
   applyReplayFrame(0);
+  fitView();   // 回放会让机器走出原来的取景，先重算一次
 }
 
 /** 每帧调用：按真实时间推进回放时钟 */
