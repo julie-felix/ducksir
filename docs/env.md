@@ -161,3 +161,16 @@ env -u https_proxy -u HTTPS_PROXY -u http_proxy -u HTTP_PROXY -u all_proxy -u AL
 产物在 `engine/build/wasm/`（`ducksim.mjs` + `ducksim.wasm`），跑法见 `engine/wasm/README.md`。
 
 **不在 CI 里跑**：runner 没有 emsdk，`test_wasm_parity.py` 缺产物会自动跳过（exit 0）。
+
+## 8. 浏览器里跑物理 + 推理（素材）
+
+```bash
+python3 tools/vendor_mujoco_web.py     # @mujoco/mujoco 4.0.0 的 js+wasm（11 MB）+ 38 个 STL（21 MB）
+python3 tools/vendor_ort_web.py        # onnxruntime-web 的 wasm-only 运行时（14 MB）
+PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 sim/host/export_browser_check.py
+```
+
+三样都不入库（`.gitignore` 里有）：`client/viewer/vendor/{mujoco,ort}/`、`client/viewer/assets/mjcf/`、`client/viewer/data/live/*.onnx`。
+页面：`/client/viewer/play.html`（物理+推理，键盘开鸭子）、`/client/viewer/live.html`（只做自算比对）。
+
+**都直连下载**：npm registry 与 storage.googleapis.com 直连比走代理快一个数量级。
