@@ -13,6 +13,8 @@ import { execFile } from 'node:child_process'
 import { createReadStream } from 'node:fs'
 import { readdir, stat as statFile } from 'node:fs/promises'
 import path from 'node:path'
+
+import { createLive } from './live.mjs'
 import { fileURLToPath } from 'node:url'
 
 /** Loader 身份。 */
@@ -175,6 +177,8 @@ function statusTool() {
 
 /** 静态路由前缀：查看器从这里取 html / js / glb。 */
 const STATIC_ROUTE = '/ducksir-static'
+/** 工作台实时后端：起仿真进程 + 代理显示端点（手机也能用同源地址）。 */
+const LIVE_ROUTE = '/ducksir-live'
 /** 只放这两棵子树，别的路径一律 403 —— 这条路由等于一个只读的小静态服务器。 */
 const STATIC_ALLOWED = ['client/viewer', 'assets']
 const MIME = {
@@ -259,6 +263,24 @@ export function apply(ctx) {
     child.effect(
       () => child.webServer.register({ kind: 'prefix', path: STATIC_ROUTE, handler: serveStatic }),
       'ducksir.static'
+    )
+    child.effect(
+      () => {
+        const live = createLive({ repo: REPO })
+        return child.webServer.register({
+          kind: 'prefix',
+          path: LIVE_ROUTE,
+          handler: (req, res) => {
+            const url = new URL(req.url ?? '/', 'http://localhost')
+            const rest = url.pathname.slice(LIVE_ROUTE.length) + url.search
+            live.handle(req, res, rest).catch((err) => {
+              res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' })
+              res.end(JSON.stringify({ error: String(err) }))
+            })
+          },
+        })
+      },
+      'ducksir.live'
     )
   })
 }

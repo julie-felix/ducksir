@@ -970,3 +970,42 @@ PASS  studio 页 14 处 id 引用全部命中（静态守卫）
 ```
 
 **还没做**：在线编辑（写回文件）、曲线图、控制台输出流、AI 助手侧栏。
+
+### W11b（2026-11-11）工作台进面板（手机可访问）
+
+**问题**：`ducksir run` 起的显示服务绑在跑 CLI 那台机器的 `127.0.0.1` 上——手机/别的机器访问不到。
+庆喆的原话是「你要加入到机器人插件里边去，我现在都访问不到」。
+
+**做法**：插件宿主侧加一条同源路由 `/ducksir-live`：
+
+| 端点 | 作用 |
+|---|---|
+| `POST /ducksir-live/start` | 用**空闲端口** spawn `run_project.py --no-open`，等 `/scene` 就绪才返回 |
+| `POST /ducksir-live/stop` | SIGINT → 4 s 后 SIGKILL 兜底 |
+| `GET /ducksir-live/status` | `{running, port, project, error}` |
+| `GET /ducksir-live/{scene,stream,files,file,command}` | 反向代理到 runner 的显示服务（SSE 逐行 pipe） |
+
+页面 `studio.html` 因此要**两处可跑**：面板里（`/ducksir-static/…` + `/ducksir-live/…` 数据）
+与 runner 直开（根路径 + `/static/…`）。做法是运行时探测 `location.pathname`，
+动态注入 importmap 与脚本地址。顶栏加了「项目路径 + 启动仿真 + 停止」。
+
+面板工具栏加了第 5 个页签「工作台」。
+
+**两个坑（都写进代码注释了）**
+
+1. **代理路径要用去掉前缀后的 `rest`**，不能用 `req.url`——否则转发出去是 `/ducksir-live/scene`，runner 回 404。
+2. **插件 spawn 的子进程没有 `PYTHONPATH`**（dsh web 的环境里没有 `docs/env.md` 那套），
+   直接起会死在 `ModuleNotFoundError: numpy`。`createLive` 里按文档约定补 `~/.local/share/ducksir/pylibs`，
+   可用 `DUCKSIR_PYLIBS` 覆盖。
+
+**验收**：`node sim/test/test_live_router.mjs`
+
+```
+PASS  未启动时 status 报告未运行
+PASS  /start 成功（ok, port, project）
+PASS  status 报告运行中且有端口
+PASS  /scene 代理通，16 个 body
+PASS  /files 代理通
+PASS  /stream 代理出帧（3 帧）
+PASS  /stop 成功 → 停止后 status 未运行
+```
