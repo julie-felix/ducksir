@@ -8,22 +8,24 @@
 
 const DIR = './data/live/';
 
+// `dir` 可选：跑 bundle 时传 bundle 目录（例如 /ducksir-static/build/release/demo/）
+
 /** plan 名 → 路径。契约里没有就直接报清楚有哪些。 */
-export function planPath(contract, name) {
+export function planPath(contract, name, dir = DIR) {
   const p = contract && contract.plans && contract.plans[name];
   if (!p) {
     const have = Object.keys((contract && contract.plans) || {}).join(', ') || '（空）';
     throw new Error(`契约里没有 plan "${name}"（有：${have}）`);
   }
-  return DIR + p.file;
+  return dir + p.file;
 }
 
 /** 策略 key 或文件名 → 路径。`{key, mode, file}` 的条目来自 contract.policies。 */
-export function policyPath(contract, keyOrFile) {
+export function policyPath(contract, keyOrFile, dir = DIR) {
   const list = (contract && contract.policies) || [];
   const pol = list.find((p) => p.key === keyOrFile) || list.find((p) => p.file === keyOrFile);
   if (!pol) throw new Error(`契约里没有策略 "${keyOrFile}"`);
-  return DIR + pol.file;
+  return dir + pol.file;
 }
 
 /** obs 配方 → 需要的源（给加载前的自检用）。 */

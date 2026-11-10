@@ -1109,3 +1109,24 @@ bundle ↔ 浏览器状态迁移一致：是
 **还没做**：工作台改成「浏览器内跑 bundle」（现在是宿主 target 的调试器）。
 这一步完成后，工作台不需要子进程，手机也不依赖反代。
 
+### W12b（2026-11-11）工作台：浏览器内跑 bundle
+
+目标形态：**运行期不执行 Python**，工作台直接吃 `bundle/`。
+
+- `play.js` 支持 `?bundle=<url 前缀>`：contract / blob / 模型全部从该目录取（默认仍是 `data/live/`）；
+- 插件静态路由放行 `build/release`（bundle 里的文件直接可下载）；
+- 插件新增 `GET /ducksir-live/bundles`：列出 `build/release/*` 里带 `contract.json` 的目录；
+- 工作台顶栏加「bundle 选择」+「**在浏览器里跑**」：点一下把 3D 区换成
+  `play.html?bundle=…`（wasm 核 + ORT Web + MuJoCo wasm + 状态机），**不起任何子进程**。
+
+这样工作台与「浏览器跑」共用同一份执行栈，差别只剩「跑哪个 bundle」。
+宿主那条路保留在 CLI（`ducksir run bundle/`），用于报告、扫参、对拍。
+
+**验收**
+
+```
+node sim/test/test_live_router.mjs    /bundles 列出 cli-test / demo / test
+node sim/test/test_play_page_ids.mjs  play.js ?bundle 支持：OK
+node sim/test/test_fsm_parity.mjs     bundle ↔ 浏览器状态迁移一致：是
+```
+

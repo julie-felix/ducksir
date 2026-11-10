@@ -61,6 +61,10 @@ const frames = await new Promise((resolveFrames) => {
 });
 ok('/stream 代理出帧', frames.length >= 3, `${frames.length} 帧`);
 
+const bundles = await getJson('/bundles');
+const names = (bundles.bundles || []).map((b) => b.name);
+ok('/bundles 列出可运行的包', names.length > 0, names.slice(0, 4));
+
 const stopped = await getJson('/stop', { method: 'POST' });
 ok('/stop 成功', stopped.ok === true);
 ok('停止后 status 未运行', (await getJson('/status')).running === false);

@@ -252,6 +252,39 @@ function wireTabs() {
   });
 }
 
+// ── bundle 浏览器执行：把编译产物交给 play.html（wasm 核 + ORT Web + MuJoCo wasm）──
+// 这条路径**不需要宿主进程**：Python 只在编译期出现，运行期只吃 bundle。
+async function wireBundles() {
+  const sel = $('bundle');
+  const frame = $('run-frame');
+  const canvas = $('c');
+  let list = [];
+  try {
+    const res = await (await fetch(`${API}/bundles`)).json();
+    list = res.bundles || [];
+  } catch { /* 宿主没重启时端点不存在，忽略 */ }
+  sel.innerHTML = '';
+  if (!list.length) {
+    sel.innerHTML = '<option value="">（还没有 bundle，先 ducksir build）</option>';
+    return;
+  }
+  for (const b of list) {
+    const opt = document.createElement('option');
+    opt.value = b.base;
+    opt.textContent = b.name;
+    sel.appendChild(opt);
+  }
+  $('btn-browser-run').onclick = () => {
+    const base = sel.value;
+    if (!base) return;
+    // play.html 已经是「wasm 核 + ORT Web + MuJoCo wasm + 状态机」那套，这里只给它 bundle 路径
+    frame.src = `/ducksir-static/client/viewer/play.html?bundle=${encodeURIComponent(base)}&embed=1`;
+    frame.style.display = 'block';
+    canvas.style.display = 'none';
+    $('conn').textContent = '浏览器内执行：' + (sel.options[sel.selectedIndex]?.textContent || '');
+  };
+}
+
 // ── 启动 / 停止（面板里用插件代理；直开时调 runner 自己的根路径）──
 async function refreshConn() {
   try {
@@ -296,6 +329,7 @@ async function main() {
   wireTabs();
   wireParams();
   wireRunControls();
+  wireBundles();
 
   // 先起渲染循环：即使模型加载失败，网格和 HUD 也要出来，不能「黑屏 = 看起来没反应」
   loop();
