@@ -309,3 +309,43 @@ body 与 joint 名单一致、actuator 顺序一致、关节轴与限位全部�
 - ORT 绑定（`ds_backend.onnx_run` 接 onnxruntime）是 W5；现在是 pass-through。
 - 逃生口 `native-only` flag 已在头文件里留位，编译期打标与拒绝在 W6 的 DSL 编译器里做。
 - `sim/plan/` 与 `contract/plan/` 的 JSON schema 还没有机器可读版本（现在靠 `ir.validate` + 文档），要不要落 JSON Schema 待定。
+
+### W5（2026-11-10）ORT 进核 + 一份真 ONNX 跑 30 s
+
+**交付**
+
+- `engine/src/ort_backend.cpp`（新，单独编成 `libducksim_ort.so`）：把 `ds_backend.onnx_run` 接到 onnxruntime 的 C API。核本身仍然零依赖——要推理才链这个库。
+- `sim/plan/make_test_policy.py`（新）：造一份**合成**测试策略（34 维 obs → 14 维动作，只把关节往零位拉）。不是训练产物，作用是让整条链有一个真 ONNX 可跑。
+- `sim/host/run_policy.py`（新）：策略闭环。obs 组装 → 图 → ONNX → action 后处理全在 C 核，物理在宿主，一次跑 30 s。
+- `sim/test/test_ort_parity.py`（新）：端到端对拍——同一张图、同一份 ONNX、同一条 obs，C 核 vs numpy oracle + Python ORT。
+
+**验收**
+
+```
+策略闭环 30.0s @ 50/200 Hz · 图 9 节点 · 模型 duck-hold.onnx
+  帧数 1500/1500｜墙钟 0.17s（实时率 178.25×）
+  基座高度 终 +0.035 最低 +0.035 m｜直立度 终 +0.368
+  PASS  finite=True no_sink=True full=True
+
+端到端对拍 20 步（含 ONNX 推理）：最大偏差 0.000e+00  PASS（阈 1e-06）
+```
+
+**注意这条 PASS 证明什么、不证明什么**：它证明**链是活的**（obs 组装 → 推理 → 动作映射 → PD → MuJoCo → 报告 → 回放），
+不证明运控好不好——合成策略只会把关节往零位拉，鸭子照样会倒（直立度 0.368）。真策略只是换一个 `.onnx`。
+
+**踩到的两个坑**
+
+1. **ORT 的张量要按模型声明的形状建**。第一版摊成 `[34]`，ORT 不会立刻炸，核拿到 `DS_ERR_GRAPH`，到第二步才暴露。
+2. **推理必须单线程**。多线程归约会让同一份输入算出不同末位，直接毁掉 1e-6 的对拍判据。
+
+**环境**（写进 `docs/env.md`）
+
+- ORT 的 wheel **不带 C 头文件**，SDK 要从 GitHub release 下 tgz 解到 `~/.local/share/ducksir/ort`；版本与 Python 包对齐 1.31.1。
+- Python 侧的 `onnxruntime` / `onnx` / `ml_dtypes` / `protobuf` / `sympy` / `packaging` 都是从 PyPI 下 wheel 直接解开到 `PYTHONPATH` 那套目录（本机没有 pip）。
+- ONNX 模型不入库（`.gitignore` 里的 `*.onnx`），但**回放轨迹入库**：`client/viewer/data/replay-duck-policy.json`（335 KB，1500 帧）。
+
+**遗留**
+
+- `policy_manifest_digest` 还是空串——manifest 是 W6 的事（D12）。
+- 核里仍只有 8 个节点；计划的「27 节点」里剩下的是 `select` / `state_machine` / `phase_clock` / `delay` / `low_pass` 这类编排与时序节点，按需加（W6 做 DSL 时一起）。
+- wasm 端要另走 ORT Web（W7）。

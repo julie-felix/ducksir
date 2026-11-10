@@ -13,7 +13,9 @@
 | `host/pd_hold.py` | W3 的验收脚本：PD 跟踪 + 物理链路验证，出 `--report` JSON 与 `--trajectory` 轨迹（给查看器回放） |
 | `plan/ir.py` | 计算图：Python 声明 → plan JSON（源码）→ blob（产物），带结构校验 |
 | `plan/oracle.py` | 同一张图的 numpy 参考实现；C 核与它逐点对拍（≤1e-6，当前 0.0） |
-| `test/` | `test_blob_roundtrip.py`（纯标准库，CI 跑）与 `test_core_vs_oracle.py`（要 numpy + g++） |
+| `host/run_policy.py` | W5 的策略闭环：obs → C 核（含 ONNX 推理）→ action → MuJoCo，出报告与轨迹 |
+| `plan/make_test_policy.py` | 造合成测试策略（14 维关节往零位拉），不是训练产物 |
+| `test/` | `test_blob_roundtrip.py`（纯标准库，CI 跑）、`test_core_vs_oracle.py`、`test_ort_parity.py`（要 numpy + g++ + ORT） |
 
 ## 怎么跑
 

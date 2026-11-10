@@ -87,6 +87,15 @@ int ds_step(ds_plan* plan, const float* obs, float* action, const ds_backend* ba
 /* 本核支持的最高 ABI（给加载方做前置判断） */
 uint16_t ds_abi_version(void);
 
+/* ---- 可选的 ORT 后端（engine/src/ort_backend.cpp，单独编成 libducksim_ort.so） ----
+ * 核心不链 onnxruntime；要推理的时候把这里造的 backend 传给 ds_step。
+ * 一个实例绑一份模型；多模型就建多个。失败返回 NULL 并把原因写进 err。
+ */
+ds_backend* ds_ort_create(const char* model_path, char* err, size_t err_len);
+void ds_ort_destroy(ds_backend* backend);
+int64_t ds_ort_input_len(const ds_backend* backend);
+int64_t ds_ort_output_len(const ds_backend* backend);
+
 #ifdef __cplusplus
 }
 #endif
