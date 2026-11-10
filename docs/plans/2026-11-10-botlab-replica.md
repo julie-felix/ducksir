@@ -558,3 +558,16 @@ PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 sim/host/export_browser_che
 
 浏览器里的最终画面需要你打开看：`python3 -m http.server 8123` → `/client/viewer/play.html`。
 （页面里 `data/live/`、`vendor/mujoco/`、`assets/mjcf/` 都是上面两条命令的产物。）
+
+### W7d（2026-11-10）浏览器页的三次修正
+
+1. **`play.html` 缺 importmap**（根因）。`OrbitControls.js` / `GLTFLoader.js` 的第一行都是
+   `import ... from 'three'`（裸标识符），`index.html` 里有 importmap、`play.html` 漏了 →
+   **整个模块图解析失败，`play.js` 一行都没跑**，遮罩永远停在初始文案。补上 importmap、`play.js` 改用裸标识符。
+2. **分步进度 + 每步超时**：卡住时能看到停在哪一步、超时变成明确错误（`stage()` / `step()`）。
+   GLB 网格（70 个 geom / 22 MB）改成后台加载，不再挡住「就绪」。
+3. **手机端**：`100dvh` 替代 `100vh`、`touch-action: none`、加「− 慢 / + 快 / 复位」三个触屏按钮
+   （手机上没有 `W/S`）。同时给导出端加了 `--physics-only`：**视觉 geom 不导出**（浏览器里视觉走 GLB，
+   STL 只喂物理），浏览器要下的 STL 从 **38 个 / 21 MB 降到 9 个 / 7.1 MB**——手机上是决定性的。
+
+物理没变：`node sim/test/test_play_core.mjs` 仍是 16 body / 14 actuator / 5 sensor，200 步 PASS。

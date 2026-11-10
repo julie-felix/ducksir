@@ -168,6 +168,10 @@ env -u https_proxy -u HTTPS_PROXY -u http_proxy -u HTTP_PROXY -u all_proxy -u AL
 python3 tools/vendor_mujoco_web.py     # @mujoco/mujoco 4.0.0 的 js+wasm（11 MB）+ 38 个 STL（21 MB）
 python3 tools/vendor_ort_web.py        # onnxruntime-web 的 wasm-only 运行时（14 MB）
 PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 sim/host/export_browser_check.py
+# 浏览器版 MJCF（只导碰撞 mesh，STL 从 21 MB 降到 7.1 MB）
+PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 tools/robot/export_mjcf.py \
+    contract/robot/types/duck-hd1910.yaml -o client/viewer/data/mjcf-browser/duck.xml \
+    --mesh-dir . --mesh-ext stl --collision-set all --physics-only
 ```
 
 三样都不入库（`.gitignore` 里有）：`client/viewer/vendor/{mujoco,ort}/`、`client/viewer/assets/mjcf/`、`client/viewer/data/live/*.onnx`。

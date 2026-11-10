@@ -6,9 +6,9 @@
 <title>ducksir · 浏览器里开鸭子</title>
 <style>
   :root { color-scheme: dark; }
-  html, body { margin: 0; height: 100%; background: #0b0f14; color: #d7dde5;
+  html, body { margin: 0; height: 100dvh; background: #0b0f14; color: #d7dde5;
                font: 13px/1.6 system-ui, "Noto Sans CJK SC", sans-serif; overflow: hidden; }
-  #c { display: block; width: 100vw; height: 100vh; }
+  #c { display: block; width: 100vw; height: 100dvh; touch-action: none; }
   #hud { position: fixed; left: 14px; top: 12px; padding: 10px 14px; border-radius: 10px;
          background: rgba(10,15,22,.78); border: 1px solid #1f2a36; font-variant-numeric: tabular-nums; }
   #hud b { font-weight: 600; }
@@ -17,6 +17,11 @@
   #busy { position: fixed; inset: 0; display: grid; place-items: center; background: #0b0f14; color: #8b98a8; }
   .ok { color: #63d18a; } .warn { color: #e6b45f; } .bad { color: #e5675f; }
   kbd { background: #1b2531; border: 1px solid #2b3a4b; border-radius: 4px; padding: 0 4px; }
+  #pad { display: flex; gap: 8px; margin-top: 8px; }
+  #pad button { flex: 1; background: #1b2531; color: #d7dde5; border: 1px solid #2b3a4b;
+                border-radius: 8px; padding: 10px 12px; font: inherit; }
+  #pad button:active { border-color: #4da3ff; }
+  @media (max-width: 560px) { #hud { font-size: 12px; padding: 8px 10px; } }
 </style>
 </head>
 <body>
@@ -27,7 +32,14 @@
   <div id="vx">前进指令 0.00 m/s</div>
   <div id="perf"></div>
 </div>
-<div id="keys"><kbd>W</kbd>/<kbd>S</kbd> 前进 ±0.05 · <kbd>R</kbd> 复位 · 拖鼠标转视角 / 滚轮缩放</div>
+<div id="keys">
+  <kbd>W</kbd>/<kbd>S</kbd> 前进 ±0.05 · <kbd>R</kbd> 复位 · 拖/双指转视角
+  <div id="pad">
+    <button id="btn-slow" type="button">− 慢</button>
+    <button id="btn-fast" type="button">+ 快</button>
+    <button id="btn-reset" type="button">复位</button>
+  </div>
+</div>
 <div id="busy">载入 MuJoCo / 执行核 / ORT Web…</div>
 <script type="importmap">
 { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/" } }
