@@ -39,6 +39,8 @@ enum ds_node_type {
     DS_NODE_WHERE = 11,
     DS_NODE_PHASE_CLOCK = 12,
     DS_NODE_ADD = 13,
+    DS_NODE_STATE_MACHINE = 14,
+    DS_NODE_COMPARE = 15,
 };
 
 /* 节点 flag */

@@ -451,3 +451,28 @@ botlab 的 MicroDuck 编排用的是 `state_machine + mode_select + policy_bank 
 
 **踩到的一个坑**：ORT 多模型后端里把槽拷回基座 ctx，析构时同一个 session 被释放两次 → `free(): invalid pointer`。
 改成持槽指针、不拷贝。凡是「共享 env/opts、独立 session」的结构，析构必须只释放一次。
+
+### W6b（2026-11-10）状态机 + 14 状态 / 7 策略的动态编排
+
+把 botlab 的 `microduck.py` / `microduck_policy.py` 那张图用本仓 DSL **逐条重写**：
+
+- 新增 **`state_machine`（14）**：输出 `[state, steps]`，三类转移（command 脉冲 / after_steps / when），
+  同类按声明顺序取首个命中，`reset_steps` 默认 True。状态跨步持久（和 history 一样在加载时分配）。
+- 新增 **`compare`（15）**：`gt/gte/lt/lte/eq` → 0/1，给 `when` 当条件（tipped / upright / ~upright）。
+- `reorder` 放宽成 gather（允许子集），这样「从 2 维里取 state」不再需要专门节点。
+
+`sim/host/run_fsm.py` 里逐项照抄它们的常量与转移表：14 个状态号、22 条转移、`SIT_ENTER_STEPS=40` 等 8 个阈值、
+状态→策略的映射（WALK/POST_KICK/WALK_RESET → walking，SIT_* → sitstand，ROLL* → roll，RECOVER* → stand …）。
+
+**验收**
+
+```
+状态机图 36 节点｜1000/1000 帧｜z 终 +0.085 最低 +0.032｜直立 终 +0.909
+状态轨迹：3.0s→1, 3.8s→2
+```
+
+第 3 秒的「坐下/站起」脉冲把状态从 0（WALK）推到 1（SIT_ENTER），40 步后再推到 2（SIT）——
+**与它们的表一致**。第 8 秒发的「起身」脉冲没反应也是对的：它们的表里 `RECOVER` 只从 `WALK` 出发，
+在 SIT 里按它不会被响应（这是它们的行为，不是我们的 bug）。
+
+对拍：`fsm` 图（命令/计时/条件三类转移各走一遍）C 核 vs oracle **0.000e+00**。

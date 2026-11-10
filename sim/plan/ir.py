@@ -48,6 +48,8 @@ NODE_TYPES = {
     "where": (11, 1),
     "phase_clock": (12, 1),
     "add": (13, 1),
+    "state_machine": (14, 1),
+    "compare": (15, 1),
 }
 TYPE_BY_ID = {tid: name for name, (tid, _) in NODE_TYPES.items()}
 NODE_VERSION = {name: ver for name, (_, ver) in NODE_TYPES.items()}
@@ -143,10 +145,17 @@ class Plan:
         return self._add("clip", [ref], ref.length, list(l) + list(h))
 
     def reorder(self, ref: NodeRef, perm) -> NodeRef:
+        """按索引重排 / 取样（gather）。
+
+        允许子集：`reorder(x, [0])` 就是取第 0 维（切片的实现方式），`[3,1,2]` 是重排，
+        `range(n)` 的排列是恒等。索引必须落在输入长度内。
+        """
         idx = [int(i) for i in perm]
-        if len(idx) != ref.length or sorted(idx) != list(range(ref.length)):
-            raise ValueError("reorder: perm 必须是 0..n-1 的排列")
-        return self._add("reorder", [ref], ref.length, [float(i) for i in idx])
+        if not idx:
+            raise ValueError("reorder: perm 不能为空")
+        if any(i < 0 or i >= ref.length for i in idx):
+            raise ValueError(f"reorder: 索引越界（输入长 {ref.length}）")
+        return self._add("reorder", [ref], len(idx), [float(i) for i in idx])
 
     def history(self, ref: NodeRef, frames: int) -> NodeRef:
         """环形缓冲：输出 = 最近 frames 帧按 by-frame 铺开（最老在前）。"""
@@ -209,6 +218,48 @@ class Plan:
             if r.length != width:
                 raise ValueError("add 各路宽度必须一致")
         return self._add("add", list(refs), width, [])
+
+    def state_machine(self, command: NodeRef, initial: int, transitions: list,
+                      conditions: list | None = None) -> NodeRef:
+        """状态机（botlab 的 `state_machine`）。输出 2 维：[state, steps]。
+
+        `transitions` 每项：`{from?, command?, after_steps?, when?, to, reset_steps?}`
+        - `from` 缺省 = 任意状态；`command` 是脉冲（值相等即触发，优先级最高）；
+        - `after_steps` 在当前状态待够多少步；`when` 是第几个 condition 信号为真（0/1）；
+        - 同一行多个条件要同时满足；同级按声明顺序取首个命中；
+        - `reset_steps` 缺省 True（切换后步数归零）。
+        """
+        if command.length != 1:
+            raise ValueError("state_machine: command 必须 1 维")
+        conds = conditions or []
+        if len(conds) > 3:
+            raise ValueError("state_machine: 最多 3 个条件信号（核里输入上限 4 = command + 3）")
+        for c in conds:
+            if c.length != 1:
+                raise ValueError("state_machine: 条件信号必须 1 维")
+        params = [float(len(transitions)), float(initial), float(len(conds))]
+        for t in transitions:
+            kind, value, ci = 0, 0.0, -1
+            if t.get("command") is not None:
+                kind, value = 0, float(t["command"])
+            elif t.get("after_steps") is not None:
+                kind, value = 1, float(t["after_steps"])
+            elif t.get("when") is not None:
+                kind, value, ci = 2, 0.0, int(t["when"])
+            else:
+                raise ValueError("transition 至少要给 command / after_steps / when 之一")
+            params += [float(t.get("from", -1)), float(t["to"]), float(kind), value, float(ci),
+                       float(1 if t.get("reset_steps", True) else 0)]
+        return self._add("state_machine", [command] + conds, 2, params)
+
+    def compare(self, a: NodeRef, op: str, b: NodeRef) -> NodeRef:
+        """比较两路 1 维信号，输出 0/1。op: gt / gte / lt / lte / eq。"""
+        ops = {"gt": 0, "gte": 1, "lt": 2, "lte": 3, "eq": 4}
+        if op not in ops:
+            raise ValueError(f"compare: 未知 op {op}")
+        if a.length != 1 or b.length != 1:
+            raise ValueError("compare: 两路都必须是 1 维")
+        return self._add("compare", [a, b], 1, [float(ops[op])])
 
     def out_action(self, ref: NodeRef) -> NodeRef:
         if any(n["name"] == "out_action" for n in self.nodes):

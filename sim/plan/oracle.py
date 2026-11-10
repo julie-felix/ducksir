@@ -21,6 +21,9 @@ def initial_state(doc: dict) -> dict:
     """每个 history 节点一份环形缓冲。"""
     state = {}
     for i, nd in enumerate(doc["nodes"]):
+        if nd["name"] == "state_machine":
+            p = doc["params"][nd["param"]["off"]:nd["param"]["off"] + nd["param"]["len"]]
+            state[i] = {"state": int(p[1]), "steps": 0}
         if nd["name"] == "history":
             frames = int(doc["params"][nd["param"]["off"]])
             n = nd["out"]["len"] // frames
@@ -104,6 +107,46 @@ def step(doc: dict, obs, state: dict | None = None, backend=None):
             value = np.zeros(out["len"], dtype=F32)
             for x in ins:
                 value = value + x
+        elif name == "state_machine":
+            n_tr = int(p[0])
+            n_cond = int(p[2])
+            cur = state[i]["state"]
+            steps = state[i]["steps"]
+            cmd = float(ins[0][0])
+            cond_v = [float(ins[1 + k][0]) for k in range(n_cond)]
+            switched, new_state, new_steps = False, cur, steps
+            for kind_wanted in (0, 1, 2):
+                if switched:
+                    break
+                for k in range(n_tr):
+                    base = 3 + k * 6
+                    frm, to, kind = int(p[base]), int(p[base + 1]), int(p[base + 2])
+                    val, ci = float(p[base + 3]), int(p[base + 4])
+                    reset = p[base + 5] != 0.0
+                    if kind != kind_wanted:
+                        continue
+                    if frm >= 0 and frm != cur:
+                        continue
+                    hit = False
+                    if kind == 0:
+                        hit = cmd == val and cmd != 0.0
+                    elif kind == 1:
+                        hit = steps >= val
+                    else:
+                        hit = 0 <= ci < n_cond and cond_v[ci] != 0.0
+                    if hit:
+                        switched, new_state = True, to
+                        new_steps = 0 if reset else steps + 1
+                        break
+            if not switched:
+                new_steps = steps + 1
+            state[i] = {"state": new_state, "steps": new_steps}
+            value = np.array([float(new_state), float(new_steps)], dtype=F32)
+        elif name == "compare":
+            op = int(p[0])
+            a_, b_ = float(ins[0][0]), float(ins[1][0])
+            res = {0: a_ > b_, 1: a_ >= b_, 2: a_ < b_, 3: a_ <= b_, 4: a_ == b_}[op]
+            value = np.array([1.0 if res else 0.0], dtype=F32)
         elif name == "out_action":
             value = ins[0]
             action = value.copy()
