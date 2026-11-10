@@ -404,6 +404,10 @@ async function show(meta) {
   renderMeta(data);
   fitView();
   {
+    const vq = new URLSearchParams(location.search).get('view');
+    if (vq) setTimeout(() => setView(vq), 200);
+  }
+  {
     const tb = document.getElementById('translucent');
     if (tb) {
       if (new URLSearchParams(location.search).has('opaque')) tb.checked = false;
@@ -427,21 +431,36 @@ async function show(meta) {
 }
 
 /** 一键切到标准视角：alongX（沿销轴看）/ alongY（侧看）/ top（俯视）。 */
+/**
+ * 标准视角。方向要按**机器人自身的轴**算：实体是 Z-up（x 前 / y 左 / z 上），
+ * 显示时整机绕 X 转了 -90°，所以不能直接拿世界坐标系当机身轴。
+ *   alongX = 沿销轴看（机构最清楚）
+ *   alongY = 侧看（从机器人左侧看）
+ *   top    = 俯视（从机身正上方看）
+ */
 function setView(kind) {
   const box = new THREE.Box3().setFromObject(robotGroup);
   if (box.isEmpty()) return;
   const c = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const dist = Math.max(size.x, size.y, size.z) * 1.9;
-  const dir = kind === 'alongX' ? new THREE.Vector3(1, 0, 0)
-    : kind === 'alongY' ? new THREE.Vector3(0, 1, 0)
-      : new THREE.Vector3(0, 0, 1);
+
+  const q = new THREE.Quaternion();
+  robotGroup.getWorldQuaternion(q);
+
+  const bodyDir = kind === 'alongX' ? new THREE.Vector3(1, 0, 0)   // 机床轴（机身 x）
+    : kind === 'alongY' ? new THREE.Vector3(0, 1, 0)               // 机身 y（左）
+      : new THREE.Vector3(0, 0, 1);                                // 机身 z（上）
+  const bodyUp = kind === 'top' ? new THREE.Vector3(1, 0, 0)       // 俯视时用机身前方向当「上」
+    : new THREE.Vector3(0, 0, 1);                                  // 其余用机身 z
+
+  const dir = bodyDir.clone().applyQuaternion(q).normalize();
   camera.position.copy(c).addScaledVector(dir, dist);
-  camera.up.set(0, kind === 'top' ? 1 : 0, kind === 'top' ? 0 : 1);
-  if (kind === 'top') camera.up.set(0, 1, 0);
+  camera.up.copy(bodyUp.clone().applyQuaternion(q).normalize());
   camera.lookAt(c);
   controls.target.copy(c);
   controls.update();
+  if (SPLIT.on && SPLIT.ready) camSync(camera, controls, SPLIT.camera, SPLIT.controls);
 }
 
 let lastSize = { w: 0, h: 0 };
