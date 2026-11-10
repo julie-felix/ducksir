@@ -162,9 +162,31 @@ function wireParams() {
 }
 
 // ── 文件树（只读）─────────────────────────────────────────
+let fileList = [];          // 当前可展示的文件（顺序同左侧树）
+
+/** 显示一个文件（默认第一个）。点右栏「代码」但没有选过文件时用它。 */
+async function showFile(rel) {
+  const code = $('code'), view = $('view');
+  const target = rel || fileList[0];
+  if (!target) {
+    code.textContent = '（这个项目没有可展示的源文件）';
+    code.classList.add('on');
+    view.classList.add('off');
+    return;
+  }
+  document.querySelectorAll('#files button').forEach((b) => b.classList.toggle('on', b.dataset.path === target));
+  const res = await fetch(`${API}/file?path=` + encodeURIComponent(target));
+  code.textContent = res.ok ? await res.text() : `（读不到 ${target}）`;
+  code.classList.add('on');
+  view.classList.add('off');
+  code.scrollTop = 0;
+  code.scrollLeft = 0;
+}
+
 async function wireFiles() {
   const box = $('files');
   const listing = await (await fetch(`${API}/files`)).json();
+  fileList = listing.files || [];
   const code = $('code'), view = $('view');
   box.querySelectorAll('button').forEach((b) => b.remove());
   for (const rel of listing.files || []) {
@@ -172,15 +194,7 @@ async function wireFiles() {
     btn.dataset.path = rel;
     btn.innerHTML = `${rel.split('/').pop()}<span class="ext">${rel.split('.').pop()}</span>`;
     btn.onclick = async () => {
-      box.querySelectorAll('button').forEach((b) => b.classList.remove('on'));
-      btn.classList.add('on');
-      const res = await fetch(`${API}/file?path=` + encodeURIComponent(rel));
-      const text = await res.text();
-      code.textContent = text;
-      code.classList.add('on');
-      code.scrollTop = 0;          // 换文件要回到顶部，别停在上一个文件的滚动位置
-      code.scrollLeft = 0;
-      view.classList.add('off');
+      await showFile(rel);       // 统一走 showFile：高亮、取内容、切视图、滚回顶部
       setRail('code');
     };
     box.appendChild(btn);
@@ -190,11 +204,14 @@ async function wireFiles() {
 // ── 右栏 / 标签页 ────────────────────────────────────────
 function setRail(name) {
   document.querySelectorAll('#rail button').forEach((b) => b.classList.toggle('on', b.dataset.rail === name));
-  if (name === 'code') return;
-  if (name === 'view') {
-    $('view').classList.remove('off');
-    $('code').classList.remove('on');
+  if (name === 'code') {
+    // 之前这里直接 return —— 点「代码」什么都不发生。现在切到代码视图，
+    // 没选过文件就自动展示第一个（否则是一片空白，看着也像「没反应」）。
+    if (!$('code').classList.contains('on')) showFile().catch(() => {});
+    return;
   }
+  $('view').classList.remove('off');
+  $('code').classList.remove('on');
 }
 function wireTabs() {
   document.querySelectorAll('#tabs button').forEach((b) => {
