@@ -46,8 +46,11 @@ async function json(url) { return (await fetch(url)).json(); }
 
 // ---------- 场景 ----------
 const canvas = $('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const isTouch = matchMedia('(hover: none) and (pointer: coarse)').matches;
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isTouch, powerPreference: 'high-performance' });
+// 手机上像素比给到 1.5 就够（2 及以上在 60 Hz 下很吃 GPU）；桌面保留 2
+let pixelRatio = Math.min(devicePixelRatio || 1, isTouch ? 1.5 : 2);
+renderer.setPixelRatio(pixelRatio);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b0f14);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x404850, 1.1));
@@ -62,12 +65,18 @@ robotGroup.rotation.x = -Math.PI / 2;      // 实体 Z-up → three Y-up
 scene.add(robotGroup);
 
 function resize() {
-  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const w = canvas.clientWidth || window.innerWidth;
+  const h = canvas.clientHeight || window.innerHeight;
+  if (w === 0 || h === 0) return;
   renderer.setSize(w, h, false);
-  camera.aspect = w / Math.max(h, 1);
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
 addEventListener('resize', resize);
+addEventListener('orientationchange', () => setTimeout(resize, 120));
+// iOS 地址栏收放不改 window.innerHeight，得盯 visualViewport
+if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
 
 // ---------- 载入 ----------
 // 指令范围照上游 app/src/game/constants.js：VEL_FWD 0.25 / VEL_BACK -0.2 / VEL_ANG 1.0。
@@ -221,6 +230,10 @@ async function main() {
     $('btn-slow').onclick = () => bump(-0.05);
     $('btn-fast').onclick = () => bump(+0.05);
     $('btn-reset').onclick = resetSim;
+    // 触屏上的动作键 = 发一次策略脉冲（和键盘 X / Z / V 等价）
+    $('btn-sit').onclick = () => { pendingCmd = 1; manual = null; };
+    $('btn-kick').onclick = () => { pendingCmd = 2; manual = null; };
+    $('btn-roll').onclick = () => { pendingCmd = 4; manual = null; };
     // 转向按钮是「按住生效」：手机上没有键盘，松手即归零
     for (const [id, sign] of [['btn-left', -1], ['btn-right', 1]]) {
       const el = $(id);
@@ -238,7 +251,7 @@ async function main() {
       if (k === 'a' || k === 'd') state.wz = 0;
     });
 
-    $('busy').style.display = 'none';
+    $('busy').classList.add('gone');
     loadGeoms.then(() => stage('网格加载完成'));
 
     // 主循环：严格 4:1 的物理:控制比（200/50 Hz）。
@@ -303,6 +316,22 @@ async function main() {
       $('perf').textContent = `墙钟 ${wall.toFixed(1)} s（${(state.simTime / wall || 0).toFixed(2)}× 实时，控制 ${realHz.toFixed(0)} Hz）`;
     }
 
+    // 自适应画质：连续 2 s 低于 26 fps 就降一档像素比（1.5 → 1.15 → 1），只降不升
+    let fpsFrames = 0, fpsSince = performance.now(), downgrades = 0;
+    function adaptQuality(now) {
+      fpsFrames += 1;
+      const dt = now - fpsSince;
+      if (dt < 2000) return;
+      const fps = (fpsFrames * 1000) / dt;
+      fpsFrames = 0; fpsSince = now;
+      if (fps < 26 && downgrades < 2 && pixelRatio > 1.02) {
+        pixelRatio = Math.max(1, pixelRatio - 0.25);
+        renderer.setPixelRatio(pixelRatio);
+        downgrades += 1;
+        resize();
+      }
+    }
+
     async function tick() {
       const now = performance.now();
       acc += Math.min(0.25, (now - last) / 1000);
@@ -324,6 +353,7 @@ async function main() {
         ctrlWindowStart = now;
         ctrlWindowCount = 0;
       }
+      adaptQuality(now);
       render();
       requestAnimationFrame(tick);
     }
