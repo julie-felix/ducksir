@@ -16,6 +16,8 @@ const $ = (id) => document.getElementById(id);
 // 两种打开方式，端点前缀和静态资源前缀都不同：
 //   1) 面板里：页面来自 /ducksir-static/…，实时数据走插件代理 /ducksir-live/…
 //   2) `ducksir run` 直接打开：页面由 runner 的显示服务提供，端点在根路径
+const BUILD = '2026-11-11 01:10';   // 改这个文件就 bump：诊断页签会显示，用来判断「页面是不是旧的」
+
 const IN_PANEL = location.pathname.startsWith('/ducksir-static/');
 const API = IN_PANEL ? '/ducksir-live' : '';
 // 静态资源全部走**相对路径**（相对页面所在目录）：面板里是 /ducksir-static/client/viewer/，
@@ -132,6 +134,7 @@ async function loadDiag() {
   try {
     const dg = await (await fetch(`${API}/diag`)).json();
     const rows = [
+      ['页面版本', BUILD],
       ['后端 pid / 运行时长', `${dg.pid} · ${dg.uptime_s}s`],
       ['后端 python', dg.python],
       ['PYTHONPATH', (dg.pythonpath || '').split(':')[0] || '（空）'],
