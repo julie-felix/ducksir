@@ -510,10 +510,10 @@ function stopReplay() {
   robotGroup.quaternion.setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
 }
 
-async function startReplay(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`回放文件读不到：${url}（${res.status}）`);
-  const traj = await res.json();
+async function startReplay(url, preloaded) {
+  const res = preloaded ? null : await fetch(url);
+  if (res && !res.ok) throw new Error(`回放文件读不到：${url}（${res.status}）`);
+  const traj = preloaded || await res.json();
   if (!current) throw new Error('先加载机型');
   const mine = new Set(current.joints.keys());
   const missing = traj.meta.joints.filter((n) => !mine.has(n));
@@ -613,7 +613,16 @@ function animate() {
     try {
       if (REPLAY.on) { stopReplay(); return; }
       const url = new URLSearchParams(location.search).get('replay') || './data/replay-duck-pd.json';
-      await startReplay(url);
+      // 轨迹属于哪台机型就先切过去，不然会报「关节对不上」这种没信息量的错
+      const traj = await (await fetch(url)).json();
+      const want = traj.meta && traj.meta.robot;
+      if (want && sel.value !== want) {
+        const meta = index.robots.find((r) => r.id === want);
+        if (!meta) throw new Error(`没有机型 ${want}`);
+        sel.value = want;
+        await show(meta);
+      }
+      await startReplay(url, traj);
     } catch (e) { alert('回放失败：' + (e.message || e)); }
   });
   $('play').addEventListener('click', () => {
