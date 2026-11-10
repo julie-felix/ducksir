@@ -1,13 +1,72 @@
-// 浏览器里「物理 + 推理」共用的核心：MuJoCo wasm 建模型、观测组装、单步控制。
-// 与 DOM 无关，node 也能跑（sim/test/test_play_core.mjs 用它做无头验证）。
+// 浏览器里「物理 + 推理」共用的核心：MuJoCo wasm 建模型、观测装配、单步物理。
+//
+// 关键约定（2026-11-10 起）：**观测布局和图的槽位不写在这里，写在契约里**。
+// 契约由 `sim/host/export_artifacts.py` 生成到 `data/live/contract.json`，
+// 这里只做「按配方取数」——改观测顺序、加策略、改 fsm 输出维度，都不用动本文件。
 
-export const OBS_DIM = 61;
-export const N_JOINTS = 14;
+let CONTRACT = null;
+
+/** 契约自检：与 Python 侧 `contract.validate_contract()` 同一套规则（端侧也要会挑错）。 */
+export function validateContract(doc) {
+  const errs = [];
+  if (!doc || doc.kind !== 'ducksir-contract') errs.push('不是 ducksir-contract');
+  const plans = (doc && doc.plans) || {};
+  for (const [name, p] of Object.entries(plans)) {
+    for (const [slotName, range] of Object.entries(p.slots || {})) {
+      const [off, len] = range;
+      const limit = slotName.startsWith('out:') ? p.output_dim : p.input_dim;
+      if (off < 0 || len <= 0 || off + len > limit) {
+        errs.push(`plan ${name} 的槽位 ${slotName} 越界：${off}+${len} > ${limit}`);
+      }
+    }
+  }
+  const obs = (doc && doc.obs) || [];
+  if (obs.length) {
+    const end = obs.reduce((m, o) => Math.max(m, o.slot[0] + o.slot[1]), 0);
+    const pre = plans.pre;
+    if (pre && end !== pre.input_dim) errs.push(`obs 总长 ${end} != pre.input_dim ${pre.input_dim}`);
+  }
+  for (const pol of (doc && doc.policies) || []) {
+    for (const key of ['key', 'mode', 'file']) {
+      if (!(key in pol)) errs.push(`策略条目缺字段 ${key}`);
+    }
+  }
+  return errs;
+}
+
+/** 载入契约（一次性）。所有 `makeObs` / 槽位查询都依赖它。不合法的契约直接拒绝。 */
+export function setContract(doc) {
+  const problems = validateContract(doc);
+  if (problems.length) throw new Error('契约不合法：' + problems.join('；'));
+  CONTRACT = doc;
+}
+export function getContract() {
+  if (!CONTRACT) throw new Error('还没 setContract()');
+  return CONTRACT;
+}
+
+/** 取某个 plan 的具名槽位 `[偏移, 长度]`（名字形如 `out:state`）。 */
+export function slot(planName, slotName) {
+  const p = getContract().plans[planName];
+  if (!p) throw new Error(`契约里没有 plan ${planName}`);
+  const s = p.slots && p.slots[slotName];
+  if (!s) throw new Error(`plan ${planName} 没有槽位 ${slotName}`);
+  return s;
+}
+
+/** 按槽位从数组里取一段。 */
+export function readSlot(arr, planName, slotName) {
+  const [off, len] = slot(planName, slotName);
+  return Array.from(arr).slice(off, off + len);
+}
+
+/** 观测总长（= 契约里 obs 配方覆盖到的最大末端）。 */
+export function obsDim() {
+  return getContract().obs.reduce((m, o) => Math.max(m, o.slot[0] + o.slot[1]), 0);
+}
 
 // 绑定的字段都是普通 TypedArray（Int32Array / Float64Array），直接下标即可。
-// 留一层 read() 是为了兼容将来可能的包装类型。
 export const read = (arr, i) => (arr && typeof arr.get === 'function' ? arr.get(i) : arr[i]);
-export const write = (arr, i, v) => { if (arr && typeof arr.set === 'function' && arr.length === undefined) arr.set(i, v); else arr[i] = v; };
 
 /** 把一张平面拼进 MJCF 的 worldbody（我们导出的机器人没有场景）。 */
 export function withFloor(xml, rgba = '0.55 0.55 0.58 1') {
@@ -19,22 +78,16 @@ export function withFloor(xml, rgba = '0.55 0.55 0.58 1') {
 
 /**
  * 建模型 + 数据。`assets` 是 `{文件名: Uint8Array}`，全部塞进 MjVFS（MJCF 里 meshdir="."）。
- * @param {object} opts
- * @param {Function} opts.loadMujoco `import('@mujoco/mujoco')` 的默认导出
- * @param {string} opts.xml  MJCF 文本
- * @param {Record<string, Uint8Array>} opts.assets
  */
 export async function loadDuck({ loadMujoco, xml, assets }) {
   const mj = await loadMujoco();
   const vfs = new mj.MjVFS();
-  // 只加裸文件名：MuJoCo 的 VFS 拒绝 "./name" 这种带前缀的键（error 2），
-  // 而 MJCF 里 meshdir="." 时会按裸文件名去找。
+  // 只加裸文件名：MuJoCo 的 VFS 拒绝 "./name" 这种带前缀的键（error 2）。
   for (const [name, bytes] of Object.entries(assets)) vfs.addBuffer(name, bytes);
   const model = mj.MjModel.from_xml_string(withFloor(xml), vfs);
   model.opt.timestep = 1 / 200;
   const data = new mj.MjData(model);
 
-  // mjtObj 的枚举值是包装对象（不是裸 number），要取 .value 才能传给 mj_name2id
   const objId = (key) => (mj.mjtObj[key] && mj.mjtObj[key].value !== undefined ? mj.mjtObj[key].value : mj.mjtObj[key]);
   const jointId = (name) => mj.mj_name2id(model, objId('mjOBJ_JOINT'), name);
   const sensorId = (name) => mj.mj_name2id(model, objId('mjOBJ_SENSOR'), name);
@@ -43,37 +96,67 @@ export async function loadDuck({ loadMujoco, xml, assets }) {
   return { mj, model, data, jointId, sensorId, bodyId, objId };
 }
 
-/** 组装 61 维观测（顺序与 contract/policy/duck-walk.manifest.yaml 一致）。 */
-export function makeObs({ mj, model, data, jointId, sensorId, bodyId }, { joints, defaultQ, lastAction, vx, command }) {
-  const obs = new Float32Array(OBS_DIM);
-  const sid = sensorId('imu_ang_vel');
-  const adr = read(model.sensor_adr, sid);
-  for (let k = 0; k < 3; k++) obs[k] = read(data.sensordata, adr + k);
-
-  // 重力在 trunk_base 系下：R^T · (0,0,-1)
-  const bid = bodyId('trunk_base');
-  const q = [read(data.xquat, bid * 4), read(data.xquat, bid * 4 + 1),
-             read(data.xquat, bid * 4 + 2), read(data.xquat, bid * 4 + 3)]; // wxyz
-  const [w, x, y, z] = q;
-  const R = [
-    [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
-    [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
-    [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
-  ];
-  for (let r = 0; r < 3; r++) obs[3 + r] = -R[2][r];   // R^T·(0,0,-1) 的第 r 个分量 = -R[2][r]
-
-  for (let k = 0; k < N_JOINTS; k++) {
-    const jid = jointId(joints[k]);
-    const qa = read(model.jnt_qposadr, jid);
-    const va = read(model.jnt_dofadr, jid);
-    obs[6 + k] = read(data.qpos, qa) - defaultQ[k];
-    obs[20 + k] = read(data.qvel, va);
-    obs[34 + k] = lastAction ? lastAction[k] : 0;
+/** 检查 plan 头里的维度与契约一致；不一致直接抛错（把「静默漂移」变成「加载即失败」）。 */
+export function checkPlanAgainstContract(planName, info) {
+  const p = getContract().plans[planName];
+  if (!p) throw new Error(`契约里没有 plan ${planName}`);
+  if (info.input_dim !== p.input_dim || info.output_dim !== p.output_dim) {
+    throw new Error(
+      `plan ${planName} 维度不符：blob ${info.input_dim}→${info.output_dim}，` +
+      `契约 ${p.input_dim}→${p.output_dim}。多半是改了 Python 但没重新导出契约。`);
   }
-  if (command && command.length === 13) {
-    for (let k = 0; k < 13; k++) obs[48 + k] = command[k];
-  } else {
-    obs[48] = vx || 0;
+}
+
+/**
+ * 按契约里的观测配方装配观测。
+ *
+ * 配方条目形如 `{name, slot:[off,len], source:"sensor:imu_ang_vel"}`，支持的 source：
+ * `sensor:<名>`、`gravity:body:<名>`、`qpos:joints`、`qvel:joints`、`last_action`、`fsm_slot:<槽位名>`。
+ */
+export function makeObs(duck, { lastAction, vx, command } = {}) {
+  const { model, data, jointId, sensorId, bodyId } = duck;
+  const c = getContract();
+  const robot = c.robot;
+  const obs = new Float32Array(obsDim());
+
+  for (const item of c.obs) {
+    const [off, len] = item.slot;
+    const src = item.source || '';
+    if (src.startsWith('sensor:')) {
+      const sid = sensorId(src.slice(7));
+      const adr = read(model.sensor_adr, sid);
+      for (let k = 0; k < len; k++) obs[off + k] = read(data.sensordata, adr + k);
+    } else if (src.startsWith('gravity:body:')) {
+      // 重力在世界系是 (0,0,-1)，它在机体系的表达 = R^T·g，第 r 个分量 = -R[2][r]
+      const bid = bodyId(src.slice(13));
+      const w = read(data.xquat, bid * 4), x = read(data.xquat, bid * 4 + 1);
+      const y = read(data.xquat, bid * 4 + 2), z = read(data.xquat, bid * 4 + 3);
+      const R = [
+        [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+        [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+        [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+      ];
+      for (let r = 0; r < 3; r++) obs[off + r] = -R[2][r];
+    } else if (src === 'qpos:joints') {
+      for (let k = 0; k < len; k++) {
+        const qa = read(model.jnt_qposadr, jointId(robot.joints[k]));
+        obs[off + k] = read(data.qpos, qa) - (item.minus === 'default' ? robot.default_q[k] : 0);
+      }
+    } else if (src === 'qvel:joints') {
+      for (let k = 0; k < len; k++) {
+        const va = read(model.jnt_dofadr, jointId(robot.joints[k]));
+        obs[off + k] = read(data.qvel, va);
+      }
+    } else if (src === 'last_action') {
+      for (let k = 0; k < len; k++) obs[off + k] = lastAction ? lastAction[k] || 0 : 0;
+    } else if (src.startsWith('fsm_slot:')) {
+      const name = src.slice(9);
+      const vals = name === 'command' ? command : null;
+      if (!vals) throw new Error(`观测配方引用 ${src}，但调用方没给`);
+      for (let k = 0; k < len; k++) obs[off + k] = vals[k] || 0;
+    } else {
+      throw new Error(`观测配方里有不认识的 source：${src}`);
+    }
   }
   return obs;
 }
@@ -83,10 +166,9 @@ export function stepPhysics(mj, model, data, decimation = 4) {
   for (let k = 0; k < decimation; k++) mj.mj_step(model, data);
 }
 
-/** 直立度（机体 z 轴与世界 y 轴的点积近似；这里直接用 xquat 算 up·Y）。 */
-export function uprightFromQuat(data, bodyId) {
-  const bid = bodyId('trunk_base');
-  const w = read(data.xquat, bid * 4), x = read(data.xquat, bid * 4 + 1);
-  const y = read(data.xquat, bid * 4 + 2), z = read(data.xquat, bid * 4 + 3);
-  return 1 - 2 * (x * x + z * z);   // y 分量相关的近似，够看趋势
+/** 由 trunk 的姿态算「直立度」（重力 z 分量，-1 = 完全正立）。 */
+export function upright(duck, bodyName = 'trunk_base') {
+  const bid = duck.bodyId(bodyName);
+  const qx = read(duck.data.xquat, bid * 4 + 1), qy = read(duck.data.xquat, bid * 4 + 2);
+  return -(1 - 2 * (qx * qx + qy * qy));
 }

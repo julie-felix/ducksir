@@ -9,7 +9,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/three/controls/OrbitControls.js';
 import { GLTFLoader } from './vendor/three/loaders/GLTFLoader.js';
-import { loadDuck, makeObs, stepPhysics, read, OBS_DIM, N_JOINTS } from './play-core.mjs';
+import { loadDuck, makeObs, stepPhysics, read, setContract, getContract, slot, readSlot,
+         checkPlanAgainstContract, obsDim, upright } from './play-core.mjs';
 
 const $ = (id) => document.getElementById(id);
 const T0 = performance.now();
@@ -33,9 +34,9 @@ function step(label, promise, timeoutMs) {
 addEventListener('error', (e) => stage('脚本出错：' + (e.message || e.error)));
 addEventListener('unhandledrejection', (e) => stage('Promise 未处理：' + (e.reason && e.reason.message || e.reason)));
 
-const CONTROL_HZ = 50;
-const PHYSICS_HZ = 200;
-const DECIM = PHYSICS_HZ / CONTROL_HZ;
+// 频率来自契约（rates），这里只是兜底默认值，载入后会按契约覆盖
+let CONTROL_HZ = 50;
+let DECIM = 4;
 
 async function bytes(url) {
   const r = await fetch(url);
@@ -86,16 +87,22 @@ const state = { vx: 0, wz: 0, lastAction: new Float32Array(N_JOINTS), simTime: 0
 
 async function main() {
   try {
-    const [{ default: loadMujoco }, { default: createDucksim }, ort, meta, viewData, xml] = await step(
-      '读元数据（duck.json / viewer data / MJCF）',
+    const [{ default: loadMujoco }, { default: createDucksim }, ort, contract, viewData, xml] = await step(
+      '读契约 / 网格索引 / MJCF',
       Promise.all([
       import('./vendor/mujoco/mujoco.js'),
       import('./vendor/ducksim/ducksim.mjs'),
       import('./vendor/ort/ort.wasm.min.mjs'),
-      json('./data/live/duck.json'),
+      json('./data/live/contract.json'),
       json('./data/duck-hd1910.json'),
       fetch('./data/mjcf-browser/duck.xml').then((r) => r.text()),
     ]), 30000);
+    setContract(contract);
+    const meta = contract.robot;
+    const rates = contract.rates;
+    CONTROL_HZ = rates.control_hz;
+    DECIM = Math.max(1, Math.round(rates.physics_hz / rates.control_hz));
+
     ort.env.wasm.wasmPaths = new URL('./vendor/ort/', location.href).href;
     ort.env.wasm.numThreads = 1;
     if (ort.env.wasm.proxy !== undefined) ort.env.wasm.proxy = false;
@@ -112,7 +119,7 @@ async function main() {
     const duck = await step('MuJoCo 解析 MJCF + 网格（这步最慢，十几秒正常）',
       loadDuck({ loadMujoco, xml, assets }), 60000);
     const { mj, model, data } = duck;
-    for (let i = 0; i < model.nq; i++) data.qpos[i] = meta.initialQpos[i];
+    for (let i = 0; i < model.nq; i++) data.qpos[i] = meta.initial_qpos[i];
     mj.mj_forward(model, data);
 
     // 渲染：每个 link 一个 group，里面按 geom 偏移放 GLB；位置直接吃 MuJoCo 的 xpos/xquat
@@ -156,18 +163,24 @@ async function main() {
       wasm._free(p); wasm._free(err);
       const ip = wasm._malloc(24); wasm._ds_info_of(h, ip);
       const info = new Uint16Array(wasm.HEAPU8.buffer, ip, 12);
-      const out = { handle: h, inDim: info[3], outDim: info[4] };
+      const out = { handle: h, input_dim: info[3], output_dim: info[4] };
       wasm._free(ip);
       return out;
     };
-    const pre = loadPlan(await bytes('./data/live/pre.blob'));
-    const post = loadPlan(await bytes('./data/live/post.blob'));
-    const fsm = loadPlan(await bytes('./data/live/fsm.blob'));   // 3 → 15：[state, mode, command(13)]
-    stage('创建 ORT Web 会话（7 个策略）');
-    const policyList = (await json('./data/live/policies.json')).policies;
+    // plan 的形状全部来自契约：文件、维度、具名槽位。加载后立刻对一次维度——
+    // 不一致就报错，而不是用旧偏移去读新 blob。
+    const planFile = (name) => './data/live/' + getContract().plans[name].file;
+    const pre = loadPlan(await bytes(planFile('pre')));
+    const post = loadPlan(await bytes(planFile('post')));
+    const fsm = loadPlan(await bytes(planFile('fsm')));
+    stage(`创建 ORT Web 会话（${contract.policies.length} 个策略）`);
+    checkPlanAgainstContract('pre', pre);
+    checkPlanAgainstContract('post', post);
+    checkPlanAgainstContract('fsm', fsm);
+    const policyList = contract.policies;
     const sessions = {};
     for (const pol of policyList) {
-      const buf = await bytes('./data/live/' + pol.file);
+      const buf = await bytes(planFile(pol.file));
       sessions[pol.key] = await ort.InferenceSession.create(buf,
         { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
     }
@@ -192,10 +205,10 @@ async function main() {
     let pendingCmd = 0;
 
     const runPlan = (plan, input) => {
-      const ip = wasm._malloc(plan.inDim * 4), op = wasm._malloc(plan.outDim * 4);
+      const ip = wasm._malloc(plan.input_dim * 4), op = wasm._malloc(plan.output_dim * 4);
       wasm.HEAPF32.set(Float32Array.from(input), ip >> 2);
       const rc = wasm._ds_step(plan.handle, ip, op, 0);
-      const out = Array.from(wasm.HEAPF32.subarray(op >> 2, (op >> 2) + plan.outDim));
+      const out = Array.from(wasm.HEAPF32.subarray(op >> 2, (op >> 2) + plan.output_dim));
       wasm._free(ip); wasm._free(op);
       if (rc !== 0) throw new Error('ds_step ' + rc);
       return out;
@@ -222,7 +235,7 @@ async function main() {
     stage('就绪（网格还在后台加载）');
     const bump = (d) => { state.vx = Math.max(LIM.back, Math.min(LIM.fwd, state.vx + d)); };
     const resetSim = () => {
-      for (let i = 0; i < model.nq; i++) data.qpos[i] = meta.initialQpos[i];
+      for (let i = 0; i < model.nq; i++) data.qpos[i] = meta.initial_qpos[i];
       for (let i = 0; i < model.nv; i++) data.qvel[i] = 0;
       state.vx = 0; state.lastAction.fill(0); state.simTime = 0;
       mj.mj_forward(model, data);
@@ -269,18 +282,26 @@ async function main() {
       const qy = read(data.xquat, bid * 4 + 2);
       // 重力在世界系是 (0,0,-1)，它在机体系的 z 分量 = -R[2][2] = -(1-2(qx²+qy²))
       const gz = -(1 - 2 * (qx * qx + qy * qy));
-      const fsmOut = runPlan(fsm, [pendingCmd, gz, state.vx, state.wz]);
+      // 输入按槽位塞（名字来自契约），输出按槽位取——端侧不写任何偏移数字
+      const fsmStream = new Array(fsm.input_dim).fill(0);
+      const put = (name, vals) => { const [off] = slot('fsm', name); vals.forEach((v, i) => { fsmStream[off + i] = v; }); };
+      put('in:policy_command', [pendingCmd]);
+      put('in:gravity_z', [gz]);
+      put('in:vx', [state.vx]);
+      put('in:wz', [state.wz]);
+      const fsmOut = runPlan(fsm, fsmStream);
       pendingCmd = 0;
-      state.fsm = { state: fsmOut[0], mode: fsmOut[1] };
-      const cmd13 = fsmOut.slice(2, 15);
+      const st = readSlot(fsmOut, 'fsm', 'out:state')[0];
+      const mode = readSlot(fsmOut, 'fsm', 'out:mode')[0];
+      const cmd13 = readSlot(fsmOut, 'fsm', 'out:command');
+      state.fsm = { state: st, mode };
       // botlab 的 `where(clear_last_action, 0, last_action)`：SIT_ENTER 第一步 / WALK_RESET / RECOVER_ENTER 要清零。
       // 漏了它，坐完站起来的第一帧会把坐姿策略的动作喂给行走策略，直接顶飞（2026-11-10 踩过）。
-      if (fsmOut[15]) state.lastAction.fill(0);
-      if (!manual) active = modeToKey[fsmOut[1]] || active;
+      if (readSlot(fsmOut, 'fsm', 'out:clear_last_action')[0]) state.lastAction.fill(0);
+      if (!manual) active = modeToKey[mode] || active;
 
       // 2) obs（61 维）：指令段用状态机给的 command
-      const obs = makeObs(duck, { joints: meta.joints, defaultQ: meta.defaultQ,
-                                  lastAction: state.lastAction, vx: state.vx, command: cmd13 });
+      const obs = makeObs(duck, { lastAction: state.lastAction, vx: state.vx, command: cmd13 });
       const policyInput = runPlan(pre, obs);
       const sess = sessions[active];
       const res = await sess.run({ [sess.inputNames[0]]:

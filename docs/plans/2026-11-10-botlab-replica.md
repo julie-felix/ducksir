@@ -790,3 +790,25 @@ VEL_FWD = 0.25   VEL_BACK = -0.2   VEL_ANG = 1.0
 
 **判据分两层**：状态迁移逐帧相同（控制逻辑等价的硬指标）+ 末态高度差 < 3 cm。
 中间帧差到 0.049 m 是混沌放大——接触密集的步态对 1e-6 的推理差异敏感到这个程度，不当 bug 处理。
+
+### W8g（2026-11-10）契约成为产物
+
+**问题**：图的形状（观测偏移、`fsm` 输出的 `[state, mode, command(13), clear]`）写在**消费端**代码里
+（`play-core.mjs` 的 `obs[0..2]`、`play.js` 的 `fsmOut[0]`/`slice(2,15)`/`fsmOut[15]`，以及手列的 `policies.json`）。
+改 Python 生成新 IR 之后，端侧用旧偏移读新 blob——**不报错，只是行为诡异**。当天的指令映射漂移就是这么来的。
+
+**做法**：编译时把形状一并产出，端侧变成通用执行器。
+
+- 新增 `sim/plan/contract.py`：`plan_entry()` 记形状 + digest + 具名槽位，`build_contract()` 组装并**自检**
+  （槽位不越界、obs 总长 == `pre.input_dim`、策略字段齐全）。
+- 新增 `sim/host/export_artifacts.py`：一个入口产出 `pre/post/fsm.blob` + 7 个模型 + `contract.json`。
+- `client/viewer/play-core.mjs`：不再有任何偏移数字——`setContract()` 校验契约，
+  `makeObs()` 按**观测配方**取数（`sensor:` / `gravity:body:` / `qpos:joints` / `qvel:joints` / `last_action` / `fsm_slot:`），
+  `checkPlanAgainstContract()` 在加载后比对维度。
+- `client/viewer/play.js`：plan 文件、维度、槽位、策略清单、频率全部来自契约；载入后立刻校验。
+- `export_browser_check.py` 不再写 `duck.json` / `policies.json`（契约取代），只留宿主参照素材。
+
+**验收**：新增 `node sim/test/test_contract_guard.mjs` —— 维度不符 / 槽位越界 / 缺字段 / kind 不对 / 未知 plan /
+未知槽位，六种篡改都必须**报错**。实测全过。其余 8 个浏览器与对拍测试在重构后全绿（含全链路对拍：状态迁移逐帧相同）。
+
+**收益**：加策略、改 `fsm` 输出维度、换观测布局——只改 Python/YAML 后重新导出，端侧零改动。

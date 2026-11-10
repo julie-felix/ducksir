@@ -150,31 +150,8 @@ def main() -> int:
         json.dump(act_list, f)
     shutil.copyfile(model_path, os.path.join(out, "model.onnx"))
 
-    # 七个策略全拷一份：浏览器里下拉切换（对应 botlab 的 policy_bank）
-    policies = []
-    for key, _, fname in (("walk", 0, "walking.onnx"), ("sitstand", 1, "sitstand.onnx"),
-                          ("kick_left", 2, "kick-left.onnx"), ("kick_right", 3, "kick-right.onnx"),
-                          ("roll", 4, "roll.onnx"), ("ground_pick", 5, "ground-pick.onnx"),
-                          ("stand", 6, "stand.onnx")):
-        src = os.path.join(ROOT, "build/models", fname)
-        if os.path.exists(src):
-            shutil.copyfile(src, os.path.join(out, fname))
-            policies.append({"key": key, "mode": _, "file": fname})
-    with open(os.path.join(out, "policies.json"), "w", encoding="utf-8") as f:
-        json.dump({"policies": policies}, f, ensure_ascii=False, indent=2)
-    # 浏览器自己组 obs 要用的元数据（关节序、站姿、指令范围）——**每次导出都重写**，
-    # 之前这份是手搓的，preset 更新后没跟着变，结果浏览器从「全零位形」起步，一上去就打滚。
-    with open(os.path.join(out, "duck.json"), "w", encoding="utf-8") as f:
-        json.dump({
-            "robot": doc["robot"]["id"],
-            "joints": driven,
-            "defaultQ": preset["defaultJointPositions"],
-            "initialQpos": preset["initialQpos"],
-            "actionScale": preset["actionScale"],
-            "ctrlrange": [[float(a["ctrlrange"][0]), float(a["ctrlrange"][1])] for a in actuators],
-            "control_hz": 50, "physics_hz": 200,
-        }, f, ensure_ascii=False, indent=2)
-
+    # 策略清单与元数据现在由 `export_artifacts.py` 写进 contract.json；
+    # 这个脚本只负责「宿主参照运行」的素材（obs / actions / meta）。
     with open(os.path.join(out, "meta.json"), "w", encoding="utf-8") as f:
         json.dump({"policy_id": man["policy_id"], "steps": args.steps, "vx": args.vx,
                    "pre_digest": ir.sha256_of_blob(pre_blob),

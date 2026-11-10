@@ -167,6 +167,9 @@ env -u https_proxy -u HTTPS_PROXY -u http_proxy -u HTTP_PROXY -u all_proxy -u AL
 ```bash
 python3 tools/vendor_mujoco_web.py     # @mujoco/mujoco 4.0.0 的 js+wasm（11 MB）+ 38 个 STL（21 MB）
 python3 tools/vendor_ort_web.py        # onnxruntime-web 的 wasm-only 运行时（14 MB）
+# 策略包：plan blob + 模型 + **契约**（contract.json，唯一真源）
+PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 sim/host/export_artifacts.py
+# 宿主参照运行素材（obs / actions / meta），给 live.html 做自算比对
 PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 sim/host/export_browser_check.py
 # 浏览器版 MJCF（只导碰撞 mesh，STL 从 21 MB 降到 7.1 MB）
 PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 tools/robot/export_mjcf.py \
