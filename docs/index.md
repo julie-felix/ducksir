@@ -18,7 +18,7 @@
 
 - [`docs/flow.md`](flow.md) — 从硬件到真机的完整流水线，每步的产物与通过判据。
 - [`docs/plans/2026-11-09-robot-entity.md`](plans/2026-11-09-robot-entity.md) — **上一阶段**（已完成）：数字描述 + 可视化 + 改值 + 导入；D1–D20 决策、三个实测发现、怎么跑。
-- [`docs/plans/2026-11-10-botlab-replica.md`](plans/2026-11-10-botlab-replica.md) — **当前阶段**：复刻 BotLab 的编排能力（`sim/` + `engine/`），D1–D20 + 9 周里程碑（到 2027-01-11）+ W3 止损点；浏览器端要可交互。
+- [`docs/plans/2026-11-10-botlab-replica.md`](plans/2026-11-10-botlab-replica.md) — **当前阶段**（W1–W7 已完成）：复刻 BotLab 的编排能力（`sim/` + `engine/`），D1–D20、里程碑状态与「现状/下一步」见 §4 与 §10。
 - [`docs/node-parity.md`](node-parity.md) — botlab 56 个节点与本仓集成情况的对照表（✅25 / ⇄2 / ⏳2 / ❌27）。
 - [`docs/plans/2026-11-09-parallel-mechanism.md`](plans/2026-11-09-parallel-mechanism.md) — 并联机构：G1 踝/腰实物并联、模型串联；PR/AB 两套坐标 + coupling；官方 CAD 7 实体判读表。
 - [`docs/plans/2026-11-08-digital-description.md`](plans/2026-11-08-digital-description.md) — 长期路线（M1–M4）：鸭子只有 MJCF 没有 URDF，canonical 自定 schema。前一段已被 11-09 取代。
