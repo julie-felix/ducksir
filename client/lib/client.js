@@ -22,6 +22,7 @@ window.__ModuleLoader__.load({
       { id: 'desc', label: '数字描述', file: 'index.html', hint: '拖关节 / 并联解算 / 轨迹回放' },
       { id: 'play', label: '浏览器跑', file: 'play.html', hint: 'MuJoCo wasm 物理 + 执行核 + ORT Web，键盘开鸭子' },
       { id: 'live', label: '自算比对', file: 'live.html', hint: '浏览器算一遍 action，和宿主比' },
+      { id: 'inspect', label: '实验台', file: 'inspect.html', hint: '面板指标 / 判据 / 摘要链 / Python 用法' },
     ]
 
     var CSS = [

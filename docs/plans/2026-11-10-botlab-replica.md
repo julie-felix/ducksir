@@ -868,3 +868,36 @@ FAIL  post：第 2 帧第 3 个分量差 1.000e-06（现 0.947509766 / 存 0.947
 
 **规矩**：改图/改核之后若**有意**改变行为，跑 `--update` 重新记录，并在提交说明里写清为什么变；
 不确定的时候不要更新快照——那是把 bug 固化成基准。
+
+### W9d（2026-11-10）面板指标 schema + 实验台页 + 薄 Python 门面
+
+**1. 指标 schema**（`sim/host/panel.py`）：固定 8 个键——`control_hz` / `physics_hz` /
+`realtime_factor` / `control_p95_ms` / `deadline_miss` / `base_height_min` / `upright_final` / `distance`。
+`run_policy.py` 在每个控制步掐表，`check_panel()` 校验「键齐、有限、不是 bool」。
+`test_panel.py` 还校验**页面标签表与 schema 的键完全一致**——两边各写一份是迟早会漂的。
+
+**2. 实验台页**（`client/viewer/inspect.html`）：读一次运行的 `report.json`，摊开四块——
+面板指标卡、判据表（pass/fail 上色）、摘要链（plan / manifest / model 的 sha256 前 16 位）、
+以及**能真跑的 Python 片段**（不是伪代码，是 `sim/sdk` 里那层门面的用法）。
+面板工具栏加了「实验台」页签。
+
+**3. 薄 Python 门面**（`sim/sdk/ducksir.py`）：
+
+```python
+from ducksir import Duck
+d = Duck()
+d.joints(); d.default_pose(); d.contract_doc()
+r = d.run(seconds=10, vx=0.25)     # 返回报告 dict，含 panel 八项
+```
+
+**只做薄的一层**（不支持 `Simulation` 的 scene/motion/sensor 装配）：厚门面要等多机器人 + 场景 + 重定向都落地才有意义。
+
+**验收**
+
+```
+python3 sim/test/test_panel.py              全部通过（schema / 缺键 / NaN / 页面标签对齐）
+node  sim/test/test_play_page_ids.mjs       导入 11 名、planPath 3 个、inspect 6 处引用 全命中
+Duck().run(seconds=2) → panel {rtf 165.891, p95 0.13 ms, deadline_miss 0, upright 0.9999}
+```
+
+**还没做**：参数可改（现在只读展示）、指标历史/曲线（现在是一次运行的一张快照）。

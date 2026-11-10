@@ -30,13 +30,14 @@ console.log(`导入检查：${imported.length} 个名字全部在 play-core 里�
 // planFile('xxx') 的字面参数必须在契约里存在（这一处曾经写成 planFile(pol.file)，运行时才炸）
 const contract = JSON.parse(readFileSync(resolve(ROOT, 'client/viewer/data/live/contract.json'), 'utf8'));
 const planNames = new Set(Object.keys(contract.plans));
-const called = new Set([...js.matchAll(/planFile\('([^']+)'\)/g)].map((m) => m[1]));
+// play.js 现在通过 assets-map 的 planPath(contract, 'x') 取 plan
+const called = new Set([...js.matchAll(/planPath\(contract, '([^']+)'\)/g)].map((m) => m[1]));
 const badPlans = [...called].filter((n) => !planNames.has(n));
 if (badPlans.length) {
   console.log('play.js 请求了契约里不存在的 plan：' + badPlans.join(', '));
   process.exit(1);
 }
-console.log(`planFile 检查：${[...called].join(', ')} 都在契约里`);
+console.log(`planPath 检查：${[...called].join(', ') || '（无）'} 都在契约里`);
 
 if (missing.length) {
   console.log('缺失：' + missing.join(', '));
@@ -44,3 +45,15 @@ if (missing.length) {
   process.exit(1);
 }
 console.log('PASS：脚本引用的 id 全部存在');
+
+// 实验台也要对得上（同一类漏改：js 里 $('x') 而 html 没有）
+const inspectHtml = readFileSync(resolve(ROOT, 'client/viewer/inspect.html'), 'utf8');
+const inspectJs = readFileSync(resolve(ROOT, 'client/viewer/inspect.js'), 'utf8');
+const iIds = new Set(inspectHtml.match(/\bid="([^"]+)"/g).map((m) => m.slice(4, -1)));
+const iRefs = new Set([...inspectJs.matchAll(/\$\('([^']+)'\)/g)].map((m) => m[1]));
+const iMissing = [...iRefs].filter((r) => !iIds.has(r));
+if (iMissing.length) {
+  console.log('inspect.js 引用了不存在的 id：' + iMissing.join(', '));
+  process.exit(1);
+}
+console.log(`inspect 页：${iRefs.size} 处引用全部命中`);

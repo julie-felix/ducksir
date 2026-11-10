@@ -36,6 +36,7 @@ sys.path.insert(0, os.path.join(ROOT, "sim", "plan"))
 sys.path.insert(0, os.path.join(ROOT, "tools", "robot"))
 
 import entity as E  # noqa: E402
+import panel as PANEL  # noqa: E402
 import ir  # noqa: E402
 
 LIB_CORE = os.path.join(ROOT, "engine", "build", "libducksim.so")
@@ -345,7 +346,10 @@ def main() -> int:
             return np.array(vals, dtype=float)
         raise SystemExit(f"manifest 里出现未知 obs 槽：{slot}")
 
+    step_times = []
+    x0, y0 = float(d.qpos[0]), float(d.qpos[1])
     for k in range(steps):
+        t_step = time.perf_counter()
         off = 0
         for o in man["obs"]:
             v = gather(o) * float(o.get("scale", 1.0))
@@ -371,6 +375,7 @@ def main() -> int:
             dead = True
             break
 
+        step_times.append(time.perf_counter() - t_step)
         heights.append(float(d.qpos[2]))
         tilts.append(float(1 - 2 * (d.qpos[4] ** 2 + d.qpos[5] ** 2)))
         efforts.append(float(np.abs(d.actuator_force).mean()))
@@ -419,6 +424,14 @@ def main() -> int:
         "steps": steps,
         "metrics": metrics,
         "verdict": verdict,
+        "panel": PANEL.build_panel(
+            control_hz=control_hz, physics_hz=physics_hz,
+            seconds=len(heights) / control_hz, wall=wall,
+            step_times=step_times,
+            base_height_min=metrics["base_height_min"],
+            upright_final=metrics["upright_final"],
+            distance=float(np.hypot(d.qpos[0] - x0, d.qpos[1] - y0)),
+        ),
     }
 
     if multi:

@@ -1,0 +1,46 @@
+{
+  "incident_id": "",
+  "plan_digest": "c8e5ef707e3891f95da45dca5a1cbcffebe509a542da344ac94a0495425c49a5",
+  "policy_manifest_digest": "40bd03de8402ad6509820ac149f7560c4b9139538fa7877a5b2cf451d8157b19",
+  "policy_id": "duck-walk",
+  "mjcf_digest": "3c934c657e7df77472de4ab7edad2eb0318b9dabdb8d659d5b765cb5e1ed7990",
+  "model_digest": "e36332d383997d51401897734cd3e79cf5038406feddb18b4d57ecfb141daa6c",
+  "policy_mode": null,
+  "entity_digest": "5e87887c09254a0a1b42d058124d0b0ca5ec12716b8e24aaf9d1a98d8b434afd",
+  "rates": {
+    "control_hz": 50,
+    "physics_hz": 200,
+    "inference_decimation": 1
+  },
+  "nodes": 13,
+  "steps": 200,
+  "metrics": {
+    "steps": 200,
+    "wall_seconds": 0.04,
+    "rtf": 93.52,
+    "inference_calls": 200,
+    "inference_hz": 50.0,
+    "mean_abs_action": 0.24778,
+    "mean_abs_torque": 0.03175,
+    "base_height_final": 0.11574495280776977,
+    "base_height_min": 0.11540929927353248,
+    "upright_final": 0.9999100761883606
+  },
+  "verdict": {
+    "finite": true,
+    "no_sink": true,
+    "ran_full": true,
+    "rates_match": true,
+    "pass": true
+  },
+  "panel": {
+    "control_hz": 50.0,
+    "physics_hz": 200.0,
+    "realtime_factor": 93.522,
+    "control_p95_ms": 0.234,
+    "deadline_miss": 0,
+    "base_height_min": 0.1154,
+    "upright_final": 0.9999,
+    "distance": 0.0104
+  }
+}
