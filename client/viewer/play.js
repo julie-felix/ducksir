@@ -83,7 +83,8 @@ if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
 // 指令范围照上游 app/src/game/constants.js：VEL_FWD 0.25 / VEL_BACK -0.2 / VEL_ANG 1.0。
 // 超出这个范围策略没见过——它会一边走一边拐（用户看到的就是「走得歪」）。
 const LIM = { fwd: 0.25, back: -0.2, ang: 1.0 };
-const state = { vx: 0, wz: 0, lastAction: new Float32Array(N_JOINTS), simTime: 0, error: null };
+// 关节数来自契约（载入后按契约重设这个数组），这里先占位
+const state = { vx: 0, wz: 0, lastAction: new Float32Array(0), simTime: 0, error: null };
 
 async function main() {
   try {
@@ -100,6 +101,7 @@ async function main() {
     setContract(contract);
     const meta = contract.robot;
     const rates = contract.rates;
+    state.lastAction = new Float32Array(meta.joints.length);
     CONTROL_HZ = rates.control_hz;
     DECIM = Math.max(1, Math.round(rates.physics_hz / rates.control_hz));
 

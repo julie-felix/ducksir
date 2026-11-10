@@ -812,3 +812,13 @@ VEL_FWD = 0.25   VEL_BACK = -0.2   VEL_ANG = 1.0
 未知槽位，六种篡改都必须**报错**。实测全过。其余 8 个浏览器与对拍测试在重构后全绿（含全链路对拍：状态迁移逐帧相同）。
 
 **收益**：加策略、改 `fsm` 输出维度、换观测布局——只改 Python/YAML 后重新导出，端侧零改动。
+
+### W8h（2026-11-10）宿主接入契约 + 两处漏改
+
+1. **宿主接入契约**：`sim/host/contract_obs.py` 提供和浏览器同一套 `makeObs()`（按配方取数），
+   `run_fsm.py` 改成读 `contract.json` 组观测（`--contract` 参数，缺了直接报错而不是退回旧口径）。
+   观测配方不再手写——`export_artifacts.py` 从 **manifest 的 obs 段派生**，manifest 才是声明源。
+2. **两处漏改（都是重构后端的）**：`play.js` 里还留着 `new Float32Array(N_JOINTS)`（`play-core` 已不再导出它）→
+   页面直接抛 `ReferenceError: N_JOINTS is not defined`。改成载入契约后按 `contract.robot.joints.length` 建数组。
+3. **静态守卫加一条**：`test_play_page_ids.mjs` 现在还检查「`play.js` 从 `play-core` 导入的每个名字都真有导出」——
+   这类漏改不靠跑起来才发现。11 个导入名全过。

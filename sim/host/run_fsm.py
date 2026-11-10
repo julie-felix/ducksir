@@ -30,6 +30,7 @@ sys.path.insert(0, os.path.join(ROOT, "sim", "plan"))
 sys.path.insert(0, os.path.join(ROOT, "tools", "robot"))
 
 import entity as E  # noqa: E402
+import contract_obs  # noqa: E402
 import ir  # noqa: E402
 from run_policy import Info, load_libs, quat_to_mat, sha256  # noqa: E402
 
@@ -189,6 +190,8 @@ def main() -> int:
     ap.add_argument("--seconds", type=float, default=20.0)
     ap.add_argument("--vx", type=float, default=0.5)
     ap.add_argument("--pulses", default="3:1,8:6", help="指令脉冲，格式 秒:值,秒:值（1 坐/站 6 起身）")
+    ap.add_argument("--contract", default="client/viewer/data/live/contract.json",
+                    help="契约（观测配方 + 槽位）；由 sim/host/export_artifacts.py 生成")
     ap.add_argument("--trace-state", action="store_true")
     ap.add_argument("--report")
     ap.add_argument("--trajectory")
@@ -237,6 +240,11 @@ def main() -> int:
     d.qpos[:] = preset["initialQpos"]
     mujoco.mj_forward(m, d)
 
+    contract_path = os.path.join(ROOT, args.contract)
+    if not os.path.exists(contract_path):
+        raise SystemExit(f"缺契约 {args.contract}：先跑 sim/host/export_artifacts.py")
+    con = contract_obs.load_contract(contract_path)
+
     qpos_off = [int(m.jnt_qposadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, nm)]) for nm in driven]
     dof_off = [int(m.jnt_dofadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, nm)]) for nm in driven]
     sadr = int(m.sensor_adr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, "imu_ang_vel")])
@@ -246,6 +254,21 @@ def main() -> int:
     for part in args.pulses.split(",") if args.pulses else []:
         s_, v_ = part.split(":")
         pulses[round(float(s_) * control_hz)] = float(v_)
+
+    def _sensor_adr(name: str) -> int:
+        sid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, name)
+        if sid < 0:
+            raise SystemExit(f"MJCF 里没有传感器 {name}")
+        return int(m.sensor_adr[sid])
+
+    def _quat_of(body: str):
+        bid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, body)
+        if bid < 0:
+            raise SystemExit(f"MJCF 里没有 body {body}")
+        return d.xquat[bid]
+
+    view = {"data": d, "qpos_off": qpos_off, "dof_off": dof_off,
+            "sensor_adr": _sensor_adr, "quat_of": _quat_of}
 
     steps = int(args.seconds * control_hz)
     obs = np.zeros(61, dtype=np.float32)
@@ -260,24 +283,20 @@ def main() -> int:
     for k in range(steps):
         if k in pulses:
             cur_pulse = pulses[k]
-        R = quat_to_mat(d.qpos[3:7])
-        obs[0:3] = d.sensordata[sadr:sadr + 3]
-        obs[3:6] = R.T @ np.array([0.0, 0.0, -1.0])
-        obs[6:20] = np.array([d.qpos[i] for i in qpos_off]) - default_q
-        obs[20:34] = np.array([d.qvel[i] for i in dof_off])
-        obs[34:48] = last_action
         # 13 维指令按状态给（botlab `_command()`）：WALK/POST_KICK/WALK_RESET 给速度、
         # **只有 SIT** 给 [1,0…]、GROUND_PICK 给相位、其余（SIT_ENTER/SIT_EXIT/踢/翻滚/起身）零指令
-        obs[48:61] = 0.0
+        cmd13 = np.zeros(13, dtype=np.float32)
         if prev_state in (WALK, POST_KICK, WALK_RESET):
-            obs[48] = args.vx
+            cmd13[0] = args.vx
         elif prev_state == SIT:
-            obs[48] = 1.0
+            cmd13[0] = 1.0
         elif prev_state == GROUND_PICK:
-            obs[48] = (prev_steps % GROUND_PICK_PERIOD_STEPS) / GROUND_PICK_PERIOD_STEPS
-        obs[60] = cur_pulse          # 第 13 维借来放策略脉冲
+            cmd13[0] = (prev_steps % GROUND_PICK_PERIOD_STEPS) / GROUND_PICK_PERIOD_STEPS
+        cmd13[12] = cur_pulse         # 第 13 维借来放策略脉冲（与契约里的 command 布局一致）
         if cur_pulse:
             cur_pulse = 0.0            # 脉冲只持续一步
+        # 观测装配走契约配方（和浏览器同一份）
+        obs = contract_obs.make_obs(con, view, last_action=last_action, command=cmd13)
 
         bi = (ctypes.c_float * 61)(*obs.tolist())
         bo = (ctypes.c_float * n_out)()
