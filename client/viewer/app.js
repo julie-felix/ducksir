@@ -672,14 +672,27 @@ function parMakeUI(side, host) {
     <div class="par-title">${side.label}</div>
     ${['A 电机', 'B 电机', 'roll', 'pitch'].map((n, k) => `
       <div class="joint"><div class="name"><span>${n}</span><span data-v="${k}">0.0°</span></div>
-        <input type="range" data-k="${k}" min="${k < 2 ? -35 : -30}" max="${k < 2 ? 35 : (k === 2 ? 30 : 45)}"
+        <input type="range" data-k="${k}" min="${k < 2 ? -28 : -30}" max="${k < 2 ? 28 : (k === 2 ? 30 : 45)}"
                step="0.5" value="0"/></div>`).join('')}
-    <div class="par-out" data-out></div>`;
+    <div class="par-out" data-out></div>
+    <div class="par-lim" data-lim style="display:none"></div>`;
   host.appendChild(wrap);
   const inputs = [...wrap.querySelectorAll('input')];
   const outs = [...wrap.querySelectorAll('[data-v]')];
   const out = wrap.querySelector('[data-out]');
   const state = { th: [0, 0], x: [0, 0] };
+  const lim = wrap.querySelector('[data-lim]');
+  // 行程：电机 ±28°（= MuJoCo 查表范围 ±0.5 rad），roll ±30°，pitch -30°~45°
+  const LIM_TH = 28 * Math.PI / 180, LIM_X = [-30 * Math.PI / 180, 30 * Math.PI / 180,
+                                              -30 * Math.PI / 180, 45 * Math.PI / 180];
+  const inRange = (st) => Math.abs(st.th[0]) <= LIM_TH + 1e-9 && Math.abs(st.th[1]) <= LIM_TH + 1e-9
+    && st.x[0] >= LIM_X[0] - 1e-9 && st.x[0] <= LIM_X[1] + 1e-9
+    && st.x[1] >= LIM_X[2] - 1e-9 && st.x[1] <= LIM_X[3] + 1e-9;
+  const showLim = (msg) => {
+    if (!msg) { lim.style.display = 'none'; return; }
+    lim.textContent = msg;
+    lim.style.display = '';
+  };
 
   const paint = () => {
     [0, 1, 2, 3].forEach((k) => {
@@ -698,6 +711,7 @@ function parMakeUI(side, host) {
 
   inputs.forEach((input) => input.addEventListener('input', () => {
     const k = +input.dataset.k;
+    const prev = { th: [...state.th], x: [...state.x] };
     if (k < 2) {
       state.th[k] = rad(parseFloat(input.value));
       state.x = parFw(side.geom, state.th, state.x);
@@ -705,6 +719,16 @@ function parMakeUI(side, host) {
       state.x[k - 2] = rad(parseFloat(input.value));
       state.th = parIk(side.geom, state.x, state.th);
     }
+    // 解出来的另一侧超出滑条行程 → 不接受这一步，把输入退回去并提示
+    if (!inRange(state)) {
+      state.th = prev.th; state.x = prev.x;
+      paint();
+      const which = [0, 1].some((i) => Math.abs(state.th[i]) > LIM_TH) ? '电机' : '关节';
+      showLim(`⚠ 这一步会让${which}超出滑条行程，已退回上一步`);
+      input.value = String(deg(k < 2 ? state.th[k] : state.x[k - 2]).toFixed(1));
+      return;
+    }
+    showLim('');
     paint();
   }));
 
@@ -790,6 +814,24 @@ async function initParallelOverlay(data) {
     PAR.sides[target].paint();
   }
   if (qs.has('selftest')) {
+    // 行程守卫自检：把 pitch 推到 45°，应该被退回并提示
+    const first = Object.values(PAR.sides)[0];
+    if (first && first.wrap) {
+      const pitchInput = first.wrap.querySelector('input[data-k="3"]');
+      pitchInput.value = '45';
+      pitchInput.dispatchEvent(new Event('input'));
+      const limEl = first.wrap.querySelector('[data-lim]');
+      console.log('LIMIT-TEST pitch=45° 之后：状态 pitch',
+        (first.state.x[1] * 180 / Math.PI).toFixed(2), '电机',
+        first.state.th.map((v) => (v * 180 / Math.PI).toFixed(1)).join('/'),
+        '提示:', limEl.style.display === 'none' ? '无' : limEl.textContent);
+      const okInput = first.wrap.querySelector('input[data-k="0"]');
+      okInput.value = '20';
+      okInput.dispatchEvent(new Event('input'));
+      console.log('LIMIT-TEST 电机=20° 之后：roll/pitch',
+        first.state.x.map((v) => (v * 180 / Math.PI).toFixed(2)).join('/'),
+        '提示:', limEl.style.display === 'none' ? '无' : limEl.textContent);
+    }
     for (const [id, side] of Object.entries(PAR.sides)) {
       for (const x of [[0.2, 0.1], [-0.15, 0.25], [0.3, -0.2]]) {
         const th = parIk(side.geom, x, [0, 0]);
