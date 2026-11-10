@@ -118,4 +118,5 @@ client/lib/client.js   web：侧栏「机器人」入口 + main 面板（iframe 
 2. **网格子项必须 `min-width: 0`**。默认 `min-width:auto` 会让长代码行 / 宽表格把中列顶宽，
    整页出现横向滚动条。
 3. **宽内容自己滚**：`pre`、文件树、底部面板各自 `overflow:auto`，并加 `overscroll-behavior: contain`
-   防止滚到底传给外层。
+   防止滚到底传给外层。底部参数区要有**上界**（`max-height: min(46vh, 420px)`）+ 内部滚动，
+   否则参数一多就把整页顶出视口；滑杆要 `touch-action: none`，不然移动端拖滑杆会连带滚页面。
