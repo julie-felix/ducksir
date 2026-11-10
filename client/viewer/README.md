@@ -51,3 +51,21 @@ rig 机型没有 vendored 的 STL，加载失败时会用一个 14 mm 的示意�
 （比如先看天工再切 G1，就变成 G1 对比天工）。
 
 `?selftest=switch` 可复现这个场景：加载天工 → 自动切到 G1，控制台打印切换前后的关节数与叠加层数量。
+
+## 轨迹回放
+
+工具栏「回放」读 `data/replay-duck-pd.json`（`sim/host/pd_hold.py --trajectory` 导出的轨迹），
+播放/暂停 + 时间轴拖动。帧里只带「自由基座位姿 + 驱动关节角」，其余几何全部复用本页自己的 FK——
+所以看到的不是另一套渲染，就是实体描述本身。回放时「贴地」自动关掉（要的是真实位姿）。
+
+重新生成（默认就是物理验证那一条，10 s 正弦、有重力、有地面）：
+
+```bash
+export PYTHONPATH=$HOME/.local/share/ducksir/pylibs
+python3 sim/host/pd_hold.py --mjcf build/mjcf/duck-hd1910.xml \
+    --preset build/preset/duck-hd1910.preset.yaml \
+    --seconds 10 --target sine --amp 0.2 --gravity on --floor \
+    --trajectory client/viewer/data/replay-duck-pd.json
+```
+
+也可以 `?replay=./data/<别的>.json` 指定文件，或把按钮换成别的机型轨迹——机型和轨迹的关节名对不上会直接报错。

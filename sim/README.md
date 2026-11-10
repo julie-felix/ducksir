@@ -10,7 +10,7 @@
 
 | 路径 | 作用 |
 |---|---|
-| `host/pd_hold.py` | W3 的验收脚本：PD 跟踪 + 物理链路验证，出 `--report` JSON |
+| `host/pd_hold.py` | W3 的验收脚本：PD 跟踪 + 物理链路验证，出 `--report` JSON 与 `--trajectory` 轨迹（给查看器回放） |
 
 ## 怎么跑
 
@@ -37,3 +37,6 @@ python3 sim/host/pd_hold.py --mjcf build/mjcf/duck-hd1910.xml \
 - 站立/行走：要策略，PD 管不了自由基座的平衡（全零位形不是站姿，实测见计划 §9）。
 - 观测语义现在内联在 `pd_hold.py` 里，W6 迁到 `contract/policy/manifest`。
 - 地面是脚本临时加的（`--floor` 用 MjSpec 注入平面）；真正的场景文件还没定。
+
+回放这条链路：`pd_hold.py --trajectory client/viewer/data/replay-duck-pd.json` →
+查看器工具栏「回放」。这样 W4 之后写 C++ 核时，验收除了报告里的数字，还有一个能用眼睛看的东西。

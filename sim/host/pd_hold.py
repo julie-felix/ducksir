@@ -112,6 +112,7 @@ def main() -> int:
     ap.add_argument("--floor", action="store_true", default=True)
     ap.add_argument("--no-floor", dest="floor", action="store_false")
     ap.add_argument("--report", help="把结果写成 JSON")
+    ap.add_argument("--trajectory", help="把轨迹写成 JSON（给 viewer 回放）")
     args = ap.parse_args()
 
     if args.physics_hz % args.control_hz != 0:
@@ -151,6 +152,7 @@ def main() -> int:
     steps = int(args.seconds * args.control_hz)
     act = np.zeros(n)
     last_action = np.zeros(n)
+    frames = []
     err_idle, err_all = [], []
     contacts = []
     finite = True
@@ -178,6 +180,13 @@ def main() -> int:
             err_idle.append(err)
         contacts.append(d.ncon)
         zs.append(float(d.qpos[2]))
+        if args.trajectory:
+            frames.append({
+                "t": round(t, 4),
+                "pos": [round(float(x), 6) for x in d.qpos[0:3]],
+                "quat": [round(float(x), 6) for x in d.qpos[3:7]],
+                "q": [round(float(x), 6) for x in obs["joint_pos"]],
+            })
         last_action = act
 
     wall = time.time() - t0
@@ -237,6 +246,28 @@ def main() -> int:
     print(f"  接触比 {report['metrics']['contact_ratio']:.2f}｜基座高度 终 {zs[-1]:+.3f} 最低 {np.nanmin(zs):+.3f} m")
     print(f"  {'PASS' if report['verdict']['pass'] else 'FAIL'}  "
           f"finite={ok_finite} track={ok_track} contact={ok_contact} obs={ok_obs} geom={height_ok}（墙钟 {wall:.2f}s）")
+    if args.trajectory:
+        out = os.path.join(ROOT, args.trajectory)
+        os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+        traj = {
+            "meta": {
+                "robot": os.path.basename(args.mjcf).rsplit(".", 1)[0],
+                "joints": driven,
+                "target": args.target,
+                "amp": args.amp,
+                "gravity": args.gravity,
+                "seconds": args.seconds,
+                "control_hz": args.control_hz,
+                "physics_hz": args.physics_hz,
+                "mcpf_digest": sha256(args.mjcf) if os.path.exists(args.mjcf) else "",
+                "preset_digest": sha256(args.preset),
+            },
+            "frames": frames,
+        }
+        with open(out, "w", encoding="utf-8") as f:
+            json.dump(traj, f, ensure_ascii=False, separators=(",", ":"))
+        print(f"  轨迹 → {args.trajectory}（{len(frames)} 帧）")
+
     if args.report:
         out = os.path.join(ROOT, args.report)
         os.makedirs(os.path.dirname(out), exist_ok=True)
