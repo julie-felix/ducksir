@@ -58,3 +58,23 @@ tienkung-lite  OK       23   21    0   42.51599707   42.51599707    0
 ```
 
 `act=0` 那两台不是 bug：它们的 canonical 里 `actuators` 还是空的，补 `kp/kd` 是 W2–W3 的活（见计划 D13）。
+
+## 4. 产物与三个命令
+
+```bash
+export PYTHONPATH=$HOME/.local/share/ducksir/pylibs
+
+# 一条命令出全套：mjcf + preset + 校验
+python3 tools/robot/mjcf_smoke.py
+
+# 单独生成 preset（13 个 botlab 字段）
+python3 tools/robot/export_preset.py contract/robot/types/duck-hd1910.yaml \
+    --mjcf build/mjcf/duck-hd1910.xml -o build/preset/duck-hd1910.preset.yaml
+
+# 与上游 MJCF 比结构
+python3 tools/robot/compare_mjcf.py build/mjcf/duck-hd1910.xml \
+    third_party/fanhao-microduck-replica/robot_walk.xml
+```
+
+产物全部落 `build/`（gitignore）：`build/mjcf/<robot>.xml`、`build/meshes/<robot>/`、`build/preset/<robot>.preset.yaml`。
+**preset 是派生物，不手改**；它带 `generated.entity_sha256` 与 `generated.mjcf_sha256`，能追到是哪份实体、哪份导出。

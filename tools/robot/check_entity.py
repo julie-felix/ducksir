@@ -8,6 +8,9 @@ C2 名字    ：link/joint/actuator 各自唯一；actuator.joint 必须是一�
 C3 单位    ：frames.units 必须是 SI 白名单全集；provenance 每条 unit 在白名单里
 C4 出处    ：同一 path 两个不同值 → 失败（除非显式 override: true）
 C5 preset  ：preset 不得改变 actuated 关节集合
+C6 并联    ：mechanisms 的耦合与预设自洽
+C7 闭环    ：loops 两端 body 存在、kind 合法、connect 带 anchor
+C8 执行器  ：actuators 与 actuated 关节一一对应，且 ctrl 序与驱动序的置换可算
 
 退出码：0 全过；1 有 FAIL。
 """
@@ -214,6 +217,34 @@ def check(doc: dict) -> list[tuple[str, bool, str]]:
                 problems.append(f"{lid}: connect 缺 anchor 或长度不是 3")
     detail = "; ".join(problems) if problems else f"{len(doc.get('loops') or [])} 条闭环约束"
     results.append(("C7", not problems, detail))
+
+    # C8 执行器双射：actuators ↔ actuated 关节；顺带把 ctrl 序 ↔ 驱动序的置换算出来
+    problems = []
+    driven = [j["name"] for j in doc.get("joints", []) if j.get("actuated")]
+    acts = doc.get("actuators") or []
+    act_joints = [a.get("joint") for a in acts]
+    if acts:
+        dup = {n for n in act_joints if act_joints.count(n) > 1}
+        if dup:
+            problems.append(f"同一关节挂了多个 actuator: {sorted(dup)}")
+        miss = sorted(set(driven) - set(act_joints))
+        extra = sorted(set(act_joints) - set(driven))
+        if miss:
+            problems.append(f"驱动关节没有 actuator: {miss}")
+        if extra:
+            problems.append(f"actuator 指向非驱动关节: {extra}")
+        if not problems:
+            idx = {n: i for i, n in enumerate(driven)}
+            perm = [idx[n] for n in act_joints]
+            ident = perm == list(range(len(driven)))
+            detail = (f"{len(acts)} 个 actuator 与驱动关节双射，{'ctrl 序=驱动序' if ident else f'ctrl 序是置换 {perm}'}"
+                      + ("" if all(a.get('kp') is not None for a in acts) else "；有 kp 缺失"))
+        else:
+            detail = "; ".join(problems)
+    else:
+        detail = f"actuators 为空（{len(driven)} 个驱动关节没有执行器参数）"
+        problems = []  # 空不算失败：URDF 导入路径本来就不带执行器参数（见 importer W002）
+    results.append(("C8", not problems, detail))
 
     return results
 
