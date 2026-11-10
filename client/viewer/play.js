@@ -11,6 +11,7 @@ import { OrbitControls } from './vendor/three/controls/OrbitControls.js';
 import { GLTFLoader } from './vendor/three/loaders/GLTFLoader.js';
 import { loadDuck, makeObs, stepPhysics, read, setContract, getContract, slot, readSlot,
          checkPlanAgainstContract, obsDim, upright } from './play-core.mjs';
+import { planPath, policyPath } from './assets-map.mjs';
 
 const $ = (id) => document.getElementById(id);
 const T0 = performance.now();
@@ -171,10 +172,9 @@ async function main() {
     };
     // plan 的形状全部来自契约：文件、维度、具名槽位。加载后立刻对一次维度——
     // 不一致就报错，而不是用旧偏移去读新 blob。
-    const planFile = (name) => './data/live/' + getContract().plans[name].file;
-    const pre = loadPlan(await bytes(planFile('pre')));
-    const post = loadPlan(await bytes(planFile('post')));
-    const fsm = loadPlan(await bytes(planFile('fsm')));
+    const pre = loadPlan(await bytes(planPath(contract, 'pre')));
+    const post = loadPlan(await bytes(planPath(contract, 'post')));
+    const fsm = loadPlan(await bytes(planPath(contract, 'fsm')));
     stage(`创建 ORT Web 会话（${contract.policies.length} 个策略）`);
     checkPlanAgainstContract('pre', pre);
     checkPlanAgainstContract('post', post);
@@ -182,7 +182,7 @@ async function main() {
     const policyList = contract.policies;
     const sessions = {};
     for (const pol of policyList) {
-      const buf = await bytes(planFile(pol.file));
+      const buf = await bytes(policyPath(contract, pol.key));
       sessions[pol.key] = await ort.InferenceSession.create(buf,
         { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
     }
