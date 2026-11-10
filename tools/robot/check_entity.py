@@ -256,6 +256,13 @@ def check(doc: dict) -> list[tuple[str, bool, str]]:
         detail = head + ", ".join(no_coll[:6]) + (" …" if len(no_coll) > 6 else "")
     else:
         detail = "所有有视觉的 link 都有碰撞体"
+    # 有碰撞变体就顺带报一下变体的覆盖（变体不是本体的一部分，单独一行说明）
+    variant = os.path.join(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "contract/robot"), "variants", f"{doc['robot']['id']}.all.yaml")
+    if os.path.exists(variant):
+        alt = E.read_yaml(variant)
+        missing = sum(1 for l in alt.get("links", [])
+                      if (l.get("visual") or []) and not (l.get("collision") or []))
+        detail += f"｜有变体 all：{missing}/{len(alt.get('links', []))} 个仍无碰撞体"
     results.append(("C9", True, detail))
 
     return results
