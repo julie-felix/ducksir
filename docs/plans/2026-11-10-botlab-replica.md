@@ -733,3 +733,30 @@ VEL_FWD = 0.25   VEL_BACK = -0.2   VEL_ANG = 1.0
    （把 `ctrl` 当成了 policy 的原始 action）。用正确口径重跑后，0.25 就是 1.00 m／10 s 的直线行走。
 
 **回归守卫**：`node sim/test/test_play_walkcmd.mjs` —— 范围内走直线（|yaw|<15°、|y|<0.4 m）、转向 ±20° 以上且符号正确。
+
+### W8f（2026-11-10）手机端与响应式
+
+「浏览器跑」这一页原来在手机上是勉强能用：状态卡压着画面、按钮一行塞五个、`100vh` 被地址栏吃掉一截、
+渲染像素比固定 2（中端机掉到 20 fps）。重做了布局与渲染参数：
+
+**布局**
+
+- `viewport-fit=cover` + `env(safe-area-inset-*)`：刘海、圆角、底部手势条都不挡内容。
+- 顶部状态卡：`backdrop-filter` 毛玻璃、`max-width: min(78vw, 340px)`，窄屏自动收到 `100vw - 20px`。
+- 底部改成**固定操作坞**（`#dock`）：两行触控按钮（转向 / 加减速 / 坐站 / 踢 / 翻滚 / 复位），
+  每个 **≥ 46 px** 高，`touch-action: manipulation` 去掉双击缩放延迟。
+- 触屏设备（`hover: none and pointer: coarse`）**隐藏键盘提示**，把空间让给按钮。
+- 横屏矮屏（`max-height: 460px`）把操作坞转成横向一条、隐藏标题，画面占比最大化。
+- 原来只有键盘的 `X/Z/V` 现在都有按钮：坐站、踢腿、翻滚 —— 手机上不再需要外接键盘。
+
+**渲染**
+
+- 像素比自适应：触屏 `min(dpr, 1.5)`、桌面 `min(dpr, 2)`；抗锯齿在手机上关掉。
+- **自适应降载**：连续 2 s 低于 26 fps 就把像素比降 0.25，最多降两档（只降不升，避免抖动）。
+- 尺寸跟随 `clientWidth/Height` + `ResizeObserver` + `orientationchange` + `visualViewport.resize`
+  （iOS 地址栏收放不会触发 `resize`）。
+
+**静态守卫**：`node sim/test/test_play_page_ids.mjs` —— 检查 `play.js` 里 `$('id')` 引用的每个 id 都在 `play.html` 里存在
+（这次改版最容易漏的就是按钮换 id，浏览器只会在运行时静默失败）。实测 17 个 id / 12 处引用全部命中。
+
+**面板壳**（`client/lib/client.js`）：窄屏（≤640px）下工具栏换行、隐藏说明文字、按钮加高到 40 px。

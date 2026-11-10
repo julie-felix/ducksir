@@ -30,8 +30,14 @@ window.__ModuleLoader__.load({
       'color:#c8ccd0;border-bottom:1px solid #262e38;background:#171c22;flex:0 0 auto}',
       '.ducksir-robot-bar .grow{flex:1}',
       '.ducksir-robot-bar a,.ducksir-robot-bar button{color:#8b97a7;background:#1e252d;border:1px solid #262e38;',
-      'border-radius:6px;padding:3px 9px;font:inherit;cursor:pointer;text-decoration:none}',
+      'border-radius:6px;padding:3px 9px;font:inherit;cursor:pointer;text-decoration:none;',
+      'min-height:32px;display:inline-flex;align-items:center;white-space:nowrap;-webkit-tap-highlight-color:transparent}',
       '.ducksir-robot-bar a:hover,.ducksir-robot-bar button:hover{border-color:#4da3ff;color:#d8dee7}',
+      '@media (max-width:640px){',
+      '.ducksir-robot-bar{flex-wrap:wrap;gap:6px;padding:6px 8px;font-size:12px}',
+      '.ducksir-robot-bar .hint{display:none}',
+      '.ducksir-robot-bar a,.ducksir-robot-bar button{min-height:40px;padding:6px 10px}',
+      '}',
       '.ducksir-robot-frame{flex:1;width:100%;border:0;min-height:0;background:#0f1216}',
     ].join('')
 
@@ -77,7 +83,7 @@ window.__ModuleLoader__.load({
             }, p.label)
           }),
           React.createElement('span', { className: 'grow' }),
-          React.createElement('span', { style: { color: '#6b7684' } }, current.hint),
+          React.createElement('span', { className: 'hint', style: { color: '#6b7684' } }, current.hint),
           React.createElement('a', { href: src, target: '_blank', rel: 'noopener' }, '新标签打开'),
           React.createElement('button', {
             type: 'button',
