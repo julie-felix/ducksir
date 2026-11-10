@@ -186,7 +186,7 @@ def main() -> int:
     if not args.no_browser:
         disp = DSP.Display(port=args.port, scene=scene,
                            files_root=project_dir, files=proj_files,
-                           command=dict(cfg["command"])).start()
+                           command=dict(cfg["command"]), repo=ROOT).start()
         if not DSP.wait_ready(f"http://127.0.0.1:{args.port}"):
             print("  (显示服务没起来，继续无头跑)")
             disp.stop()

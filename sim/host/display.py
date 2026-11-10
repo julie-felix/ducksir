@@ -30,13 +30,18 @@ LOOPBACK = ("127.0.0.1", "localhost")
 class Display:
     def __init__(self, port: int = 8765, scene: dict | None = None, host: str = "127.0.0.1",
                  root: str | None = None, files_root: str | None = None,
-                 files: list[str] | None = None, command: dict | None = None):
+                 files: list[str] | None = None, command: dict | None = None,
+                 repo: str | None = None):
         if host not in LOOPBACK:
             raise ValueError(f"display 只允许绑本机（现在 {host}）")
         self.host = host
         self.port = int(port)
         self.scene = scene or {}
         self.files_root = files_root or ""
+        # 清单里可能是两种路径：项目目录内的（相对 project_dir）与仓库相对的（contract/…）。
+        # 取文件时先按项目目录找，找不到再按仓库根找——否则像 manifest 这种会「读不到」。
+        self.repo = repo or os.path.abspath(os.path.join(root or os.path.dirname(os.path.abspath(__file__)),
+                                                          "..", ".."))
         self.files = list(files or [])          # 允许只读展示的相对路径
         self._command = dict(command or {})     # 实时指令（滑杆写这里）
         self._stats = {}                        # runner 每步塞进来的小指标
@@ -143,7 +148,17 @@ class Display:
                         self.send_header("content-length", "0")
                         self.end_headers()
                         return
-                    self._serve_file(rel, None, base=display.files_root)
+                    # 两个根依次尝试：项目目录 → 仓库根
+                    for base in (display.files_root, display.repo):
+                        if not base:
+                            continue
+                        candidate = os.path.normpath(os.path.join(base, rel))
+                        if candidate.startswith(os.path.abspath(base)) and os.path.isfile(candidate):
+                            self._serve_file(rel, None, base=base)
+                            return
+                    self.send_response(404)
+                    self.send_header("content-length", "0")
+                    self.end_headers()
                     return
                 if self.path.startswith("/command"):
                     from urllib.parse import parse_qs, urlsplit
