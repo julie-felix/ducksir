@@ -150,10 +150,26 @@ async function main() {
     };
     const pre = loadPlan(await bytes('./data/live/pre.blob'));
     const post = loadPlan(await bytes('./data/live/post.blob'));
-    stage('创建 ORT Web 会话');
-    const session = await ort.InferenceSession.create(await bytes('./data/live/model.onnx'),
-      { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
-    const inputName = session.inputNames[0], outputName = session.outputNames[0];
+    stage('创建 ORT Web 会话（7 个策略）');
+    const policyList = (await json('./data/live/policies.json')).policies;
+    const sessions = {};
+    for (const pol of policyList) {
+      const buf = await bytes('./data/live/' + pol.file);
+      sessions[pol.key] = await ort.InferenceSession.create(buf,
+        { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
+    }
+    let active = policyList[0].key;
+    const inputName = sessions[active].inputNames[0];
+    const outputName = sessions[active].outputNames[0];
+    const picker = $('policy');
+    for (const pol of policyList) {
+      const opt = document.createElement('option');
+      opt.value = pol.key;
+      opt.textContent = `${pol.mode} · ${pol.key}`;
+      picker.appendChild(opt);
+    }
+    picker.value = active;
+    picker.onchange = () => { active = picker.value; state.lastAction.fill(0); };
 
     const runPlan = (plan, input) => {
       const ip = wasm._malloc(plan.inDim * 4), op = wasm._malloc(plan.outDim * 4);
@@ -170,6 +186,10 @@ async function main() {
       if (e.key === 'w' || e.key === 'W') state.vx = Math.min(1, state.vx + 0.05);
       else if (e.key === 's' || e.key === 'S') state.vx = Math.max(-0.2, state.vx - 0.05);
       else if (e.key === 'r' || e.key === 'R') resetSim();
+      else if (/^[1-7]$/.test(e.key)) {
+        const idx = Number(e.key) - 1;
+        if (policyList[idx]) { active = policyList[idx].key; $('policy').value = active; state.lastAction.fill(0); }
+      }
     });
 
     stage('就绪（网格还在后台加载）');
@@ -198,8 +218,9 @@ async function main() {
                                     lastAction: state.lastAction, vx: state.vx });
         const policyInput = runPlan(pre, obs);
         const feeds = { [inputName]: new ort.Tensor('float32', Float32Array.from(policyInput), [1, policyInput.length]) };
-        const res = await session.run(feeds);
-        const action = Array.from(res[outputName].data);
+        const res = await sessions[active].run(feeds);
+        const outName = sessions[active].outputNames[0];
+        const action = Array.from(res[outName].data);
         const ctrlOut = runPlan(post, action);
         for (let j = 0; j < model.nu; j++) data.ctrl[j] = ctrlOut[j];
         state.lastAction.set(action);
@@ -222,7 +243,7 @@ async function main() {
       const z = read(data.qpos, 2);
       const wall = (performance.now() - t0) / 1000;
       $('stat').textContent = `基座 ${z.toFixed(3)} m · 仿真 ${state.simTime.toFixed(1)} s · ${ctrl} 次推理`;
-      $('vx').textContent = `前进指令 ${state.vx.toFixed(2)} m/s`;
+      $('vx').textContent = `前进指令 ${state.vx.toFixed(2)} m/s · 策略 ${active}`;
       $('perf').textContent = `墙钟 ${wall.toFixed(1)} s（${(state.simTime / wall || 0).toFixed(2)}× 实时）`;
       requestAnimationFrame(loop);
     };
