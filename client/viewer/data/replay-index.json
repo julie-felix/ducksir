@@ -1,0 +1,14 @@
+{
+  "clips": [
+    {
+      "label": "链路验证：关重力，只动腿（5 s）",
+      "file": "replay-duck-chain.json",
+      "robot": "duck-hd1910"
+    },
+    {
+      "label": "物理验证：有重力，会倒（10 s）",
+      "file": "replay-duck-pd.json",
+      "robot": "duck-hd1910"
+    }
+  ]
+}
