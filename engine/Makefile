@@ -7,10 +7,23 @@ CXX      ?= g++
 CXXFLAGS ?= -std=c++20 -O2 -Wall -Wextra -Wpedantic -ffp-contract=off -fPIC
 INCLUDE  := -Iinclude
 BUILD    := build
+# ORT SDK 位置（含 include/onnxruntime_c_api.h 与 lib/libonnxruntime.so）
+# 默认指向 docs/env.md 里那套；换机器时用 DUCKSIR_ORT=/path make ort
+ORT_DIR  ?= $(HOME)/.local/share/ducksir/ort
 
 .PHONY: all clean test
 
 all: $(BUILD)/libducksim.so
+
+# 可选：推理后端。核心不依赖它，只在使用方需要时才编。
+ort: $(BUILD)/libducksim_ort.so
+
+$(BUILD)/libducksim_ort.so: src/ort_backend.cpp include/ducksim.h
+	@mkdir -p $(BUILD)
+	@test -f $(ORT_DIR)/include/onnxruntime_c_api.h || \
+		{ echo "缺 ORT SDK：$(ORT_DIR)（见 docs/env.md）"; exit 1; }
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -I$(ORT_DIR)/include -shared -o $@ src/ort_backend.cpp \
+		-L$(ORT_DIR)/lib -lonnxruntime -Wl,-rpath,$(ORT_DIR)/lib
 
 $(BUILD)/libducksim.so: src/core.cpp include/ducksim.h
 	@mkdir -p $(BUILD)

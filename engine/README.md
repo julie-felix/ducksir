@@ -14,9 +14,13 @@
 ## 构建
 
 ```bash
-cd engine && make          # → build/libducksim.so
+cd engine && make          # → build/libducksim.so（核心，零依赖）
+make ort                   # → build/libducksim_ort.so（可选：链 onnxruntime）
 make test                  # 需要 numpy（见 docs/env.md）→ 与 oracle 对拍
 ```
+
+`libducksim_ort.so` 单独一个库是刻意的：核心要能编到 wasm、能在板子上跑，不能背 ORT 这个依赖；
+浏览器那边推理走的是 ORT Web，另一条路（D8）。
 
 没有 cmake：本机只有 g++ 13 与 make，再加一层构建系统就是多一个要维护的坑。出 wasm 在 W7 单独写。
 
@@ -44,3 +48,14 @@ ds_free(p);
 | `contract/plan/README.md` | blob 布局与 8 个节点的语义（**定版在这**） |
 
 对拍当前是 **0.000e+00**，不是「差不多」——float32 逐位一致。以后改任何节点语义，先改 oracle，再改核，再把这条跑绿。
+
+## ORT 后端（`src/ort_backend.cpp`）
+
+对核只暴露 `ds_backend`：`ds_ort_create(path)` 建实例，`ds_step` 里核调 `onnx_run`。
+
+三条实现约束：
+
+1. **只收单输入单输出、float32、静态形状**——动态维度直接拒绝（不然每步都要重新算形状，且不确定）。
+2. **张量按模型声明的形状建**（`[1,34]` 不是 `[34]`）。踩过一次：摊平成一维，ORT 直接报形状不匹配，
+   核收到的是 `DS_ERR_GRAPH`，跑到第二步才暴露。
+3. **intra/inter op 线程锁 1**：多线程归约会让同一份输入算出不同末位，而我们对拍判据是 1e-6、目标是逐位一致。

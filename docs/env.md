@@ -20,6 +20,27 @@ export PYTHONPATH=$HOME/.local/share/ducksir/pylibs
 - **重建**：任何一台能装 pip 的机器上 `python3 -m pip install --target <dir> mujoco numpy`，然后把 `<dir>` 拷过来；离线环境同理，拷目录即可，不需要在目标机联网。
 - 没装 mujoco 时 `tools/robot/mjcf_smoke.py` 会跳过并 exit 0（CI runner 就不装）。
 
+## 1b. onnxruntime（推理）与 onnx（造测试模型）
+
+ORT 有两份东西，位置分开：
+
+| 东西 | 位置 | 干什么 |
+|---|---|---|
+| **Python 包**（`onnxruntime` / `onnx` / `ml_dtypes` / `protobuf` / `sympy` / `packaging`） | `$PYTHONPATH` 那套 pylibs | numpy 侧参考推理、造测试模型 |
+| **ORT SDK**（头文件 + `libonnxruntime.so`） | `~/.local/share/ducksir/ort` | `engine/src/ort_backend.cpp` 编译链接 |
+
+```bash
+# SDK 是 GitHub release 里的 tgz（wheel 不带头文件），版本与 Python 包对齐 1.31.1
+curl -sSL --noproxy '*' -o /tmp/ort.tgz \
+  https://github.com/microsoft/onnxruntime/releases/download/v1.31.1/onnxruntime-linux-x64-1.31.1.tgz
+mkdir -p ~/.local/share/ducksir/ort && tar xzf /tmp/ort.tgz -C ~/.local/share/ducksir/ort --strip-components=1
+
+# Python 包：直接从 PyPI 下 wheel 解开到这个目录（本机没有 pip）
+#   onnxruntime, onnx, protobuf, ml_dtypes(cp312), sympy, packaging, typing_extensions
+```
+
+换机器时用 `DUCKSIR_ORT=/path make -C engine ort`。
+
 ## 2. mesh：MuJoCo 不认 glb
 
 `assets/*` 里全是给查看器用的 **GLB**（`tools/robot/stl2glb.py` 转出来的），而 MuJoCo 只吃 **STL / OBJ / MSH**。三个来源：
@@ -79,6 +100,15 @@ python3 tools/robot/export_preset.py contract/robot/types/duck-hd1910.yaml \
 # 回放画面与物理一致性（viewer FK vs MuJoCo xpos）
 python3 tools/robot/check_replay_fk.py client/viewer/data/duck-hd1910.json \
     client/viewer/data/replay-duck-pd.json build/mjcf/duck-hd1910.xml
+
+# 造一份合成测试策略（14 维关节，把关节往零位拉）
+python3 sim/plan/make_test_policy.py -o build/models/duck-hold.onnx
+
+# 策略闭环：obs → C 核（含 ONNX 推理）→ action → MuJoCo（W5 验收）
+python3 sim/host/run_policy.py --mjcf build/mjcf/duck-hd1910-all.xml \
+    --preset build/preset/duck-hd1910.preset.yaml --onnx build/models/duck-hold.onnx \
+    --seconds 30 --report build/report/policy.json \
+    --trajectory client/viewer/data/replay-duck-policy.json
 
 # 与上游 MJCF 比结构
 python3 tools/robot/compare_mjcf.py build/mjcf/duck-hd1910.xml \
