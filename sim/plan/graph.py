@@ -38,7 +38,7 @@ class Graph:
     """
 
     def __init__(self, policy_manifest: dict | None = None, preset: dict | None = None,
-                 name: str = "graph"):
+                 name: str = "graph", expose_raw_action: bool = False):
         self.manifest = policy_manifest or {}
         self.preset = preset or {}
         self.name = name
@@ -46,6 +46,7 @@ class Graph:
         self._model_ref: ir.NodeRef | None = None
         self._action_ref: ir.NodeRef | None = None
         self._built = False
+        self.expose_raw_action = expose_raw_action
         total = sum(o["len"] for o in self.manifest.get("obs") or [])
         self._out_len = int(self.preset.get("actionDimension")
                             or len(self.preset.get("defaultJointPositions") or []) or 14)
@@ -137,7 +138,14 @@ class Graph:
         else:
             raise GraphError(f"不认识的 clip：{clip}")
         out = self._plan.clip(s, lo, hi) if lo is not None else s
-        self._plan.out_action(out)
+        if self.expose_raw_action:
+            # 观测里的 last_action 必须是**策略原始输出**（affine 之前）。
+            # 把 ctrl 当 last_action 喂回去，策略看到的是加了站姿偏置的假动作，
+            # 表现就是「指令给到上限也不走」（2026-11-11 用 20 s 路程 0.01 m 抓到的）。
+            self._plan.output_dim = self._out_len * 2
+            self._plan.out_action(self._plan.concat(out, self._action_ref))
+        else:
+            self._plan.out_action(out)
         self._built = True
         return self
 
@@ -156,8 +164,9 @@ class Graph:
     # ── 便捷：标准单策略图（等价于 run_policy.build_plan）────
     @classmethod
     def standard(cls, policy_manifest: dict, preset: dict, ctrl_lo, ctrl_hi,
-                 mode: int = 0) -> "Graph":
-        return (cls(policy_manifest, preset, name=policy_manifest.get("policy_id", "graph"))
+                 mode: int = 0, expose_raw_action: bool = False) -> "Graph":
+        return (cls(policy_manifest, preset, name=policy_manifest.get("policy_id", "graph"),
+                    expose_raw_action=expose_raw_action)
                 .observe_all()
                 .policy("standard", mode=mode)
                 .action(clip="ctrlrange", ctrl_lo=ctrl_lo, ctrl_hi=ctrl_hi))

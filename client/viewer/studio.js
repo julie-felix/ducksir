@@ -107,7 +107,8 @@ function applyFrame(f) {
   if (now - hzSince > 1000) { hz = (hzFrames * 1000) / (now - hzSince); hzSince = now; hzFrames = 0; }
   const s = f.stats || {};
   $('hud-line').innerHTML = `t=${f.t.toFixed(2)}s · 基座 ${fmt(s.base_height)} m · 直立 ${fmt(s.upright)}`
-    + ` · ${hz.toFixed(0)} Hz`;
+    + ` · ${hz.toFixed(0)} Hz`
+    + `<br>速度 ${fmt(s.speed)} m/s · 路程 ${fmt(s.distance)} m`;
   updateMetrics(s);
   $('conn').textContent = '已连接';
 }
@@ -120,6 +121,7 @@ function loop() {
 const METRIC_ROWS = [
   ['base_height', '基座高度', 'm'], ['upright', '直立度', ''],
   ['forward', '前进指令', 'm/s'], ['yaw', '转向指令', 'rad/s'],
+  ['speed', '实际速度', 'm/s'], ['distance', '路程', 'm'],
   ['rtf', '实时倍率', '×'], ['step', '控制步', ''],
 ];
 function fmt(v) { return typeof v === 'number' ? v.toFixed(3) : '—'; }

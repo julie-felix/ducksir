@@ -76,6 +76,8 @@ def main() -> int:
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--no-browser", action="store_true", help="不起显示服务也不开浏览器")
     ap.add_argument("--no-open", action="store_true", help="起显示服务但不自动开浏览器")
+    ap.add_argument("--forward", type=float, help="覆盖项目的常值前进指令（验证用）")
+    ap.add_argument("--yaw", type=float, help="覆盖项目的常值转向指令")
     ap.add_argument("--page", choices=("studio", "follow"), default="studio",
                     help="打开哪个页面（默认 studio：文件树 + 3D + 参数/指标）")
     ap.add_argument("--pace", choices=("auto", "realtime", "max"), default="auto",
@@ -118,7 +120,7 @@ def main() -> int:
         raise SystemExit(f"缺模型 {model_path}")
 
     # 图：用 builder（与 ir.Plan 逐字节等价），端点仍编译成 blob 交给 C 核
-    g = (G.Graph(man, preset, name=man.get("policy_id", "project"))
+    g = (G.Graph(man, preset, name=man.get("policy_id", "project"), expose_raw_action=True)
          .observe_all().policy(pol["key"], mode=int(pol.get("mode", 0)))
          .action(clip="ctrlrange", ctrl_lo=lo, ctrl_hi=hi))
     blob = g.build()
@@ -198,12 +200,17 @@ def main() -> int:
             print(f"  显示：{follow_url}（SSE {disp.url}）")
 
     cmd13 = np.zeros(13, dtype=np.float32)
-    cmd13[0] = float(cfg["command"].get("forward", 0.0))
-    cmd13[2] = float(cfg["command"].get("yaw", 0.0))
+    cmd13[0] = float(args.forward if args.forward is not None else cfg["command"].get("forward", 0.0))
+    cmd13[2] = float(args.yaw if args.yaw is not None else cfg["command"].get("yaw", 0.0))
 
     act = np.zeros(n, dtype=np.float32)
+    last_action = np.zeros(n, dtype=np.float32)
     heights, tilts, step_times, frames = [], [], [], []
     x0, y0 = float(d.qpos[0]), float(d.qpos[1])
+    path_len = 0.0            # 走过的路程（米）
+    speed = 0.0               # 最近 10 步的平均速度（m/s）
+    prev_xy = (x0, y0)
+    speed_hist = []
     # 节拍：给浏览器看就必须按实时走，否则 170× 的模糊帧没人看得清
     pace_realtime = args.pace == "realtime" or (args.pace == "auto" and not args.no_browser)
     deadline = 0.0
@@ -229,19 +236,30 @@ def main() -> int:
                 live = disp.get_command()
                 cmd13[0] = float(live.get("forward", cmd13[0]))
                 cmd13[2] = float(live.get("yaw", cmd13[2]))
-            obs = CO.make_obs(con, view, last_action=act, command=cmd13)
+            obs = CO.make_obs(con, view, last_action=last_action, command=cmd13)
             bi = (ctypes.c_float * len(obs))(*obs.tolist())
-            bo = (ctypes.c_float * n)()
+            bo = (ctypes.c_float * (n * 2))()
             rc = core.ds_step(handle, bi, bo, be)
             if rc != 0:
                 raise SystemExit(f"ds_step 返回 {rc}")
-            act = np.array(bo[:], dtype=np.float32)
+            act = np.array(bo[:n], dtype=np.float32)          # ctrl（已含站姿偏置）
+            last_action = np.array(bo[n:n * 2], dtype=np.float32)   # 策略原始输出 → 喂回 last_action
             d.ctrl[:] = act
             for _ in range(decim):
                 mujoco.mj_step(m, d)
             if not np.isfinite(d.qpos).all():
                 dead = True
                 break
+            # 位移/速度：把「看起来没动」变成数字——策略的实际步速远低于指令值
+            cur_xy = (float(d.qpos[0]), float(d.qpos[1]))
+            seg = float(np.hypot(cur_xy[0] - prev_xy[0], cur_xy[1] - prev_xy[1]))
+            path_len += seg
+            speed_hist.append(seg * control_hz)
+            if len(speed_hist) > 10:
+                speed_hist.pop(0)
+            speed = sum(speed_hist) / len(speed_hist)
+            prev_xy = cur_xy
+
             t_sim += 1.0 / control_hz
             step_times.append(time.perf_counter() - t_step)
             heights.append(float(d.qpos[2]))
@@ -254,6 +272,8 @@ def main() -> int:
                     "rtf": round(completed / max(1e-6, time.time() - t0), 2),
                     "forward": round(float(cmd13[0]), 3),
                     "yaw": round(float(cmd13[2]), 3),
+                    "speed": round(speed, 3),
+                    "distance": round(path_len, 3),
                     "step": completed,
                 })
                 disp.push(t_sim, d.xpos.reshape(-1), d.xquat.reshape(-1))
@@ -304,6 +324,8 @@ def main() -> int:
           if heights else "  没采到帧")
     print(f"  {report['panel']['realtime_factor']}× 实时｜p95 {report['panel']['control_p95_ms']} ms"
           f"｜超期 {report['panel']['deadline_miss']} 步")
+    print(f"  指令 forward {cmd13[0]:+.2f} → 实际速度 {speed:.3f} m/s｜路程 {path_len:.2f} m"
+          f"｜位移 {np.hypot(d.qpos[0] - x0, d.qpos[1] - y0):.2f} m")
 
     if args.report:
         out = os.path.join(ROOT, args.report)
