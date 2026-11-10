@@ -173,6 +173,15 @@ bin/ducksir golden                # 与快照逐位比（改核后跑）
 bin/ducksir golden --update       # 有意改行为时重新记录基准
 ```
 
+面板「实验台」读一次运行的报告：`bin/ducksir run --report client/viewer/data/live/report.json` 之后刷新即可。
+Python 里用薄门面：
+
+```python
+import sys; sys.path.insert(0, "sim/sdk")
+from ducksir import Duck
+d = Duck(); print(d.joints()); report = d.run(seconds=10, vx=0.25)
+```
+
 退出码统一（0 通过 / 1 失败）。三者都是薄包装（`tools/cli/ducksir.py`），真现在老脚本上。
 冒烟：`bash sim/test/test_cli.sh`。
 
