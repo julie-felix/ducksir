@@ -101,7 +101,20 @@ def build_plan(man: dict, preset: dict, n_joints: int, ctrl_lo, ctrl_hi) -> dict
     for o in man["obs"]:
         sl.append(p.obs(off, o["len"]))
         off += o["len"]
-    x = p.concat(*sl) if len(sl) > 1 else sl[0]
+    # 核里 concat 最多 4 个输入（定长记录），超过就层层折叠——和手写 `concat(concat(a,b,c,d),e)` 等价
+    def concat_all(refs):
+        if len(refs) == 1:
+            return refs[0]
+        level = list(refs)
+        while len(level) > 4:
+            nxt = []
+            for i in range(0, len(level), 4):
+                chunk = level[i:i + 4]
+                nxt.append(chunk[0] if len(chunk) == 1 else p.concat(*chunk))
+            level = nxt
+        return p.concat(*level)
+
+    x = concat_all(sl)
 
     h = man.get("history") or {}
     frames = int(h.get("length", 0))
@@ -142,6 +155,9 @@ def main() -> int:
     ap.add_argument("--seconds", type=float, default=30.0)
     ap.add_argument("--start-height", type=float, default=0.25)
     ap.add_argument("--clip-rad", type=float, help="覆盖 manifest 的 ctrlrange 夹取（调试用）")
+    ap.add_argument("--vx", type=float, help="覆盖 manifest 里 command 的第 0 维（前进速度 m/s）")
+    ap.add_argument("--vy", type=float, help="覆盖第 1 维（横向 m/s）")
+    ap.add_argument("--yaw", type=float, help="覆盖第 2 维（转向 rad/s）")
     ap.add_argument("--report")
     ap.add_argument("--trajectory")
     args = ap.parse_args()
@@ -200,10 +216,21 @@ def main() -> int:
     m = spec.compile()
     d = mujoco.MjData(m)
     m.opt.timestep = 1.0 / physics_hz
+    init_qpos = preset.get("initialQpos") or []
     d.qpos[:] = 0.0
-    d.qpos[3] = 1.0
-    d.qpos[2] = args.start_height
+    if len(init_qpos) == m.nq:
+        d.qpos[:] = init_qpos
+        start_note = "preset.initialQpos"
+    else:
+        d.qpos[3] = 1.0
+        d.qpos[2] = args.start_height
+        start_note = f"手写（initialQpos 长度 {len(init_qpos)} != nq {m.nq}）"
     mujoco.mj_forward(m, d)
+
+    sens = {}
+    for i in range(m.nsensor):
+        nm = mujoco.mj_id2name(m, mujoco.mjtObj.mjOBJ_SENSOR, i)
+        sens[nm] = (int(m.sensor_adr[i]), int(m.sensor_dim[i]))
 
     qpos_off = [int(m.jnt_qposadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, nm)]) for nm in driven]
     dof_off = [int(m.jnt_dofadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, nm)]) for nm in driven]
@@ -217,25 +244,53 @@ def main() -> int:
     last_infer_step = -10 ** 9
     t0 = time.time()
 
-    def gather(slot: str) -> np.ndarray:
+    default_q = np.array(preset["defaultJointPositions"], dtype=float)
+    cmd_override = [args.vx, args.vy, args.yaw]
+    root_body = doc["frames"]["root"]
+
+    def body_rot(name: str) -> np.ndarray:
+        bid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, name)
+        if bid < 0:
+            raise SystemExit(f"MJCF 里没有 body {name}")
+        return d.xmat[bid].reshape(3, 3)
+
+    def gather(o: dict) -> np.ndarray:
+        slot = o["slot"]
+        if slot == "imu_ang_vel":
+            name = o.get("sensor", "imu_ang_vel")
+            if name not in sens:
+                raise SystemExit(f"MJCF 里没有传感器 {name}（导出端要带上 site/sensor）")
+            adr, dim = sens[name]
+            return d.sensordata[adr:adr + dim].copy()
         if slot == "base_ang_vel":
             return d.qvel[3:6].copy()
         if slot == "projected_gravity":
-            return -quat_to_mat(d.qpos[3:7]).T @ np.array([0.0, 0.0, 1.0])
+            # 重力方向在指定 body 系下的表达（botlab: projected_gravity(target=...)）
+            target = o.get("target") or root_body
+            return body_rot(target).T @ np.array([0.0, 0.0, -1.0])
         if slot == "joint_pos":
-            return np.array([d.qpos[o] for o in qpos_off])
+            q = np.array([d.qpos[i] for i in qpos_off])
+            if o.get("minus") == "default":
+                q = q - default_q
+            return q
         if slot == "joint_vel":
-            return np.array([d.qvel[o] for o in dof_off])
+            return np.array([d.qvel[i] for i in dof_off])
         if slot == "last_action":
             return act.copy()
         if slot == "base_height":
             return np.array([d.qpos[2]])
+        if slot == "command":
+            vals = list(o.get("values") or [0.0] * o["len"])
+            for i, v in enumerate(cmd_override):
+                if v is not None and i < len(vals):
+                    vals[i] = v
+            return np.array(vals, dtype=float)
         raise SystemExit(f"manifest 里出现未知 obs 槽：{slot}")
 
     for k in range(steps):
         off = 0
         for o in man["obs"]:
-            v = gather(o["slot"]) * float(o.get("scale", 1.0))
+            v = gather(o) * float(o.get("scale", 1.0))
             obs[off:off + o["len"]] = v
             off += o["len"]
 

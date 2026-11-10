@@ -1,0 +1,26 @@
+# 站立位形（默认关节角）。来源不是我们的标定，是 botlab 的 MicroDuck 示例工程。
+# 用途：判断「全零位形不是站姿」之后，用上游实际在用的那条站姿把闭环跑起来。
+kind: ducksir-posture
+version: 1
+name: microduck-stand
+provenance:
+  source: botlab 模板 microduck · microduck.preset.yaml（2026-11-10 取）
+  upstream: https://huggingface.co/spaces/pollen-robotics/microduck-simulator
+  note: 上游无根 LICENSE；仅本地兼容性对照用，不对外分发，也不当作我们的标定结论。
+order: motor            # 按 preset 的 motorJointOrder（= 我们的驱动关节序）
+joints:                 # 14 个驱动关节，弧度
+  - 0.0
+  - -0.08726646259971647
+  - -0.457924
+  - -0.004940
+  - 0.452984
+  - 0.3490658503988659
+  - 0.3490658503988659
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.08726646259971647
+  - 0.457924
+  - 0.004940
+  - -0.452984
+base: {pos: [0.0, 0.0, 0.12], quat: [1.0, 0.0, 0.0, 0.0]}

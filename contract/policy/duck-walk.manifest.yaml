@@ -1,0 +1,38 @@
+# botlab 的 MicroDuck walking 策略：obs 61 维、action 14 维，布局逐项对齐它的 microduck.py。
+kind: ducksir-policy-manifest
+version: 1
+policy_id: duck-walk
+
+model:
+  file: build/models/walking.onnx
+  input: {name: obs, shape: [1, 61]}
+  output: {name: actions, shape: [1, 14]}
+
+# 顺序 = botlab `_observation()` 的 concat 顺序：
+#   angular_velocity(3) + gravity(3) + joint_position(14) + joint_velocity(14) + last_action(14) + command(13) = 61
+obs:
+  # 注意：它读的是 IMU 陀螺仪的 site 坐标系，不是 qvel（botlab 代码里有注释明说两者不等价）
+  - {slot: imu_ang_vel, len: 3, scale: 1.0}
+  # target=trunk_base：重力在该 body 系下的方向
+  - {slot: projected_gravity, len: 3, target: trunk_base, scale: 1.0}
+  # botlab 的 joint_position(default=default_angles) = (q - default) * scale
+  - {slot: joint_pos, len: 14, minus: default, scale: 1.0}
+  - {slot: joint_vel, len: 14, scale: 1.0}
+  - {slot: last_action, len: 14, scale: 1.0}
+  # 指令 13 维：前 3 是 [vx, vy, yaw_rate]，其余补零
+  - {slot: command, len: 13, values: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
+
+history: {length: 0, layout: by-frame}
+
+action:
+  mapping: default_plus_scale
+  order: motor
+  clip: ctrlrange
+
+rates: {control_hz: 50, physics_hz: 200, inference_decimation: 1}
+
+provenance:
+  source: botlab 模板 microduck · assets/models/walking.onnx（2026-11-10 取）
+  upstream: https://huggingface.co/spaces/pollen-robotics/microduck-simulator
+  obs_layout: botlab microduck.py 的 _observation()：3+3+14+14+14+13 = 61
+  note: 上游无根 LICENSE；仅本地兼容性对照用，不对外分发。

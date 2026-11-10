@@ -65,7 +65,21 @@ def offsets_computed(names: list[str], floating: bool):
     return qpos, qvel
 
 
-def build(entity_path: str, mjcf_path: str | None) -> dict:
+def load_posture(path: str, n: int) -> dict:
+    """站立位形（contract/robot/postures/*.yaml）：给出 defaultJointPositions 与 initialQpos。"""
+    with open(path, encoding="utf-8") as f:
+        post = yaml.safe_load(f)
+    joints = [float(x) for x in post["joints"]]
+    if len(joints) != n:
+        raise SystemExit(f"位形 {path} 有 {len(joints)} 个关节，驱动关节是 {n}")
+    base = post.get("base") or {}
+    pos = [float(x) for x in (base.get("pos") or [0, 0, 0])]
+    quat = [float(x) for x in (base.get("quat") or [1, 0, 0, 0])]
+    return {"joints": joints, "base": pos + quat, "provenance": post.get("provenance") or {},
+            "name": post.get("name")}
+
+
+def build(entity_path: str, mjcf_path: str | None, posture_path: str | None = None) -> dict:
     doc = E.read_yaml(entity_path)
     joints = driven_joints(doc)
     acts = doc.get("actuators") or []
@@ -95,6 +109,10 @@ def build(entity_path: str, mjcf_path: str | None) -> dict:
     order = [index_of[a["joint"]] for a in acts] if acts else list(range(len(names)))
 
     forker = [abs(a["forcerange"][0]) if a.get("forcerange") else None for a in acts]
+
+    posture = load_posture(posture_path, len(names)) if posture_path else None
+    _posture_joints = posture["joints"] if posture else [0.0] * len(names)
+    _posture_base = posture["base"] if posture else ([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0] if floating else [])
     preset = {
         "kind": "botlab-preset",
         "generated": {
@@ -110,8 +128,8 @@ def build(entity_path: str, mjcf_path: str | None) -> dict:
         "jointQvelOffset": qvel,
         "actuatorJointOrder": order,
         "motorJointOrder": order,
-        "defaultJointPositions": [0.0] * len(names),
-        "initialQpos": [0.0] * (7 if floating else 0) + [0.0] * len(names),
+        "defaultJointPositions": _posture_joints,
+        "initialQpos": _posture_base + list(_posture_joints) if floating else list(_posture_joints),
         "kp": [a.get("kp") for a in acts],
         "kd": [a.get("kv") for a in acts],
         "effortLimit": forker,
@@ -119,8 +137,10 @@ def build(entity_path: str, mjcf_path: str | None) -> dict:
         "imuExtrinsic": [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
         "autoActuators": False,
         "assumptions": {
-            "defaultJointPositions": "全 0：上游 MJCF 没有 keyframe/home，训练侧也未给初始位形",
-            "initialQpos": "基座位姿取原点 + 单位四元数；实际站立高度由标定/训练侧给",
+            "defaultJointPositions": (f"来自位形 {posture['name']}（{posture['provenance'].get('source')}）"
+                                      if posture else "全 0：上游 MJCF 没有 keyframe/home，训练侧也未给初始位形"),
+            "initialQpos": (f"基座取位形 {posture['name']} 的 base" if posture
+                            else "基座位姿取原点 + 单位四元数；实际站立高度由标定/训练侧给"),
             "actionScale": "全 1：策略输出直接当关节增量，缩放由训练侧确定",
             "imuExtrinsic": "单位变换：IMU 安装位置未标定",
         },
@@ -141,9 +161,10 @@ def main() -> int:
     ap.add_argument("entity")
     ap.add_argument("-o", "--output", required=True)
     ap.add_argument("--mjcf", help="导出的 MJCF（用来取真实的 qpos/qvel 偏移）")
+    ap.add_argument("--default-pose", help="站立位形 yaml（contract/robot/postures/*.yaml）")
     args = ap.parse_args()
 
-    out = build(args.entity, args.mjcf)
+    out = build(args.entity, args.mjcf, args.default_pose)
     os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
     with open(args.output, "w", encoding="utf-8") as f:
         f.write(f"# 自动生成，不要手改：{args.entity} → preset\n")

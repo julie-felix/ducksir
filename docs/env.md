@@ -123,3 +123,18 @@ python3 tools/robot/compare_mjcf.py build/mjcf/duck-hd1910.xml \
 
 宿主物理与报告在 `sim/`：[`sim/README.md`](../sim/README.md) 有两条现成命令（链路验证 / 物理验证）。
 依赖同上（`PYTHONPATH=$HOME/.local/share/ducksir/pylibs`），前置产物由 `tools/robot/mjcf_smoke.py` 生成。
+
+## 6. botlab 模板资产（真策略从哪来）
+
+botlab 的产品站把模板按 `templates/<id>/<相对路径>` 直接暴露，MicroDuck 那套可以白拿（2026-11-10 实测 200）：
+
+```bash
+B=https://botlab.enkeebot.com/templates/microduck
+curl -sSL -x http://127.0.0.1:7890 -o build/models/walking.onnx $B/assets/models/walking.onnx
+curl -sSL -x http://127.0.0.1:7890 -o /tmp/microduck.xml      $B/assets/robot/MicroDuck/microduck.xml
+curl -sSL -x http://127.0.0.1:7890 -o /tmp/microduck.preset.yaml $B/microduck.preset.yaml
+curl -sSL -x http://127.0.0.1:7890 -o /tmp/microduck.py        $B/microduck.py
+```
+
+七个策略：`walking / sitstand / kick-left / kick-right / roll / ground-pick / stand`，全部 `obs[1,61] → actions[1,14]`。
+上游是 <https://huggingface.co/spaces/pollen-robotics/microduck-simulator>，**没有根 LICENSE**：只做本地对照，不入库、不对外分发。
