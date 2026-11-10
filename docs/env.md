@@ -169,6 +169,8 @@ bin/ducksir validate              # 实体 C1–C9 + manifest + 图编译 + MJCF
 bin/ducksir build                 # 产出 build/release/<时间戳>/：duck.xml + preset + blob + 模型 + contract.json + release.json
 bin/ducksir run --seconds 20 --vx 0.25      # 单策略闭环
 bin/ducksir run --fsm --pulses 3:1,8:1      # 14 状态机
+bin/ducksir golden                # 与快照逐位比（改核后跑）
+bin/ducksir golden --update       # 有意改行为时重新记录基准
 ```
 
 退出码统一（0 通过 / 1 失败）。三者都是薄包装（`tools/cli/ducksir.py`），真现在老脚本上。

@@ -837,3 +837,34 @@ VEL_FWD = 0.25   VEL_BACK = -0.2   VEL_ANG = 1.0
 
 **还没做**（比 botlab 少的）：`deploy` / `agent` / `target` / `control`（部署子系统整体推迟，见 `docs/botlab-diff.md` §5），
 `ui`（我们有面板，不需要它的 UI 快照管理）。
+
+### W9c（2026-11-10）golden 快照
+
+照 botlab 的 `_runtime/golden_check.py` 补了「先记录后验证」这一层。
+
+**分工**：`test_core_vs_oracle.py` 证明「**算得对**」（对着 numpy 参考实现重算期望值）；
+`test_golden.py` 证明「**没变**」（对着上一次的 C 核输出逐位比）。两条都要过。
+
+**做法**
+
+- `sim/plan/golden.py`：`record()` 跑 C 核把输出存成快照；`check()` 重放并逐值比，
+  报「第几帧第几个分量差多少」；`cases_from_release()` 从 release 目录构造确定性用例
+  （普通 plan 用固定种子随机帧，fsm 用结构化场景播种：站立/按坐站/前进/转向/倾倒/接近正立）。
+- 快照存 `contract/plan/fixtures/release-golden.json`（22.6 KB，入库）。值用 Python float 字面量——
+  float32 转 float 再序列化**精确往返**，所以既可读（能 diff）又不丢精度。
+- 入口两处：`bin/ducksir golden [--update]` 与 `python3 sim/test/test_golden.py [--update-golden]`。
+
+**验收**
+
+```
+PASS  3 个 plan 与快照逐位相同：pre(6 帧), post(6 帧), fsm(36 帧)
+```
+
+**证明它真的会报警**：手动把快照里 `post` 第 2 帧第 3 个分量加 1e-6，再跑：
+
+```
+FAIL  post：第 2 帧第 3 个分量差 1.000e-06（现 0.947509766 / 存 0.947510766）
+```
+
+**规矩**：改图/改核之后若**有意**改变行为，跑 `--update` 重新记录，并在提交说明里写清为什么变；
+不确定的时候不要更新快照——那是把 bug 固化成基准。

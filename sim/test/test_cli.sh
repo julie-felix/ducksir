@@ -18,6 +18,7 @@ check "validate" python3 tools/cli/ducksir.py validate
 check "build" python3 tools/cli/ducksir.py build --out build/release/cli-test
 check "run --policy" python3 tools/cli/ducksir.py run --seconds 2 --vx 0.25
 check "run --fsm" python3 tools/cli/ducksir.py run --fsm --seconds 4 --pulses "1:1"
+check "golden" python3 tools/cli/ducksir.py golden --release build/release/cli-test
 
 if [ -f build/release/cli-test/contract.json ] && [ -f build/release/cli-test/release.json ]; then
   echo "  PASS  产物齐（contract.json + release.json）"
