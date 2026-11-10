@@ -10,6 +10,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <new>
 
 namespace {
 
