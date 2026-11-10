@@ -16,7 +16,13 @@ window.__ModuleLoader__.load({
 
     var PANEL_ID = 'ducksir-robot'
     var STYLE_ID = 'ducksir-robot-style'
-    var VIEWER = '/ducksir-static/client/viewer/index.html'
+    var BASE = '/ducksir-static/client/viewer/'
+    // 面板里能切四个页面：都是 client/viewer/ 下的静态页，共用同一条只读路由。
+    var PAGES = [
+      { id: 'desc', label: '数字描述', file: 'index.html', hint: '拖关节 / 并联解算 / 轨迹回放' },
+      { id: 'play', label: '浏览器跑', file: 'play.html', hint: 'MuJoCo wasm 物理 + 执行核 + ORT Web，键盘开鸭子' },
+      { id: 'live', label: '自算比对', file: 'live.html', hint: '浏览器算一遍 action，和宿主比' },
+    ]
 
     var CSS = [
       '.ducksir-robot-panel{display:flex;flex-direction:column;height:100%;min-height:0;background:#0f1216}',
@@ -52,14 +58,26 @@ window.__ModuleLoader__.load({
       )
     }
 
-    /** 全屏面板：工具栏 + iframe。 */
+    /** 全屏面板：工具栏（页面切换）+ iframe。 */
     function RobotPanel() {
       var [nonce, setNonce] = React.useState(0)
-      var src = VIEWER + '?embed=1&_=' + nonce
+      var [page, setPage] = React.useState('desc')
+      var current = PAGES.find(function (p) { return p.id === page }) || PAGES[0]
+      var src = BASE + current.file + '?embed=1&_=' + nonce
       return React.createElement('div', { className: 'ducksir-robot-panel' },
         React.createElement('div', { className: 'ducksir-robot-bar' },
-          React.createElement('span', null, '数字描述 · 关节预览'),
+          PAGES.map(function (p) {
+            var active = p.id === current.id
+            return React.createElement('button', {
+              key: p.id,
+              type: 'button',
+              title: p.hint,
+              onClick: function () { setPage(p.id); setNonce(function (n) { return n + 1 }) },
+              style: active ? { borderColor: '#4da3ff', color: '#d8dee7' } : null,
+            }, p.label)
+          }),
           React.createElement('span', { className: 'grow' }),
+          React.createElement('span', { style: { color: '#6b7684' } }, current.hint),
           React.createElement('a', { href: src, target: '_blank', rel: 'noopener' }, '新标签打开'),
           React.createElement('button', {
             type: 'button',
