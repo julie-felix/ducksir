@@ -137,9 +137,17 @@ def build_multi_plan(man: dict, preset: dict, n_joints: int, ctrl_lo, ctrl_hi, m
     return p.to_json()
 
 
-def build_plan(man: dict, preset: dict, n_joints: int, ctrl_lo, ctrl_hi) -> dict:
+def build_plan(man: dict, preset: dict, n_joints: int, ctrl_lo, ctrl_hi,
+               expose_raw_action: bool = True) -> dict:
+    """建单策略图。
+
+    `expose_raw_action=True` 时输出是 `[ctrl…, 原始 action…]`（2n 维）——
+    观测里的 `last_action` 必须是**affine 之前**的策略输出；把 ctrl 喂回去策略看到的是
+    加了站姿偏置的假动作，表现就是「指令给到上限也不走」（2026-11-11 实测 20 s 只走 0.01 m）。
+    """
     total = sum(o["len"] for o in man["obs"])
-    p = ir.Plan(input_dim=total, output_dim=n_joints, name=man["policy_id"])
+    p = ir.Plan(input_dim=total, output_dim=n_joints * (2 if expose_raw_action else 1),
+                name=man["policy_id"])
     sl, off = [], 0
     for o in man["obs"]:
         sl.append(p.obs(off, o["len"]))
@@ -169,7 +177,7 @@ def build_plan(man: dict, preset: dict, n_joints: int, ctrl_lo, ctrl_hi) -> dict
     m = p.model(x, out_len=n_joints, model_id=0)
     s = p.affine(m, preset["actionScale"], preset["defaultJointPositions"])
     k = p.clip(s, ctrl_lo, ctrl_hi)
-    p.out_action(k)
+    p.out_action(p.concat(k, m) if expose_raw_action else k)
     return p.to_json()
 
 
@@ -297,6 +305,7 @@ def main() -> int:
     steps = int(args.seconds * control_hz)
     obs = np.zeros(obs_dim, dtype=np.float32)
     act = np.zeros(n, dtype=np.float32)
+    raw_act = np.zeros(n, dtype=np.float32)
     frames, heights, tilts, efforts = [], [], [], []
     dead = False
     infer_calls = 0
@@ -335,7 +344,7 @@ def main() -> int:
         if slot == "joint_vel":
             return np.array([d.qvel[i] for i in dof_off])
         if slot == "last_action":
-            return act.copy()
+            return raw_act.copy()
         if slot == "base_height":
             return np.array([d.qpos[2]])
         if slot == "command":
@@ -359,11 +368,12 @@ def main() -> int:
         # 推理节流：inference_decimation=1 表示每控制步都推（与 botlab 的 actor 一致）
         if k - last_infer_step >= infer_every:
             buf_in = (ctypes.c_float * obs_dim)(*obs.tolist())
-            buf_out = (ctypes.c_float * n)()
+            buf_out = (ctypes.c_float * (n * 2))()
             rc = core.ds_step(handle, buf_in, buf_out, be)
             if rc != 0:
                 raise SystemExit(f"ds_step 返回 {rc}")
-            act = np.array(buf_out[:], dtype=np.float32)
+            act = np.array(buf_out[:n], dtype=np.float32)                 # ctrl
+            raw_act = np.array(buf_out[n:n * 2], dtype=np.float32)        # 原始 action
             infer_calls += 1
             last_infer_step = k
 

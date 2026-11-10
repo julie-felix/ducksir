@@ -68,6 +68,8 @@
   .tabpane { display:none; padding:12px 14px; overflow:auto; min-height:0;
              overscroll-behavior: contain; }
   .tabpane.on { display:block; }
+  .hint { color:var(--dim); font-size:11.5px; line-height:1.55; margin-top:10px;
+          border-top:1px solid var(--line); padding-top:8px; }
   .row { display:grid; grid-template-columns: 110px 1fr 90px; align-items:center; gap:12px; margin:6px 0; }
   .row label { color:var(--dim); }
   .row output { font-variant-numeric:tabular-nums; text-align:right; }
@@ -142,6 +144,10 @@
         <label>转向速度</label>
         <input id="yaw" type="range" min="-1" max="1" step="0.05" value="0" />
         <output id="yaw-v">0.00 rad/s</output>
+      </div>
+      <div class="hint">
+        口径：前进指令训练范围是 0–0.25，但策略对 <b>&lt;0.22</b> 的指令几乎不响应（训练时是二值指令），
+        实测 0.22–0.25 约 <b>0.15 m/s</b>。想看它走，直接拉到 0.25。
       </div>
     </div>
     <div class="tabpane" id="pane-metrics">

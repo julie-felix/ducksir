@@ -38,11 +38,16 @@ def main() -> int:
     lo = [float(a["ctrlrange"][0]) for a in acts]
     hi = [float(a["ctrlrange"][1]) for a in acts]
 
-    old = ir.compile_blob(RP.build_plan(man, preset, len(driven), lo, hi))
-    new = G.Graph.standard(man, preset, lo, hi).build()
+    # 两种模式都要对得上：默认（只输出 ctrl）与 expose_raw_action（额外带原始 action）
+    old = ir.compile_blob(RP.build_plan(man, preset, len(driven), lo, hi, expose_raw_action=True))
+    new = G.Graph.standard(man, preset, lo, hi, expose_raw_action=True).build()
+    old_plain = ir.compile_blob(RP.build_plan(man, preset, len(driven), lo, hi, expose_raw_action=False))
+    new_plain = G.Graph.standard(man, preset, lo, hi).build()
+    same_plain = old_plain == new_plain
+    print(f"  {'PASS' if same_plain else 'FAIL'}  默认模式（只输出 ctrl）也完全相同（{len(old_plain)} B）")
+    ok = same_plain
     old_info, new_info = ir.read_blob(old), ir.read_blob(new)
 
-    ok = True
     same = old == new
     print(f"  {'PASS' if same else 'FAIL'}  blob 完全相同（{len(old)} B，{len(old_info['nodes'])} 节点）")
     ok &= same
