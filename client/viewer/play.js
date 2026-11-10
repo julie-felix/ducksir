@@ -12,7 +12,26 @@ import { GLTFLoader } from './vendor/three/loaders/GLTFLoader.js';
 import { loadDuck, makeObs, stepPhysics, read, OBS_DIM, N_JOINTS } from './play-core.mjs';
 
 const $ = (id) => document.getElementById(id);
-const say = (html) => { $('stat').innerHTML = html; };
+const T0 = performance.now();
+/** 往遮罩上写一行阶段进度（带毫秒时间戳），这样「卡住」时能看到卡在哪一步。 */
+function stage(text) {
+  const el = $('busy');
+  if (el) el.textContent = `${text}  ·  +${((performance.now() - T0) / 1000).toFixed(1)} s`;
+  console.log('[play]', text);
+}
+/** 包一层超时：卡住时变成一条明确的错误，而不是永远「载入中」。 */
+function step(label, promise, timeoutMs) {
+  stage(label);
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} 超时（${timeoutMs / 1000}s）`)), timeoutMs);
+    Promise.resolve(promise).then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); },
+    );
+  });
+}
+addEventListener('error', (e) => stage('脚本出错：' + (e.message || e.error)));
+addEventListener('unhandledrejection', (e) => stage('Promise 未处理：' + (e.reason && e.reason.message || e.reason)));
 
 const CONTROL_HZ = 50;
 const PHYSICS_HZ = 200;
@@ -55,24 +74,31 @@ const state = { vx: 0, lastAction: new Float32Array(N_JOINTS), simTime: 0, error
 
 async function main() {
   try {
-    const [{ default: loadMujoco }, { default: createDucksim }, ort, meta, viewData, xml] = await Promise.all([
+    const [{ default: loadMujoco }, { default: createDucksim }, ort, meta, viewData, xml] = await step(
+      '读元数据（duck.json / viewer data / MJCF）',
+      Promise.all([
       import('./vendor/mujoco/mujoco.js'),
       import('./vendor/ducksim/ducksim.mjs'),
       import('./vendor/ort/ort.wasm.min.mjs'),
       json('./data/live/duck.json'),
       json('./data/duck-hd1910.json'),
       fetch('./data/mjcf-browser/duck.xml').then((r) => r.text()),
-    ]);
+    ]), 30000);
     ort.env.wasm.wasmPaths = new URL('./vendor/ort/', location.href).href;
     ort.env.wasm.numThreads = 1;
     if (ort.env.wasm.proxy !== undefined) ort.env.wasm.proxy = false;
 
-    // 38 个 STL 塞进 MuJoCo 的虚拟文件系统
     const stlNames = [...new Set(xml.match(/\b[a-zA-Z0-9_]+\.stl\b/g) || [])];
     const assets = {};
-    await Promise.all(stlNames.map(async (n) => { assets[n] = await bytes('./assets/mjcf/' + n); }));
+    let done = 0;
+    await step(`下载 ${stlNames.length} 个 STL（约 21 MB）`, Promise.all(stlNames.map(async (n) => {
+      assets[n] = await bytes('./assets/mjcf/' + n);
+      done += 1;
+      stage(`下载 STL ${done}/${stlNames.length}`);
+    })), 120000);
 
-    const duck = await loadDuck({ loadMujoco, xml, assets });
+    const duck = await step('MuJoCo 解析 MJCF + 网格（这步最慢，十几秒正常）',
+      loadDuck({ loadMujoco, xml, assets }), 60000);
     const { mj, model, data } = duck;
     for (let i = 0; i < model.nq; i++) data.qpos[i] = meta.initialQpos[i];
     mj.mj_forward(model, data);
@@ -89,7 +115,9 @@ async function main() {
       robotGroup.add(group);
       bodyOf[name] = { group, bid };
     }
-    await Promise.all(viewData.links.flatMap((link) => (link.geoms || []).map(async (g) => {
+    const geoms = viewData.links.reduce((acc, l) => acc + (l.geoms || []).length, 0);
+    let gdone = 0;
+    const loadGeoms = Promise.all(viewData.links.flatMap((link) => (link.geoms || []).map(async (g) => {
       const entry = bodyOf[link.name];
       if (!entry) return;
       const gltf = await loader.loadAsync(g.mesh);   // 形如 ../../assets/microduck/x.glb（相对本页）
@@ -101,8 +129,11 @@ async function main() {
         color: new THREE.Color(g.color[0] ?? 0.7, g.color[1] ?? 0.7, g.color[2] ?? 0.7),
         metalness: 0.15, roughness: 0.65 }); } });
       entry.group.add(inst);
-    })));
+      gdone += 1;
+      if (gdone % 12 === 0 || gdone === geoms) stage(`GLB ${gdone}/${geoms}`);
+    }))).catch((e) => console.warn('GLB 加载有问题（不影响物理）', e));
 
+    stage('加载执行核（wasm）与 plan');
     // 执行核：pre（obs → 策略输入）与 post（原始 action → ctrl）
     const wasm = await createDucksim();
     const loadPlan = (blob) => {
@@ -119,6 +150,7 @@ async function main() {
     };
     const pre = loadPlan(await bytes('./data/live/pre.blob'));
     const post = loadPlan(await bytes('./data/live/post.blob'));
+    stage('创建 ORT Web 会话');
     const session = await ort.InferenceSession.create(await bytes('./data/live/model.onnx'),
       { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
     const inputName = session.inputNames[0], outputName = session.outputNames[0];
@@ -145,7 +177,9 @@ async function main() {
       }
     });
 
+    stage('就绪（网格还在后台加载）');
     $('busy').style.display = 'none';
+    loadGeoms.then(() => stage('网格加载完成'));
 
     // 主循环：50 Hz 控制（异步推理）+ 200 Hz 物理 + 渲染
     let lastInfer = 0, ctrl = 0;
@@ -189,7 +223,7 @@ async function main() {
     loop();
   } catch (e) {
     console.error(e);
-    $('busy').textContent = '载入失败：' + (e && e.message ? e.message : e);
+    stage('载入失败：' + (e && e.message ? e.message : e));
   }
 }
 
