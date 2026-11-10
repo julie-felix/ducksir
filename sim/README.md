@@ -11,6 +11,9 @@
 | 路径 | 作用 |
 |---|---|
 | `host/pd_hold.py` | W3 的验收脚本：PD 跟踪 + 物理链路验证，出 `--report` JSON 与 `--trajectory` 轨迹（给查看器回放） |
+| `plan/ir.py` | 计算图：Python 声明 → plan JSON（源码）→ blob（产物），带结构校验 |
+| `plan/oracle.py` | 同一张图的 numpy 参考实现；C 核与它逐点对拍（≤1e-6，当前 0.0） |
+| `test/` | `test_blob_roundtrip.py`（纯标准库，CI 跑）与 `test_core_vs_oracle.py`（要 numpy + g++） |
 
 ## 怎么跑
 
