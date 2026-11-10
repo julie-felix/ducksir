@@ -102,10 +102,15 @@ def transitions(tipped: int, upright: int) -> list[dict]:
     return T
 
 
-def build_graph(preset: dict, n_joints: int, ctrl_lo, ctrl_hi, vx: float,
-                trace_state: bool = False) -> dict:
-    """trace_state=True 时把 state 拼在 action 后面输出，方便看状态机到底有没有切。"""
-    p = ir.Plan(input_dim=61, output_dim=n_joints + (1 if trace_state else 0), name="duck-fsm")
+def build_graph(preset: dict, n_joints: int, ctrl_lo, ctrl_hi, vx: float) -> dict:
+    """图输出固定是 `[ctrl…, state, steps, clear_last_action, 原始 action…]`。
+
+    后三样给宿主侧组观测用——和浏览器那份 `fsm.blob` 同口径：
+    - `state`/`steps`：13 维指令要按状态给（botlab 的 `_command()`），相位要按步数算；
+    - `clear_last_action`：SIT_ENTER 首步 / WALK_RESET / RECOVER_ENTER 时把 `last_action` 清零；
+    - 原始 action（affine 之前）：观测里的 `last_action` 必须是**策略原始输出**，不是加过偏置的 ctrl。
+    之前这里只输出 ctrl，观测里恒给速度指令、也不清 last_action——口径和浏览器不一致。"""
+    p = ir.Plan(input_dim=61, output_dim=n_joints * 2 + 3, name="duck-fsm")
 
     ang = p.obs(0, 3)
     grav = p.obs(3, 3)
@@ -160,12 +165,20 @@ def build_graph(preset: dict, n_joints: int, ctrl_lo, ctrl_hi, vx: float,
         return level[0] if len(level) == 1 else p.add(*level)
 
     mixed = select_by_state(STATE_TO_POLICY)
+    raw_action = mixed                     # affine 之前的策略原始输出（观测里的 last_action 用它）
     s = p.affine(mixed, preset["actionScale"], preset["defaultJointPositions"])
     k = p.clip(s, ctrl_lo, ctrl_hi)
-    if trace_state:
-        p.out_action(p.concat(k, state))
-    else:
-        p.out_action(k)
+    steps_sig = p.reorder(sm, [1])
+
+    def eq_const(x, v):
+        return p.compare(x, "eq", p.constant([float(v)]))
+
+    sit_enter_first = p.compare(p.add(eq_const(state, SIT_ENTER), eq_const(steps_sig, 0.0)),
+                                "gte", p.constant([2.0]))
+    clear = p.compare(p.add(sit_enter_first, eq_const(state, WALK_RESET), eq_const(state, RECOVER_ENTER)),
+                      "gte", p.constant([1.0]))
+    # 核里 concat 最多 4 个输入，折一层
+    p.out_action(p.concat(p.concat(k, state, steps_sig, clear), raw_action))
     return p.to_json()
 
 
@@ -194,7 +207,7 @@ def main() -> int:
     hi = [float(a["ctrlrange"][1]) for a in actuators]
 
     trace = bool(args.report or args.trajectory)
-    plan = build_graph(preset, n, lo, hi, args.vx, trace_state=trace)
+    plan = build_graph(preset, n, lo, hi, args.vx)
     blob = ir.compile_blob(plan)
 
     control_hz, physics_hz = 50.0, 200.0
@@ -238,8 +251,10 @@ def main() -> int:
     obs = np.zeros(61, dtype=np.float32)
     act = np.zeros(n, dtype=np.float32)
     frames, states, heights, tilts = [], [], [], []
-    n_out = n + (1 if trace else 0)
+    n_out = n * 2 + 3
     cur_pulse = 0.0
+    last_action = np.zeros(n, dtype=np.float32)
+    prev_state, prev_steps = WALK, 0
     dead = False
 
     for k in range(steps):
@@ -250,10 +265,17 @@ def main() -> int:
         obs[3:6] = R.T @ np.array([0.0, 0.0, -1.0])
         obs[6:20] = np.array([d.qpos[i] for i in qpos_off]) - default_q
         obs[20:34] = np.array([d.qvel[i] for i in dof_off])
-        obs[34:48] = act
+        obs[34:48] = last_action
+        # 13 维指令按状态给（botlab `_command()`）：WALK/POST_KICK/WALK_RESET 给速度、
+        # **只有 SIT** 给 [1,0…]、GROUND_PICK 给相位、其余（SIT_ENTER/SIT_EXIT/踢/翻滚/起身）零指令
         obs[48:61] = 0.0
-        obs[48] = args.vx
-        obs[60] = cur_pulse          # 第 13 维借来放策略指令
+        if prev_state in (WALK, POST_KICK, WALK_RESET):
+            obs[48] = args.vx
+        elif prev_state == SIT:
+            obs[48] = 1.0
+        elif prev_state == GROUND_PICK:
+            obs[48] = (prev_steps % GROUND_PICK_PERIOD_STEPS) / GROUND_PICK_PERIOD_STEPS
+        obs[60] = cur_pulse          # 第 13 维借来放策略脉冲
         if cur_pulse:
             cur_pulse = 0.0            # 脉冲只持续一步
 
@@ -263,8 +285,13 @@ def main() -> int:
         if rc != 0:
             raise SystemExit(f"ds_step 返回 {rc}")
         act = np.array(bo[:n], dtype=np.float32)
+        prev_state = int(bo[n])
+        prev_steps = int(bo[n + 1])
+        if bo[n + 2]:
+            last_action = np.zeros(n, dtype=np.float32)
+        last_action = np.array(bo[n + 3:n + 3 + n], dtype=np.float32)   # 原始 action（affine 之前）
         if trace:
-            states.append(int(bo[n]))
+            states.append(prev_state)
 
         d.ctrl[:] = act
         for _ in range(decim):
@@ -310,7 +337,7 @@ def main() -> int:
                                 "policy_id": "duck-fsm",
                                 "mjcf_digest": sha256(args.mjcf),
                                 "preset_digest": sha256(args.preset)},
-                       "frames": frames}, f, ensure_ascii=False, separators=(",", ":"))
+                       "frames": frames, "states": states}, f, ensure_ascii=False, separators=(",", ":"))
         print(f"  轨迹 → {args.trajectory}（{len(frames)} 帧）")
 
     core.ds_free(handle)
