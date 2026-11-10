@@ -15,7 +15,7 @@
    | 页 | 文件 | 干什么 |
    |---|---|---|
    | 数字描述 | `viewer/index.html` | 拖关节 / 并联解算 / 轨迹回放（GLB + three.js FK） |
-   | 浏览器跑 | `viewer/play.html` | MuJoCo wasm 物理 + 执行核 + ORT Web；`W/S` 或「+ 快/− 慢」调指令，下拉或数字键 `1..7` 切 7 个策略 |
+   | 浏览器跑 | `viewer/play.html` | MuJoCo wasm 物理 + 执行核 + ORT Web + **状态机**；`W/S` 调指令、`X/Z/C/V/B/R` 发策略指令（坐站/踢/翻滚/拾取/起身），也能手动切策略 |
    | 自算比对 | `viewer/live.html` | 浏览器算一遍 action，和宿主算的逐点比 |
 
    这三个页面都由 host 侧的只读静态路由 `/ducksir-static/*` 提供，只放 `client/viewer/` 和 `assets/` 两棵子树。

@@ -44,7 +44,7 @@ export async function loadDuck({ loadMujoco, xml, assets }) {
 }
 
 /** 组装 61 维观测（顺序与 contract/policy/duck-walk.manifest.yaml 一致）。 */
-export function makeObs({ mj, model, data, jointId, sensorId, bodyId }, { joints, defaultQ, lastAction, vx }) {
+export function makeObs({ mj, model, data, jointId, sensorId, bodyId }, { joints, defaultQ, lastAction, vx, command }) {
   const obs = new Float32Array(OBS_DIM);
   const sid = sensorId('imu_ang_vel');
   const adr = read(model.sensor_adr, sid);
@@ -70,7 +70,11 @@ export function makeObs({ mj, model, data, jointId, sensorId, bodyId }, { joints
     obs[20 + k] = read(data.qvel, va);
     obs[34 + k] = lastAction ? lastAction[k] : 0;
   }
-  obs[48] = vx || 0;
+  if (command && command.length === 13) {
+    for (let k = 0; k < 13; k++) obs[48 + k] = command[k];
+  } else {
+    obs[48] = vx || 0;
+  }
   return obs;
 }
 

@@ -87,7 +87,7 @@
 | W5 12-08~12-14 | 27 节点全量 + ORT `create/prepare/run`；一份现成 ONNX 在 native MuJoCo 里跑 30 s | 不炸；action 与 numpy 参考一致；曲线能看 | ✅ 2026-11-10（真策略 61 维、站立 1.000；对拍 0.000e+00） |
 | W6 12-15~12-21 | Python DSL 编译器（声明→图）+ manifest 读取 + 图校验器（同源同一套 schema） | 一个真项目从 DSL 编到 blob 一条命令 | ✅ 2026-11-10（15 节点；14 状态 / 7 策略状态机跑通） |
 | W7 12-22~12-28 | wasm 构建（`libonnxruntime_webassembly.a`）+ 浏览器查看器（复用 `client/viewer`，WS 推状态） | 浏览器里看到同一份图在动 | ✅ 2026-11-10（wasm 逐位相同；浏览器物理+推理） |
-| W8 12-29~01-04 | **交互通道**：键盘/滑条 → `commands`、参数滑杆热更新、策略/模式切换 | 能用键盘把鸭子开起来、拖参数能看曲线变化、能切策略 | 🟡 部分（浏览器里切 7 策略 + 调指令；自动 FSM 仍在宿主） |
+| W8 12-29~01-04 | **交互通道**：键盘/滑条 → `commands`、策略/模式切换 | 能用键盘把鸭子开起来、能切策略 | ✅ 2026-11-10（浏览器里状态机自动切策略；参数热更新仍未做） |
 | W9 01-05~01-11 | `--report` 完整字段、`docs/node-parity.md` 收尾、demo | 一份 ONNX + 一张图：主机与浏览器行为一致，且浏览器里可驾驶 | 🟡 部分（report 有最小字段；node-parity 已更新；demo 已可跑） |
 ---
 
@@ -627,3 +627,31 @@ PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 sim/host/export_browser_che
 3. **交互通道的参数热更新**（改 `actionScale`/clip 立刻生效）：现在是重编 blob 才变。
 4. **板端**：aarch64 `.so` 交叉编译与实跑（计划里排 v0.2）。
 5. **指挥指令的标定**：`vx` 与策略内部尺度的系数仍没定死（§9 W5c 记着）。
+
+### W8b（2026-11-10）状态机也搬进浏览器
+
+**做法**：状态机不吃策略输出，只吃「指令脉冲 + 姿态 + vx」，所以它可以**整块放进核里**跑，
+在推理边界之前一次性算完。新增 `sim/host/export_browser_fsm.py` 编出 `fsm.blob`：
+
+```
+输入 (3)   [policy_command 脉冲, 重力 z 分量, 前进指令 vx]
+输出 (15)  [state, policy_mode, command(13)]
+```
+
+`command(13)` 直接照 botlab 的 `_command()`：行走用 `[vx,0…]`、坐/站用 `[1,0…]`、
+地面拾取用 `[phase,0…]`（`phase_clock(steps, 200)`）。JS 每控制步：跑 `fsm.blob` → 拿 state/mode/command →
+组 61 维 obs → `pre` → 推理（按 mode 选会话）→ `post` → ctrl。
+
+**验收**（无渲染的端到端，`node sim/test/test_browser_fsm_run.mjs`）
+
+```
+状态轨迹： t=0.00s → 0，t=3.00s → 1，t=3.82s → 2
+末态：state=2 策略=sitstand 基座 z=0.060 m
+PASS：脉冲触发状态机切策略，动作进了物理
+```
+
+第 3 秒按一下「坐下/站起」→ 状态 1（SIT_ENTER，切到 sitstand 策略）→ 40 步后状态 2（SIT），基座从 0.117 掉到 0.060 m——
+**它真的坐下了**。这与宿主侧 `run_fsm.py` 的轨迹一致。
+
+**浏览器键位**（照 botlab `config/io.yaml`）：`W/S` 前进、`X` 坐/站、`Z` 左踢、`C` 右踢、`V` 翻滚、`B` 地面拾取、`R` 起身/复位。
+下拉/数字键仍可手动指定策略，按任一策略键即回到状态机。
