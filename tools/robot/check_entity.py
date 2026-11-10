@@ -11,6 +11,7 @@ C5 preset  ：preset 不得改变 actuated 关节集合
 C6 并联    ：mechanisms 的耦合与预设自洽
 C7 闭环    ：loops 两端 body 存在、kind 合法、connect 带 anchor
 C8 执行器  ：actuators 与 actuated 关节一一对应，且 ctrl 序与驱动序的置换可算
+C9 碰撞覆盖：有 visual 却没有 collision 的 link 列出来（信息级，不算失败）
 
 退出码：0 全过；1 有 FAIL。
 """
@@ -245,6 +246,17 @@ def check(doc: dict) -> list[tuple[str, bool, str]]:
         detail = f"actuators 为空（{len(driven)} 个驱动关节没有执行器参数）"
         problems = []  # 空不算失败：URDF 导入路径本来就不带执行器参数（见 importer W002）
     results.append(("C8", not problems, detail))
+
+    # C9 碰撞覆盖：没有碰撞体的 link 摔到地上会「穿地」。不是错误（上游资产就这样），
+    # 但必须报出来，否则「看着怪」的时候没法判断是渲染错还是模型没碰撞。
+    no_coll = [l["name"] for l in doc.get("links", [])
+               if (l.get("visual") or []) and not (l.get("collision") or [])]
+    if no_coll:
+        head = f"{len(no_coll)}/{len(doc.get('links', []))} 个 link 无碰撞体（摔倒会穿地）："
+        detail = head + ", ".join(no_coll[:6]) + (" …" if len(no_coll) > 6 else "")
+    else:
+        detail = "所有有视觉的 link 都有碰撞体"
+    results.append(("C9", True, detail))
 
     return results
 

@@ -47,3 +47,5 @@ python3 sim/host/pd_hold.py --mjcf build/mjcf/duck-hd1910.xml \
 python3 tools/robot/check_replay_fk.py client/viewer/data/duck-hd1910.json \
     client/viewer/data/replay-duck-pd.json build/mjcf/duck-hd1910.xml
 ```
+
+两条片源的区别写在 `client/viewer/README.md`：关重力那条看机构，有重力那条会倒（物理如此，没策略）。

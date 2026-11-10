@@ -196,10 +196,13 @@ def main() -> int:
     zs = np.array(zs) if zs else np.array([np.nan])
 
     ok_finite = finite
-    if args.target == "step":
-        # 链路验证：无重力时位置伺服稳态误差应为 0
-        ok_track = bool(np.nanmax(err_idle) <= 0.005)
-        ok_contact = bool(np.nanmax(np.abs(zs)) < 1.0)  # 自由漂浮，只看不炸
+    # 跑法由「有没有重力/地面」决定，不由目标波形决定：
+    # 链路验证隔离平衡问题，物理验证才谈接触与穿地。
+    chain_mode = args.gravity == "off" or not args.floor
+    if chain_mode:
+        track_tol = {"step": 0.005, "sine": 0.10, "zero": 0.02}[args.target]
+        ok_track = bool(np.nanmax(err_idle) <= track_tol)
+        ok_contact = bool(np.nanmax(np.abs(zs)) < 1.0)   # 自由漂浮，只看没炸
         height_ok = True
     else:
         # 物理验证：跟踪误差只记录，判的是不发散 / 有接触 / 不穿地
@@ -217,6 +220,7 @@ def main() -> int:
         "preset_digest": sha256(args.preset),
         "entity_digest": preset["generated"]["entity_sha256"],
         "target": args.target,
+        "mode": "chain" if (args.gravity == "off" or not args.floor) else "physics",
         "amp": args.amp,
         "steps": len(err_all),
         "control_hz": args.control_hz,
@@ -241,7 +245,8 @@ def main() -> int:
         },
     }
 
-    print(f"target={args.target} amp={args.amp} gravity={args.gravity} {args.seconds}s @ {args.control_hz}/{args.physics_hz} Hz")
+    print(f"target={args.target} amp={args.amp} gravity={args.gravity} mode={report['mode']} "
+          f"{args.seconds}s @ {args.control_hz}/{args.physics_hz} Hz")
     print(f"  最大误差 {report['metrics']['max_err_rad']:.4f} rad｜稳态 {report['metrics']['steady_err_rad']:.4f} rad")
     print(f"  接触比 {report['metrics']['contact_ratio']:.2f}｜基座高度 终 {zs[-1]:+.3f} 最低 {np.nanmin(zs):+.3f} m")
     print(f"  {'PASS' if report['verdict']['pass'] else 'FAIL'}  "

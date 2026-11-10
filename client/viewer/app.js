@@ -514,6 +514,7 @@ function applyReplayFrame(i) {
 function stopReplay() {
   REPLAY.on = false; REPLAY.playing = false; REPLAY.frames = []; REPLAY.meta = null;
   if ($('replay-box')) $('replay-box').style.display = 'none';
+  if ($('replay-pick')) $('replay-pick').style.display = 'none';
   if (typeof setTranslucent === 'function' && REPLAY.prevTrans !== undefined) {
     $('translucent').checked = REPLAY.prevTrans;
     setTranslucent(REPLAY.prevTrans);
@@ -525,6 +526,26 @@ function stopReplay() {
   }
   $('ground').checked = true; groundClamp = true;
   robotGroup.position.set(0, groundClamp ? (current?.groundOffset ?? 0) : 0, 0);
+}
+
+/** 按整条轨迹的包围盒取景：只按首帧会导致「取景时还在空中，一播就掉到画面底下」 */
+function fitReplayView() {
+  if (!REPLAY.frames.length) return;
+  const box = new THREE.Box3();
+  for (const f of REPLAY.frames) {
+    // 实体 (x, y, z) → three 世界 (x, z, -y)
+    box.expandByPoint(new THREE.Vector3(f.pos[0], f.pos[2], -f.pos[1]));
+  }
+  box.expandByScalar(0.22);            // 机身半径，把整机也装进画面
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const dist = Math.max(size.x, size.y, size.z, 0.25) * 1.9;
+  controls.target.copy(center);
+  camera.position.set(center.x + dist * 0.85, center.y + dist * 0.5, center.z + dist);
+  camera.near = Math.max(0.005, dist / 100);
+  camera.far = dist * 30;
+  camera.updateProjectionMatrix();
+  controls.update();
 }
 
 async function startReplay(url, preloaded) {
@@ -558,8 +579,9 @@ async function startReplay(url, preloaded) {
     const m = traj.meta;
     info.textContent = `${m.target} amp=${m.amp} gravity=${m.gravity} · 0.00 s`;
   }
+  robotGroup.position.set(0, 0, 0);   // 贴地那套 lift 必须清掉：真实高度已经在位姿里了
   applyReplayFrame(0);
-  fitView();   // 回放会让机器走出原来的取景，先重算一次
+  fitReplayView();
 }
 
 /** 每帧调用：按真实时间推进回放时钟 */
@@ -631,21 +653,54 @@ function animate() {
     }
   });
   $('fit').addEventListener('click', () => fitView());
+  async function playClip(file, preloaded) {
+    // 轨迹属于哪台机型就先切过去，不然会报「关节对不上」这种没信息量的错
+    const traj = preloaded || await (await fetch(file)).json();
+    const want = traj.meta && traj.meta.robot;
+    if (want && sel.value !== want) {
+      const meta = index.robots.find((r) => r.id === want);
+      if (!meta) throw new Error(`没有机型 ${want}`);
+      sel.value = want;
+      await show(meta);
+    }
+    await startReplay(file, traj);
+  }
+
+  async function loadClipList() {
+    const pick = $('replay-pick');
+    if (pick.options.length) return pick;
+    let clips = [{ label: '默认轨迹', file: 'replay-duck-pd.json' }];
+    try {
+      const idx = await (await fetch('./data/replay-index.json')).json();
+      if (idx && Array.isArray(idx.clips) && idx.clips.length) clips = idx.clips;
+    } catch (e) { /* 没有索引就用默认那条 */ }
+    for (const c of clips) {
+      const o = document.createElement('option');
+      o.value = c.file;
+      o.textContent = c.label;
+      pick.appendChild(o);
+    }
+    return pick;
+  }
+
   $('replay').addEventListener('click', async () => {
     try {
       if (REPLAY.on) { stopReplay(); return; }
-      const url = new URLSearchParams(location.search).get('replay') || './data/replay-duck-pd.json';
-      // 轨迹属于哪台机型就先切过去，不然会报「关节对不上」这种没信息量的错
-      const traj = await (await fetch(url)).json();
-      const want = traj.meta && traj.meta.robot;
-      if (want && sel.value !== want) {
-        const meta = index.robots.find((r) => r.id === want);
-        if (!meta) throw new Error(`没有机型 ${want}`);
-        sel.value = want;
-        await show(meta);
-      }
-      await startReplay(url, traj);
+      const pick = await loadClipList();
+      const want = new URLSearchParams(location.search).get('replay');
+      const file = want || './data/' + pick.value;
+      if (want) { const i = Array.from(pick.options).findIndex((o) => want.includes(o.value)); if (i >= 0) pick.value = pick.options[i].value; }
+      pick.style.display = '';
+      await playClip(file);
     } catch (e) { alert('回放失败：' + (e.message || e)); }
+  });
+
+  $('replay-pick').addEventListener('change', async (e) => {
+    try {
+      if (REPLAY.on) stopReplay();
+      $('replay-pick').style.display = '';
+      await playClip('./data/' + e.target.value);
+    } catch (err) { alert('回放失败：' + (err.message || err)); }
   });
   $('play').addEventListener('click', () => {
     if (!REPLAY.on) return;
