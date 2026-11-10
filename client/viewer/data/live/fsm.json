@@ -1,8 +1,8 @@
 {
-  "nodes": 62,
-  "input_dim": 3,
+  "nodes": 66,
+  "input_dim": 4,
   "output_dim": 16,
-  "plan_digest": "3eb2f37f85af4fed2770bbf7dca185748c8960e8a5b7881d62e39131feced2dd",
+  "plan_digest": "2497335eb4c8ad192da188c4e9ca7418896133415d2a07c73231bc74b4ab7746",
   "state_to_mode": {
     "0": 0,
     "1": 1,

@@ -7,8 +7,11 @@
 状态机不吃策略输出，只吃「指令脉冲 + 姿态 + 速度指令」，所以它可以整块放进核里跑，
 每步输出三样东西给 JS：
 
-    输入 (3)   [policy_command 脉冲, 重力 z 分量, 前进指令 vx]
+    输入 (4)   [policy_command 脉冲, 重力 z 分量, 前进指令 vx, 转向指令 yaw_rate]
     输出 (16)  [state, policy_mode, command(13), clear_last_action]
+
+前进/转向范围照上游 `app/src/game/constants.js`：`VEL_FWD=0.25`、`VEL_BACK=-0.2`、`VEL_ANG=1.0`。
+超出这个范围（比如硬塞 0.5）策略没见过——它会一边走一边拐，看起来就是「走得歪」。
 
 `clear_last_action` 是 botlab 图里那个 `where(clear_last_action, 0, last_action)`：
 在 SIT_ENTER 的第一步、WALK_RESET、RECOVER_ENTER 这三种时刻，观测里的 `last_action` 必须清零。
@@ -38,11 +41,12 @@ import run_fsm as F  # noqa: E402
 
 
 def build() -> dict:
-    p = ir.Plan(input_dim=3, output_dim=16, name="microduck-fsm")
+    p = ir.Plan(input_dim=4, output_dim=16, name="microduck-fsm")
 
     cmd = p.reorder(p.obs(0, 1), [0])        # policy_command 脉冲
     gz = p.reorder(p.obs(1, 1), [0])         # 重力 z 分量
     vx = p.reorder(p.obs(2, 1), [0])         # 前进指令
+    wz = p.reorder(p.obs(3, 1), [0])         # 转向指令（yaw rate）
 
     tipped = p.compare(gz, "gt", p.constant([-0.3]))
     upright = p.compare(gz, "lt", p.constant([-0.85]))
@@ -83,7 +87,8 @@ def build() -> dict:
     zero12 = p.constant([0.0] * 12)
     mode = select_by_state({k: p.constant([float(v)]) for k, v in mode_by_state.items()})
 
-    walk_cmd = p.concat(vx, zero12)
+    # [vx, vy=0, yaw_rate, 0×10]
+    walk_cmd = p.concat(vx, p.constant([0.0]), wz, p.constant([0.0] * 10))
     sit_cmd = p.concat(p.constant([1.0]), zero12)
     phase = p.phase_clock(steps, F.GROUND_PICK_PERIOD_STEPS)
     gp_cmd = p.concat(phase, zero12)

@@ -70,7 +70,10 @@ function resize() {
 addEventListener('resize', resize);
 
 // ---------- 载入 ----------
-const state = { vx: 0, lastAction: new Float32Array(N_JOINTS), simTime: 0, error: null };
+// 指令范围照上游 app/src/game/constants.js：VEL_FWD 0.25 / VEL_BACK -0.2 / VEL_ANG 1.0。
+// 超出这个范围策略没见过——它会一边走一边拐（用户看到的就是「走得歪」）。
+const LIM = { fwd: 0.25, back: -0.2, ang: 1.0 };
+const state = { vx: 0, wz: 0, lastAction: new Float32Array(N_JOINTS), simTime: 0, error: null };
 
 async function main() {
   try {
@@ -191,20 +194,24 @@ async function main() {
 
     // 键盘
     addEventListener('keydown', (e) => {
-      if (e.key === 'w' || e.key === 'W') state.vx = Math.min(1, state.vx + 0.05);
-      else if (e.key === 's' || e.key === 'S') state.vx = Math.max(-0.2, state.vx - 0.05);
-      else if (e.key === 'r' || e.key === 'R') resetSim();
+      const k = e.key.toLowerCase();
+      if (k === 'w') state.vx = Math.min(LIM.fwd, state.vx + 0.05);
+      else if (k === 's') state.vx = Math.max(LIM.back, state.vx - 0.05);
+      // 实测：策略的 +yaw 是向右（+1.0 → yaw −151°），所以「左转」发负值
+      else if (k === 'a') state.wz = -LIM.ang;
+      else if (k === 'd') state.wz = LIM.ang;
+      else if (k === 'r') resetSim();
       else if (/^[1-7]$/.test(e.key)) {
         const idx = Number(e.key) - 1;
         if (policyList[idx]) { manual = policyList[idx].key; active = manual; $('policy').value = active; state.lastAction.fill(0); }
-      } else if (KEY_CMD[e.key.toLowerCase()] !== undefined) {
-        pendingCmd = KEY_CMD[e.key.toLowerCase()];
+      } else if (KEY_CMD[k] !== undefined) {
+        pendingCmd = KEY_CMD[k];
         manual = null;          // 按策略键即回到状态机
       }
     });
 
     stage('就绪（网格还在后台加载）');
-    const bump = (d) => { state.vx = Math.max(-0.2, Math.min(1, state.vx + d)); };
+    const bump = (d) => { state.vx = Math.max(LIM.back, Math.min(LIM.fwd, state.vx + d)); };
     const resetSim = () => {
       for (let i = 0; i < model.nq; i++) data.qpos[i] = meta.initialQpos[i];
       for (let i = 0; i < model.nv; i++) data.qvel[i] = 0;
@@ -214,6 +221,22 @@ async function main() {
     $('btn-slow').onclick = () => bump(-0.05);
     $('btn-fast').onclick = () => bump(+0.05);
     $('btn-reset').onclick = resetSim;
+    // 转向按钮是「按住生效」：手机上没有键盘，松手即归零
+    for (const [id, sign] of [['btn-left', -1], ['btn-right', 1]]) {
+      const el = $(id);
+      if (!el) continue;
+      const on = (e) => { e.preventDefault(); state.wz = LIM.ang * sign; };
+      const off = () => { state.wz = 0; };
+      el.addEventListener('pointerdown', on);
+      el.addEventListener('pointerup', off);
+      el.addEventListener('pointerleave', off);
+      el.addEventListener('pointercancel', off);
+    }
+
+    addEventListener('keyup', (e) => {
+      const k = e.key.toLowerCase();
+      if (k === 'a' || k === 'd') state.wz = 0;
+    });
 
     $('busy').style.display = 'none';
     loadGeoms.then(() => stage('网格加载完成'));
@@ -233,7 +256,7 @@ async function main() {
       const qy = read(data.xquat, bid * 4 + 2);
       // 重力在世界系是 (0,0,-1)，它在机体系的 z 分量 = -R[2][2] = -(1-2(qx²+qy²))
       const gz = -(1 - 2 * (qx * qx + qy * qy));
-      const fsmOut = runPlan(fsm, [pendingCmd, gz, state.vx]);
+      const fsmOut = runPlan(fsm, [pendingCmd, gz, state.vx, state.wz]);
       pendingCmd = 0;
       state.fsm = { state: fsmOut[0], mode: fsmOut[1] };
       const cmd13 = fsmOut.slice(2, 15);
@@ -275,7 +298,7 @@ async function main() {
       const wall = (performance.now() - t0) / 1000;
       $('stat').textContent = `基座 ${z.toFixed(3)} m · 仿真 ${state.simTime.toFixed(1)} s · ${ctrl} 次推理`;
       const fs = state.fsm || { state: '—', mode: '—' };
-      $('vx').textContent = `vx ${state.vx.toFixed(2)} m/s · 状态 ${fs.state} · 策略 ${active}`
+      $('vx').textContent = `vx ${state.vx.toFixed(2)} · yaw ${state.wz.toFixed(2)} · 状态 ${fs.state} · 策略 ${active}`
         + (manual ? '（手动）' : '');
       $('perf').textContent = `墙钟 ${wall.toFixed(1)} s（${(state.simTime / wall || 0).toFixed(2)}× 实时，控制 ${realHz.toFixed(0)} Hz）`;
     }
