@@ -1009,3 +1009,30 @@ PASS  /files 代理通
 PASS  /stream 代理出帧（3 帧）
 PASS  /stop 成功 → 停止后 status 未运行
 ```
+
+### W11c（2026-11-11）「又连接不上」的排查与加固
+
+**现象**：工作台顶栏又显示连不上。按层排查（全部 curl 实测，不靠猜）：
+
+| 层 | 检查 | 结果 |
+|---|---|---|
+| 插件路由 | `GET /ducksir-live/status` | **200** `{running:false,…}` |
+| 启动 | `POST /ducksir-live/start` | **200** `{ok:true, port:44703}` |
+| 进程 | `pgrep run_project.py` + `ss -ltnp` | runner 在跑、端口在听 |
+| 代理 | `GET /ducksir-live/file?path=contract/…` | **200** 1644 B（新代码，两个根都对） |
+| 页面 | 宿主 serve 的 `studio.js` vs 仓库文件 | **sha256 完全相同** |
+| 收尾 | `POST /ducksir-live/stop` | **200**，无残留进程 |
+
+**结论**：后端这条链是好的，问题在**前端一侧**——最可能是面板 iframe 里还挂着旧的 `studio.js`
+（改动前那版会在 `import '/static/…'` 处 404，整个 module 不执行，顶栏停在「未连接」）。
+
+**顺带加固三件事**
+
+1. **单例**：`createLive` 之前每注册一次就 new 一个实例，各自持有不同 `session`——
+   「A 实例起的仿真，B 实例的 /status 说不存在」就是这种鬼。改成 `getLive()` 进程级单例。
+2. **`/diag` 端点**：返回 pid、运行时长、python、PYTHONPATH、请求数、上次错误。
+3. **页面的「诊断」页签**直接显示这些，并把连接失败的文案改成「连不上后端（点「启动仿真」或面板「重载」）」——
+   下一步动作写在提示里，别让人猜。
+
+**一条结构性教训**（写进 `client/README.md`）：`client/src/*` 是**宿主侧**代码，改动需要重启 dsh web；
+`client/viewer/*` 是静态页，刷新即可。混在一起改的时候，先分清这次改的是哪一侧。

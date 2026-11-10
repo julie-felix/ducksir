@@ -120,3 +120,14 @@ client/lib/client.js   web：侧栏「机器人」入口 + main 面板（iframe 
 3. **宽内容自己滚**：`pre`、文件树、底部面板各自 `overflow:auto`，并加 `overscroll-behavior: contain`
    防止滚到底传给外层。底部参数区要有**上界**（`max-height: min(46vh, 420px)`）+ 内部滚动，
    否则参数一多就把整页顶出视口；滑杆要 `touch-action: none`，不然移动端拖滑杆会连带滚页面。
+
+## 改完之后：要不要重启 dsh？
+
+| 改了什么 | 生效方式 |
+|---|---|
+| `client/viewer/*`（页面、studio.js、play.js…） | **刷新浏览器**即可（静态路由 `no-cache`） |
+| `client/lib/client.js`（面板壳、页签） | 刷新浏览器 |
+| `client/src/*`（宿主插件：`index.mjs`、`live.mjs`） | **必须重启 dsh web**（模块在启动时加载） |
+
+排查「连不上」的顺序：面板「重载」→ 看工作台「诊断」页签的**后端自检**（`/diag`）→
+`curl -k https://<host>:3080/ducksir-live/status`。三层都能定位到具体是哪一侧旧了。

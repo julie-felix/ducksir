@@ -127,6 +127,21 @@ function updateMetrics(s) {
 }
 
 async function loadDiag() {
+  // 后端自检（/diag）：页面版本、宿主 pid、PYTHONPATH、请求数、上次错误。
+  // 「连不上」时先看这里，比猜快得多。
+  try {
+    const dg = await (await fetch(`${API}/diag`)).json();
+    const rows = [
+      ['后端 pid / 运行时长', `${dg.pid} · ${dg.uptime_s}s`],
+      ['后端 python', dg.python],
+      ['PYTHONPATH', (dg.pythonpath || '').split(':')[0] || '（空）'],
+      ['已处理请求', dg.requests],
+      ['上次错误', dg.last_error ? String(dg.last_error).slice(-160) : '（无）'],
+    ];
+    $('diag').innerHTML += rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
+  } catch (e) {
+    $('diag').innerHTML += `<tr><th>后端自检</th><td class="bad">取不到 /diag：${e?.message || e}</td></tr>`;
+  }
   const sc = await (await fetch(`${API}/scene`)).json();
   $('diag').innerHTML = [
     ['项目', sc.project || '—'],
@@ -237,7 +252,7 @@ async function refreshConn() {
     $('conn').className = 'pill ' + (st.running ? 'ok' : '');
     return st.running;
   } catch {
-    $('conn').textContent = '连不上服务';
+    $('conn').textContent = '连不上后端（点「启动仿真」或面板「重载」）';
     return false;
   }
 }

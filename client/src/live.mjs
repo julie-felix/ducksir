@@ -71,12 +71,29 @@ function pythonPath() {
  * @param {string} [options.python] python 可执行文件。
  * @param {string[]} [options.env] 需要透传的环境（如 PYTHONPATH）。
  */
+let SINGLETON = null
+const STARTED_AT = Date.now()
+let REQUESTS = 0
+
+/**
+ * 取进程级单例。
+ *
+ * 为什么不是每次注册都 new：dsh 的 webServer 注册可能被重复执行（热重载 / 多次 inject），
+ * 每个实例各自持有 `session`，于是「A 实例启动的仿真，B 实例的 /status 说不存在」——
+ * 表现就是「明明在跑却说连接不上」（2026-11-11 排到的坑）。
+ */
+export function getLive(options) {
+  if (!SINGLETON) SINGLETON = createLive(options)
+  return SINGLETON
+}
+
 export function createLive({ repo, python = 'python3' }) {
   /** @type {{child: import('node:child_process').ChildProcess, port: number, project: string}|null} */
   let session = null
   let lastError = ''
 
   async function start({ project = 'sim/test/fixtures/project_demo.py', seconds = 600 } = {}) {
+    console.log('[ducksir-live] start', project)
     await stop()
     const port = await freePort()
     const args = [path.join(repo, 'sim/host/run_project.py'),
@@ -93,9 +110,11 @@ export function createLive({ repo, python = 'python3' }) {
     const ready = await waitReady(port)
     if (!ready) {
       lastError = log || '启动超时'
+      console.warn('[ducksir-live] 启动失败：' + lastError.slice(-400))
       child.kill('SIGINT')
       return { ok: false, error: lastError }
     }
+    console.log('[ducksir-live] ready on', port)
     session = { child, port, project }
     return { ok: true, port, project }
   }
@@ -153,7 +172,22 @@ export function createLive({ repo, python = 'python3' }) {
       res.writeHead(code, { 'content-type': 'application/json; charset=utf-8' })
       res.end(JSON.stringify(body))
     }
+    REQUESTS += 1
     if (pathname === '/status') return json(200, status())
+    if (pathname === '/diag') {
+      return json(200, {
+        uptime_s: Math.round((Date.now() - STARTED_AT) / 1000),
+        pid: process.pid,
+        python,
+        repo,
+        pythonpath: pythonPath(),
+        requests: REQUESTS,
+        running: Boolean(session),
+        port: session?.port ?? null,
+        last_error: lastError,
+        node: process.version,
+      })
+    }
     if (pathname === '/start' && req.method === 'POST') {
       let body = ''
       for await (const chunk of req) body += chunk

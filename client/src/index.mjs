@@ -14,7 +14,7 @@ import { createReadStream } from 'node:fs'
 import { readdir, stat as statFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import { createLive } from './live.mjs'
+import { getLive } from './live.mjs'
 import { fileURLToPath } from 'node:url'
 
 /** Loader 身份。 */
@@ -266,7 +266,7 @@ export function apply(ctx) {
     )
     child.effect(
       () => {
-        const live = createLive({ repo: REPO })
+        const live = getLive({ repo: REPO })
         return child.webServer.register({
           kind: 'prefix',
           path: LIVE_ROUTE,
