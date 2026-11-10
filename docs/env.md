@@ -138,3 +138,26 @@ curl -sSL -x http://127.0.0.1:7890 -o /tmp/microduck.py        $B/microduck.py
 
 七个策略：`walking / sitstand / kick-left / kick-right / roll / ground-pick / stand`，全部 `obs[1,61] → actions[1,14]`。
 上游是 <https://huggingface.co/spaces/pollen-robotics/microduck-simulator>，**没有根 LICENSE**：只做本地对照，不入库、不对外分发。
+
+## 7. emscripten（wasm 端）
+
+`make -C engine wasm` 需要 emsdk。本机装法是 git clone + `./emsdk install latest`（约 240 MB，走代理慢，第一次要十几分钟）：
+
+```bash
+git clone --depth 1 https://github.com/emscripten-core/emsdk.git ~/emsdk
+cd ~/emsdk && ./emsdk install latest && ./emsdk activate latest
+```
+
+Makefile 里默认取 `~/emsdk/upstream/emscripten/em++`，换路径用 `EMXX=/path make -C engine wasm`。
+
+**下载必须绕代理**（2026-11-10 实测）：emsdk 从 `storage.googleapis.com` 拉 322 MB 的 wasm-binaries，
+走 Clash 代理只有 **31 KB/s**，直连 **5.8 MB/s**（快 186 倍）。所以装的时候要把代理变量摘掉：
+
+```bash
+env -u https_proxy -u HTTPS_PROXY -u http_proxy -u HTTP_PROXY -u all_proxy -u ALL_PROXY ./emsdk install latest
+```
+
+不摘的话 `./emsdk install` 会卡在几 MB 十几分钟，看起来像断网。
+产物在 `engine/build/wasm/`（`ducksim.mjs` + `ducksim.wasm`），跑法见 `engine/wasm/README.md`。
+
+**不在 CI 里跑**：runner 没有 emsdk，`test_wasm_parity.py` 缺产物会自动跳过（exit 0）。

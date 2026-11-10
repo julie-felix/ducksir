@@ -476,3 +476,30 @@ botlab 的 MicroDuck 编排用的是 `state_machine + mode_select + policy_bank 
 在 SIT 里按它不会被响应（这是它们的行为，不是我们的 bug）。
 
 对拍：`fsm` 图（命令/计时/条件三类转移各走一遍）C 核 vs oracle **0.000e+00**。
+
+### W7（2026-11-10）wasm 端：同一份核编给浏览器
+
+**交付**
+
+- `engine/Makefile` 加 `wasm` 目标（em++，`MODULARIZE` + `EXPORT_ES6` + `addFunction`），产物 `engine/build/wasm/{ducksim.mjs,ducksim.wasm}`（15 KB）。
+- `engine/wasm/harness.mjs`：node 里加载 wasm、喂 plan blob 与 obs 序列、打印 action。自带 `--js-model` 用来验证推理回调。
+- `sim/test/test_wasm_parity.py`：native（ctypes）vs wasm（node）对拍。
+- `docs/env.md` 补 emsdk 安装与「下载要绕代理」的坑。
+
+**验收**
+
+```
+native 30 步｜wasm 30 步｜节点 14｜10 → 26
+最大偏差 0.000e+00   PASS 逐位相同
+```
+
+图里带 affine / clip / history / select / phase_clock / pass-through model——覆盖面足够说明「不是只跑得动最简单的图」。
+
+**推理回调那条缝也验了**：`ds_backend` 用 `addFunction` 注入 JS 函数，接 `y = 2x + 1`，输出与期望逐位相同。
+浏览器里把那个函数换成 ORT Web 的 `session.run` 就是完整链路——**这条是本项目最该有、botlab 做不到的保证**：
+它两份引擎（TS/Python）靠 golden trace 对拍，而那份测试在开源包里默认 skip；我们是一份 C++ 走两个编译目标。
+
+**还没做**
+
+- 浏览器里的真推理（ORT Web 的 npm 包 + 页面接线）；现在是 node 里的等价验证。
+- `viewer` 接 wasm：现在回放还是「宿主算好轨迹 → 浏览器放」，不是「浏览器里算」。
