@@ -16,11 +16,14 @@ const $ = (id) => document.getElementById(id);
 //   2) `ducksir run` 直接打开：页面由 runner 的显示服务提供，端点在根路径
 const IN_PANEL = location.pathname.startsWith('/ducksir-static/');
 const API = IN_PANEL ? '/ducksir-live' : '';
-const ASSET = IN_PANEL ? '/ducksir-static/client/viewer' : '/static';
-const assets = (rel) => `${ASSET}/${rel.replace(/^\.\//, '')}`;
-// GLB 在仓库根 assets/ 下，和 viewer 的静态资源不同根
-const GLB_BASE = IN_PANEL ? '/ducksir-static/assets' : '/static/assets';
-const glb = (rel) => `${GLB_BASE}/${rel.replace(/^\.\.\/\.\.\/assets\//, '').replace(/^\.\.\/assets\//, '')}`;
+// 静态资源全部走**相对路径**（相对页面所在目录）：面板里是 /ducksir-static/client/viewer/，
+// runner 直开时是 `/`（显示服务把 vendor/data/assets 挂在根下）。这样不需要探测、也不会拼错根。
+const assets = (rel) => rel.replace(/^\.\//, '');
+const glb = (rel) => rel;   // duck-hd1910.json 里的 mesh 本来就是 ../../assets/…
+
+// 启动标记：页面脚本真的跑起来了就先把这行改掉。
+// 如果顶栏停在初始文案，说明 module 没执行（importmap/路径问题），而不是 fetch 失败。
+document.getElementById('conn').textContent = '页面已加载';
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));

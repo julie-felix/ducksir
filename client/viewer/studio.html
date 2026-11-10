@@ -144,22 +144,11 @@
     <button data-rail="diag">诊断</button>
   </div>
 </div>
-<script>
-  // 同一份页面在两处跑：面板（/ducksir-static/…）与 runner 直开（/）
-  (function () {
-    var inPanel = location.pathname.indexOf('/ducksir-static/') === 0;
-    var base = inPanel ? '/ducksir-static/client/viewer/' : '/static/';
-    var map = document.createElement('script');
-    map.type = 'importmap';
-    map.textContent = JSON.stringify({
-      imports: { three: base + 'vendor/three/three.module.js', 'three/addons/': base + 'vendor/three/' }
-    });
-    document.head.appendChild(map);
-    var mod = document.createElement('script');
-    mod.type = 'module';
-    mod.src = base + 'studio.js';
-    document.head.appendChild(mod);
-  })();
+<!-- 静态 importmap + 相对路径：同一份页面在面板（/ducksir-static/client/viewer/）与
+     runner 直开（/）都能跑。动态注入 importmap 在部分 Chrome 里会被忽略，导致整页不执行。 -->
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/" } }
 </script>
+<script type="module" src="./studio.js"></script>
 </body>
 </html>

@@ -103,15 +103,28 @@ class Display:
                 if self.path in ("/follow", "/follow.html"):
                     self._serve_file("follow.html", "text/html; charset=utf-8")
                     return
+                # 直开模式（页面在根路径）需要的别名：/vendor /data /assets 与几个脚本。
+                # 顺序要紧：先 assets，再 vendor/data，最后 /static/ 兜底。
+                if self.path.startswith("/assets/"):
+                    rel = self.path[len("/assets/"):].split("?")[0]
+                    repo_assets = os.path.abspath(os.path.join(display.root, "..", "..", "assets"))
+                    self._serve_file(rel, None, base=repo_assets)
+                    return
                 if self.path.startswith("/static/assets/"):
-                    # GLB 在仓库根 assets/ 下，不在 viewer/ 里：两棵根分别是 client/viewer 与 assets
                     rel = self.path[len("/static/assets/"):].split("?")[0]
-                    assets_root = os.path.join(os.path.dirname(display.root), "..", "assets")
-                    self._serve_file(rel, None, base=os.path.abspath(assets_root))
+                    repo_assets = os.path.abspath(os.path.join(display.root, "..", "..", "assets"))
+                    self._serve_file(rel, None, base=repo_assets)
+                    return
+                if self.path.startswith("/vendor/") or self.path.startswith("/data/"):
+                    self._serve_file(self.path.lstrip("/").split("?")[0])
                     return
                 if self.path.startswith("/static/"):
                     rel = self.path[len("/static/"):].split("?")[0]
                     self._serve_file(rel)
+                    return
+                if self.path in ("/studio.js", "/follow.js", "/panel-meta.mjs", "/assets-map.mjs",
+                                 "/live-core.mjs", "/play.js", "/play-core.mjs", "/inspect.js"):
+                    self._serve_file(self.path.lstrip("/"))
                     return
                 if self.path.startswith("/files"):
                     body = json.dumps({"root": os.path.basename(display.files_root),
@@ -141,8 +154,8 @@ class Display:
                     body = json.dumps(display.get_command(), ensure_ascii=False).encode()
                     self.send_response(200)
                     self.send_header("content-type", "application/json; charset=utf-8")
-                    self.send_header("content-length", str(len(body)))
                     self.send_header("access-control-allow-origin", "*")
+                    self.send_header("content-length", str(len(body)))
                     self.end_headers()
                     self.wfile.write(body)
                     return

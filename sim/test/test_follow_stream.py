@@ -24,7 +24,16 @@ sys.path.insert(0, os.path.join(ROOT, "sim", "host"))
 
 import display as DSP  # noqa: E402
 
-PORT = int(os.environ.get("DUCKSIR_DISPLAY_PORT", "8807"))
+def _free_port() -> int:
+    """每次挑一个空闲端口：固定端口会被上一次没杀干净的 runner 占住，
+    然后测试连到一个**跑着旧代码**的进程上，表现为莫名其妙的 404（2026-11-11 踩过）。"""
+    import socket
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+
+
+PORT = int(os.environ.get("DUCKSIR_DISPLAY_PORT") or _free_port())
 PROJECT = os.environ.get("DUCKSIR_TEST_PROJECT", "sim/test/fixtures/project_demo.py")
 BASE = f"http://127.0.0.1:{PORT}"
 fails = 0
@@ -45,6 +54,7 @@ env = dict(os.environ)
 child = subprocess.Popen([sys.executable, "sim/host/run_project.py", "--project", PROJECT,
                           "--seconds", "60", "--port", str(PORT), "--no-open"],
                          cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+stop = threading.Event()
 try:
     ok("显示服务就绪", DSP.wait_ready(BASE, timeout=15))
 
@@ -67,8 +77,6 @@ try:
 
     # 先订阅，再等帧
     frames = []
-
-    stop = threading.Event()
 
     def reader():
         req = urllib.request.urlopen(BASE + "/stream", timeout=30)
