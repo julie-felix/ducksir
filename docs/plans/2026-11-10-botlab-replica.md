@@ -78,18 +78,17 @@
 
 ## 4. 里程碑（9 周）
 
-| 周 | 交付 | 通过判据 |
-|---|---|---|
-| W1 11-10~11-16 | canonical→MJCF 导出端 v0（body/joint/actuator/惯性/限位） | MuJoCo `mj_loadXML` 成功，0 warning |
-| W2 11-17~11-23 | preset 生成器、C8（canonical 驱动序 ↔ MJCF actuator 序双射）、与 `third_party/fanhao-microduck-replica` 的结构对比脚本 | 结构对比差异逐条有解释；C8 红黄绿可跑 |
-| W3 11-24~11-30 | **PD 跟踪 + 物理链路验证**（两跑法，见 §9 W3）+ `--report` 落地 | **止损点**（2026-11-10 改定）：原判据「PD 保持零位站 10 s」已实测不可达，站立并入 W5 有策略时验 |
-| W4 12-01~12-07 | blob 格式定版；C++ 核骨架（arena/ABI/loader）+ 8 节点；numpy oracle 起步 | 8 节点与 numpy 逐点误差 ≤1e-6 |
-| W5 12-08~12-14 | 27 节点全量 + ORT `create/prepare/run`；一份现成 ONNX 在 native MuJoCo 里跑 30 s | 不炸；action 与 numpy 参考一致；曲线能看 |
-| W6 12-15~12-21 | Python DSL 编译器（声明→图）+ manifest 读取 + 图校验器（同源同一套 schema） | 一个真项目从 DSL 编到 blob 一条命令 |
-| W7 12-22~12-28 | wasm 构建（`libonnxruntime_webassembly.a`）+ 浏览器查看器（复用 `client/viewer`，WS 推状态） | 浏览器里看到同一份图在动 |
-| W8 12-29~01-04 | **交互通道**：键盘/滑条 → `commands`、参数滑杆热更新、策略/模式切换 | 能用键盘把鸭子开起来、拖参数能看曲线变化、能切策略 |
-| W9 01-05~01-11 | `--report` 完整字段、`docs/node-parity.md` 收尾、demo | 一份 ONNX + 一张图：主机与浏览器行为一致，且浏览器里可驾驶 |
-
+| 周 | 交付 | 通过判据 | 状态 |
+|---|---|---|---|
+| W1 11-10~11-16 | canonical→MJCF 导出端 v0（body/joint/actuator/惯性/限位） | MuJoCo `mj_loadXML` 成功，0 warning | ✅ 2026-11-10（三台机型 load 0 警告，质量对到 1e-6） |
+| W2 11-17~11-23 | preset 生成器、C8（canonical 驱动序 ↔ MJCF actuator 序双射）、与 `third_party/fanhao-microduck-replica` 的结构对比脚本 | 结构对比差异逐条有解释；C8 红黄绿可跑 | ✅ 2026-11-10（与上游 MJCF 结构完全一致；C8 落地） |
+| W3 11-24~11-30 | **PD 跟踪 + 物理链路验证**（两跑法，见 §9 W3）+ `--report` 落地 | **止损点**（2026-11-10 改定）：原判据「PD 保持零位站 10 s」已实测不可达，站立并入 W5 有策略时验 | ✅ 2026-11-10（链路稳态 0.0031 rad；物理接触比 0.98） |
+| W4 12-01~12-07 | blob 格式定版；C++ 核骨架（arena/ABI/loader）+ 8 节点；numpy oracle 起步 | 8 节点与 numpy 逐点误差 ≤1e-6 | ✅ 2026-11-10（8 节点对拍 0.000e+00；blob 定版） |
+| W5 12-08~12-14 | 27 节点全量 + ORT `create/prepare/run`；一份现成 ONNX 在 native MuJoCo 里跑 30 s | 不炸；action 与 numpy 参考一致；曲线能看 | ✅ 2026-11-10（真策略 61 维、站立 1.000；对拍 0.000e+00） |
+| W6 12-15~12-21 | Python DSL 编译器（声明→图）+ manifest 读取 + 图校验器（同源同一套 schema） | 一个真项目从 DSL 编到 blob 一条命令 | ✅ 2026-11-10（15 节点；14 状态 / 7 策略状态机跑通） |
+| W7 12-22~12-28 | wasm 构建（`libonnxruntime_webassembly.a`）+ 浏览器查看器（复用 `client/viewer`，WS 推状态） | 浏览器里看到同一份图在动 | ✅ 2026-11-10（wasm 逐位相同；浏览器物理+推理） |
+| W8 12-29~01-04 | **交互通道**：键盘/滑条 → `commands`、参数滑杆热更新、策略/模式切换 | 能用键盘把鸭子开起来、拖参数能看曲线变化、能切策略 | 🟡 部分（浏览器里切 7 策略 + 调指令；自动 FSM 仍在宿主） |
+| W9 01-05~01-11 | `--report` 完整字段、`docs/node-parity.md` 收尾、demo | 一份 ONNX + 一张图：主机与浏览器行为一致，且浏览器里可驾驶 | 🟡 部分（report 有最小字段；node-parity 已更新；demo 已可跑） |
 ---
 
 ## 5. 契约与产物
@@ -598,3 +597,33 @@ PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 sim/host/export_browser_che
 **还没做**：**自动状态机切换**（tipped/upright 条件、计时转移）仍只在宿主侧（`run_fsm.py`）。
 浏览器里现在是「手动切策略」——和 botlab 的键盘行为一致（它也是按键发 `policy_command`），
 差别在于它把状态机也跑在图里，我们这一步把 FSM 留在宿主。
+
+---
+
+## 10. 现状（2026-11-10 收尾盘点）
+
+**能跑通的完整链**（两条，同一份 C++ 核）：
+
+| 在哪跑 | 命令 / 入口 | 干什么 |
+|---|---|---|
+| 宿主 | `python3 sim/host/run_fsm.py --mjcf build/mjcf/duck-hd1910-all.xml --preset build/preset/duck-hd1910.preset.yaml` | 14 状态 / 7 策略状态机，按指令自切换，出报告与回放轨迹 |
+| 宿主 | `python3 sim/host/run_policy.py --manifest contract/policy/duck-walk.manifest.yaml` | 单策略闭环（61 维 obs） |
+| 浏览器 | 面板「机器人」→「浏览器跑」（`client/viewer/play.html`） | MuJoCo wasm 物理 + wasm 核 + ORT Web，`W/S` 调指令、`1..7` 切策略 |
+
+**硬指标**（都不是「看着像」）
+
+| 对拍 | 判据 | 实测 |
+|---|---|---|
+| C 核 vs numpy oracle（8/15 节点） | ≤1e-6 | **0.000e+00** |
+| native vs wasm（图运算） | 逐位相同 | **0.000e+00** |
+| native vs ORT Web（推理） | ≤1e-5 | **1.192e-6** |
+| 导出 MJCF vs 上游 MJCF | 结构一致 | body/joint/轴/限位/质量全对 |
+| 回放 FK vs MuJoCo | ≤0.1 mm | **0.000 mm** |
+
+**还没做的**（按价值排）
+
+1. **浏览器里的自动状态机**：现在是手动切策略；`state_machine` 节点已有，差把 pre/post 的切法从「推理边界」扩成「整图在浏览器里跑、推理回调注入」。
+2. **`--report` 完整字段**：现在有 digest 链与 metrics/verdict，缺逐段耗时与 `policy_manifest_digest` 的校核。
+3. **交互通道的参数热更新**（改 `actionScale`/clip 立刻生效）：现在是重编 blob 才变。
+4. **板端**：aarch64 `.so` 交叉编译与实跑（计划里排 v0.2）。
+5. **指挥指令的标定**：`vx` 与策略内部尺度的系数仍没定死（§9 W5c 记着）。
