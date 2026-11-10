@@ -150,6 +150,7 @@ async function main() {
     };
     const pre = loadPlan(await bytes('./data/live/pre.blob'));
     const post = loadPlan(await bytes('./data/live/post.blob'));
+    const fsm = loadPlan(await bytes('./data/live/fsm.blob'));   // 3 → 15：[state, mode, command(13)]
     stage('创建 ORT Web 会话（7 个策略）');
     const policyList = (await json('./data/live/policies.json')).policies;
     const sessions = {};
@@ -158,6 +159,9 @@ async function main() {
       sessions[pol.key] = await ort.InferenceSession.create(buf,
         { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
     }
+    const modeToKey = {};
+    for (const pol of policyList) modeToKey[pol.mode] = pol.key;
+    let manual = null;            // 非空 = 手动选的策略（下拉/数字键）；按键后回到状态机
     let active = policyList[0].key;
     const inputName = sessions[active].inputNames[0];
     const outputName = sessions[active].outputNames[0];
@@ -169,7 +173,11 @@ async function main() {
       picker.appendChild(opt);
     }
     picker.value = active;
-    picker.onchange = () => { active = picker.value; state.lastAction.fill(0); };
+    picker.onchange = () => { manual = picker.value; active = manual; state.lastAction.fill(0); };
+
+    // 策略指令脉冲：对应 botlab config/io.yaml 的 policy_command
+    const KEY_CMD = { x: 1, z: 2, c: 3, v: 4, b: 5, r: 6 };
+    let pendingCmd = 0;
 
     const runPlan = (plan, input) => {
       const ip = wasm._malloc(plan.inDim * 4), op = wasm._malloc(plan.outDim * 4);
@@ -188,7 +196,10 @@ async function main() {
       else if (e.key === 'r' || e.key === 'R') resetSim();
       else if (/^[1-7]$/.test(e.key)) {
         const idx = Number(e.key) - 1;
-        if (policyList[idx]) { active = policyList[idx].key; $('policy').value = active; state.lastAction.fill(0); }
+        if (policyList[idx]) { manual = policyList[idx].key; active = manual; $('policy').value = active; state.lastAction.fill(0); }
+      } else if (KEY_CMD[e.key.toLowerCase()] !== undefined) {
+        pendingCmd = KEY_CMD[e.key.toLowerCase()];
+        manual = null;          // 按策略键即回到状态机
       }
     });
 
@@ -214,8 +225,21 @@ async function main() {
       const now = performance.now();
       if (now - lastInfer >= 1000 / CONTROL_HZ) {
         lastInfer = now;
+        // 1) 状态机：吃「脉冲 + 重力 z + vx」，吐 [state, mode, command(13)]
+        const bid = duck.bodyId('trunk_base');
+        const qw = read(data.xquat, bid * 4), qx = read(data.xquat, bid * 4 + 1);
+        const qy = read(data.xquat, bid * 4 + 2), qz = read(data.xquat, bid * 4 + 3);
+        // 重力在世界系是 (0,0,-1)，它在机体系的 z 分量 = -R[2][2] = -(1-2(qx²+qy²))
+        const gz = -(1 - 2 * (qx * qx + qy * qy));
+        const fsmOut = runPlan(fsm, [pendingCmd, gz, state.vx]);
+        pendingCmd = 0;
+        state.fsm = { state: fsmOut[0], mode: fsmOut[1] };
+        const cmd13 = fsmOut.slice(2, 15);
+        if (!manual) active = modeToKey[fsmOut[1]] || active;
+
+        // 2) obs（61 维）：指令段用状态机给的 command
         const obs = makeObs(duck, { joints: meta.joints, defaultQ: meta.defaultQ,
-                                    lastAction: state.lastAction, vx: state.vx });
+                                    lastAction: state.lastAction, vx: state.vx, command: cmd13 });
         const policyInput = runPlan(pre, obs);
         const feeds = { [inputName]: new ort.Tensor('float32', Float32Array.from(policyInput), [1, policyInput.length]) };
         const res = await sessions[active].run(feeds);
@@ -243,7 +267,9 @@ async function main() {
       const z = read(data.qpos, 2);
       const wall = (performance.now() - t0) / 1000;
       $('stat').textContent = `基座 ${z.toFixed(3)} m · 仿真 ${state.simTime.toFixed(1)} s · ${ctrl} 次推理`;
-      $('vx').textContent = `前进指令 ${state.vx.toFixed(2)} m/s · 策略 ${active}`;
+      const fs = state.fsm || { state: '—', mode: '—' };
+      $('vx').textContent = `vx ${state.vx.toFixed(2)} m/s · 状态 ${fs.state} · 策略 ${active}`
+        + (manual ? '（手动）' : '');
       $('perf').textContent = `墙钟 ${wall.toFixed(1)} s（${(state.simTime / wall || 0).toFixed(2)}× 实时）`;
       requestAnimationFrame(loop);
     };
