@@ -1,7 +1,12 @@
 {
   "clips": [
     {
-      "label": "策略闭环：合成策略跑 30 s（真 ONNX 推理）",
+      "label": "真策略：botlab walking.onnx · 原地站/走（30 s）",
+      "file": "replay-duck-walk.json",
+      "robot": "duck-hd1910"
+    },
+    {
+      "label": "合成策略：往零位拉（30 s）",
       "file": "replay-duck-policy.json",
       "robot": "duck-hd1910"
     },

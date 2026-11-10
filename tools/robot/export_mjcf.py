@@ -116,6 +116,13 @@ def export(doc: dict, mesh_dir: str | None = None, mesh_ext: str | None = None) 
             ET.SubElement(body, "joint", **attrs)
         # type=fixed 的关节不导出：MuJoCo 里父 body 直接就是焊死的
 
+        # site：策略读 IMU 用的坐标系（botlab 的 sensor_data("imu_ang_vel") 就在 imu 这个 site 上）
+        for site in (doc.get("sensors") or []):
+            if site.get("kind") == "site" and site.get("body") == link["name"]:
+                attrs = {"name": site["name"], "pos": _vec(site.get("pos") or [0, 0, 0]),
+                         "quat": _vec(site.get("quat") or [1, 0, 0, 0]), "group": "3"}
+                ET.SubElement(body, "site", **attrs)
+
         for item in link["visual"]:
             if not item.get("mesh_name"):
                 continue
@@ -141,6 +148,24 @@ def export(doc: dict, mesh_dir: str | None = None, mesh_ext: str | None = None) 
     if len(roots) != 1:
         raise SystemExit(f"根不唯一: {[r['name'] for r in roots]}")
     build(roots[0], worldbody)
+
+    # sensor：gyro / velocimeter / accelerometer / framequat / subtreeangmom …
+    # 只导「有 site 或 body」的：canonical 里没记 objtype/objname 的（例如 framequat 指向 site）
+    # 导不出合法 MJCF，宁可跳过并报个数，也不编一个 objtype。
+    all_sens = [x for x in (doc.get("sensors") or []) if x.get("kind") != "site"]
+    sens = [x for x in all_sens if x.get("site") or x.get("body")]
+    skipped = [x["name"] for x in all_sens if not (x.get("site") or x.get("body"))]
+    if sens:
+        block = ET.SubElement(root, "sensor")
+        for x in sens:
+            attrs = {"name": x["name"]}
+            if x.get("site"):
+                attrs["site"] = x["site"]
+            if x.get("body"):
+                attrs["body"] = x["body"]
+            if x.get("noise") is not None:
+                attrs["noise"] = _f(x["noise"])
+            ET.SubElement(block, x["kind"], **attrs)
 
     actuators = doc.get("actuators") or []
     if actuators:
@@ -181,6 +206,8 @@ def main() -> int:
     ET.indent(tree, space="  ")
     os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
     tree.write(args.output, encoding="utf-8", xml_declaration=True)
+    if locals().get("skipped"):
+        print(f"  跳过 {len(skipped)} 个传感器（canonical 没记 objtype/objname）：{', '.join(skipped)}")
     cs = (doc.get("robot") or {}).get("collision_set")
     print(f"写入 {args.output}" + (f"（碰撞集 {cs['name']} ← {cs['source']}）" if cs else "（碰撞集 default）"))
     return 0

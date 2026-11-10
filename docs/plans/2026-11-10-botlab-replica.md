@@ -386,3 +386,40 @@ body 与 joint 名单一致、actuator 顺序一致、关节轴与限位全部�
 - 它的 `control_decimation` 是 policy 每 N 个控制步推一次；我们现在 `inference_decimation` 实现了同样的节流，但还没验证过 N>1 的行为。
 
 **结论**：链是对的，缺的是「一份真策略」。合成策略换成训练产物之前，任何「挣扎/不挣扎」都只是那份策略的脾气。
+
+### W5c（2026-11-10）把 botlab 的真策略接进来
+
+庆喆问：「现在的策略是从哪来的，botlab 里边那个 onnx 不是可以用吗」。答：之前那份是**我生成的合成策略**（往零位拉），
+仓里没有训练产物。这次把 botlab 的真策略接进来了。
+
+**怎么拿到的**：botlab 产品站把模板按 `templates/microduck/<相对路径>` 直接暴露（实测 200），
+所以 `walking.onnx` / `microduck.xml` / `microduck.preset.yaml` / `microduck.py` / `microduck_policy.py` 都能直接取。
+上游是 <https://huggingface.co/spaces/pollen-robotics/microduck-simulator>，**无根 LICENSE** → 只做本地对照，模型不入库。
+
+**对齐到了什么程度**（逐条对照它们的源码，不是猜）
+
+| 项 | botlab | 我们 | 结论 |
+|---|---|---|---|
+| obs 维度与顺序 | 3+3+14+14+14+13 = **61** | 同 | ✅ 逐项一致 |
+| 角速度来源 | IMU 陀螺仪 `imu_ang_vel`（site 系） | 导出端补了 `<site>` + `<sensor>`，读同一传感器 | ✅（之前我们导出的 MJCF 里一个 sensor 都没有） |
+| 重力 | `projected_gravity(target="trunk_base")` | 同 | ✅ |
+| 关节位置 | `joint_position(default=default_angles)` = q − preset.default | 同 | ✅ |
+| 动作 | `ctrl = default + action_scale * action[motor_order]` | 图里 `affine` 做，clip 到 `ctrlrange` | ✅ |
+| 频率 | control 50 / physics 200 / 每控制步推理 | 同，实测 inference_hz = 50.0 | ✅ |
+| 模型 | `assets/models/*.onnx`，`obs[1,61] → actions[1,14]` | 同一份文件 | ✅ |
+| 位形 | preset `defaultJointPositions` + `initialQpos`（= MJCF keyframe STAND） | 新增 `contract/robot/postures/microduck-stand.yaml` | ✅ |
+| 模型 | pollen 的 MJCF | 我们的导出与它**结构完全一致**（compare_mjcf：body/joint/轴/限位/质量全对） | ✅ |
+
+**结果**
+
+```
+策略闭环 20 s @ 50/200 Hz · 图 13 节点
+  |action| 0.3229 rad｜实际力矩 0.0993 Nm
+  基座高度 终 +0.124 最低 +0.112 m｜直立度 终 +0.996
+  关节 std 0.0914 rad｜摆幅 0.399 rad   ← 真的在迈步，不是僵住
+```
+
+**没对上的**：指令尺度。同样这份 walking 策略，command=0.2 时几乎不动（8 s 位移 1 cm），0.5 时迈步明显
+（8 s 2.08 m），0.6 反而走 6.7 m——链路是通的，但「UI 的 m/s」和「策略吃到的数值」之间差一个系数或标定，
+而 botlab 的 `commands()` 代码里没有任何缩放，所以这一层要么在它的运行时里，要么在训练配置里。
+**不猜**：先按 `--vx 0.5` 出片，把它记成待查项（下一步去 HF Space 的源码里找）。

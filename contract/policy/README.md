@@ -48,3 +48,25 @@ rates: {control_hz: 50, physics_hz: 200, inference_decimation: 1}
 | 文件 | 说明 |
 |---|---|
 | `duck-hold.manifest.yaml` | 合成测试策略（把关节往零位拉），用来打通链路；**不是训练产物** |
+
+## obs 槽类型（`slot` 的取值）
+
+| slot | 长度 | 怎么取 |
+|---|---|---|
+| `imu_ang_vel` | 3 | MJCF 传感器 `imu_ang_vel`（gyro）的读数，**不是** qvel——botlab 代码里明说两者不等价 |
+| `projected_gravity` | 3 | 重力方向在 `target` 指定 body 系下的表达；`target` 缺省用根 body |
+| `joint_pos` | n | 驱动关节角；`minus: default` 时按 botlab 的 `joint_position(default=...)` 语义减 `defaultJointPositions` |
+| `joint_vel` | n | 驱动关节角速度 |
+| `last_action` | n | 上一控制步的**原始策略输出**（不是缩放后的 ctrl） |
+| `command` | k | 常量向量，`values` 给初值；`--vx/--vy/--yaw` 覆盖前三维 |
+| `base_ang_vel` / `base_height` | 3 / 1 | 调试用 |
+
+## 现在有什么
+
+| 文件 | 说明 |
+|---|---|
+| `duck-hold.manifest.yaml` | **合成**测试策略（把关节往零位拉），只证明链路通 |
+| `duck-walk.manifest.yaml` | botlab 模板 microduck 的 `walking.onnx`：61 维 obs → 14 维动作，布局逐项对齐它的 `microduck.py` |
+
+> 两个 manifest 都带 `provenance`。botlab 模板的上游（pollen-robotics/microduck-simulator）没有根 LICENSE，
+> 这些模型与位形**只作本地兼容性对照**，不对外分发、也不当作我们的标定结论。

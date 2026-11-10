@@ -40,3 +40,9 @@ python3 tools/robot/check_entity.py "contract/robot/types/*.yaml"
 `types/<id>.yaml` 是本体；`variants/<id>.<轴>.yaml` 是**同一台机器人的另一种取法**，靠 `robot.variant_of` 指回本体。
 现在只有一种：`duck-hd1910.all.yaml` —— 碰撞体来自上游 `robot_allcollisions.xml`（本体用的是 walk 子集）。
 导出时 `--collision-set all` 会用它覆盖碰撞体，其余（视觉/关节/质量）一概不动。
+
+## postures/
+
+`postures/<name>.yaml` 是**位形**（默认/站立关节角 + 基座位姿），不是实体本身。
+`export_preset.py --default-pose` 会读它填 `defaultJointPositions` / `initialQpos`。
+现在只有 `microduck-stand.yaml`，来源是 botlab 模板（见文件里的 provenance），用于兼容性对照。
