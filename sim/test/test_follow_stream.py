@@ -16,6 +16,7 @@ import sys
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -68,7 +69,12 @@ try:
 
     py = next(f for f in listed if f.endswith(".py"))
     body = get("/file?path=" + py)
-    ok("/file 能读内容", "Project" in body or "import" in body, body[:36].replace("\n", " "))
+    ok("/file 能读内容（项目目录内）", "Project" in body or "import" in body, body[:36].replace("\n", " "))
+    # 清单里还有仓库相对的路径（contract/…），必须也能读——否则工作台点开就是「读不到」
+    repo_rel = next((f for f in listed if f.startswith("contract/")), None)
+    if repo_rel:
+        text = get("/file?path=" + urllib.parse.quote(repo_rel))
+        ok(f"/file 能读仓库相对路径（{repo_rel.split('/')[-1]}）", len(text) > 50, f"{len(text)} B")
     try:
         get("/file?path=../../etc/passwd")
         ok("越界路径要拒绝", False)
