@@ -82,7 +82,7 @@
 |---|---|---|
 | W1 11-10~11-16 | canonical→MJCF 导出端 v0（body/joint/actuator/惯性/限位） | MuJoCo `mj_loadXML` 成功，0 warning |
 | W2 11-17~11-23 | preset 生成器、C8（canonical 驱动序 ↔ MJCF actuator 序双射）、与 `third_party/fanhao-microduck-replica` 的结构对比脚本 | 结构对比差异逐条有解释；C8 红黄绿可跑 |
-| W3 11-24~11-30 | MuJoCo 里 PD 保持 `defaultJointPositions` 站 10 s；`--report` 骨架 | **止损点**：站不住就停下来修 canonical/exporter，不进入 C++ |
+| W3 11-24~11-30 | **PD 跟踪 + 物理链路验证**（两跑法，见 §9 W3）+ `--report` 落地 | **止损点**（2026-11-10 改定）：原判据「PD 保持零位站 10 s」已实测不可达，站立并入 W5 有策略时验 |
 | W4 12-01~12-07 | blob 格式定版；C++ 核骨架（arena/ABI/loader）+ 8 节点；numpy oracle 起步 | 8 节点与 numpy 逐点误差 ≤1e-6 |
 | W5 12-08~12-14 | 27 节点全量 + ORT `create/prepare/run`；一份现成 ONNX 在 native MuJoCo 里跑 30 s | 不炸；action 与 numpy 参考一致；曲线能看 |
 | W6 12-15~12-21 | Python DSL 编译器（声明→图）+ manifest 读取 + 图校验器（同源同一套 schema） | 一个真项目从 DSL 编到 blob 一条命令 |
@@ -217,3 +217,46 @@ body 与 joint 名单一致、actuator 顺序一致、关节轴与限位全部�
 **遗留 / 要拍板**
 
 - G1 与天工**要不要做成可驱动**？现在它们是「load-only」：几何与质量可信，控制参数空着。若要做，得先人判读 `motor_info.md` 的关节归类，再由训练侧给 `kp/kd`——不是写代码能解决的。
+
+### W3（2026-11-10）PD 跟踪 + 物理链路验证
+
+**判据改了**。原判据「PD 保持 `defaultJointPositions` 站 10 秒」在动工前被探针推翻：
+
+| kp | 终点 z | 直立度 | 关节最大偏差 |
+|---|---|---|---|
+| 0.55（canonical 现值） | -0.009 m | -0.18 | 0.309 rad |
+| 5 | -0.010 m | -0.15 | 0.041 rad |
+| 20 | -0.011 m | -0.14 | 0.010 rad |
+| 120 | -0.011 m | -0.14 | 0.002 rad |
+
+跟踪误差随 kp 单调收敛（actuator 映射没问题），但**终点姿态几乎不动，鸭子照样侧躺**：全零位形不是站姿，腿伸直、质心在支撑面外，而 PD 管不了自由基座的平衡。上游 `config_mjcf_walk.json` / `1910_m6.json` 里也没有任何 default/stand pose 可抄。庆喆 2026-11-10 定：**改成「链路验证 + 物理验证」两跑法**，站立并到 W5「一份真 ONNX 跑 30 s」里验。
+
+**交付**
+
+- `sim/README.md` + `sim/host/pd_hold.py`：宿主仿真的第一块。**物理在宿主（D9）**，C++ 核以后只接 `obs → action` 这一段。
+- `--report` 落地（D17 的最小字段）：`mjcf_digest` / `preset_digest` / `entity_digest` / `metrics` / `verdict`。
+
+**验收**
+
+```
+链路验证  --gravity off --target step --amp 0.2 --seconds 5
+  最大误差 0.1903 rad｜稳态 0.0031 rad（阈 0.005）
+  PASS  finite=True track=True contact=True obs=True geom=True
+
+物理验证  --gravity on --floor --target sine --amp 0.2 --seconds 10
+  最大误差 0.6204 rad｜稳态 0.3638 rad（只记录，不设阈）
+  接触比 0.98｜基座高度 终 -0.009 最低 -0.012 m
+  PASS  finite=True track=True contact=True obs=True geom=True
+```
+
+**三个发现**
+
+1. **导出端不生成场景**，MJCF 里没有地面 → 第一次跑鸭子直接自由落体到 z=-490。地面现在由宿主用 `MjSpec` 注入（`--floor`）；真正的场景文件还没定，留给 W4。
+2. **设备增益偏软**：`kp=0.55`、`kv=0` 在重力下跟踪 0.2 rad 正弦，稳态误差 0.36 rad。链路是通的（关重力后稳态 0.003 rad），所以这不是 bug，是「这条策略要的增益得由训练侧给」——和 D13 的结论一致。
+3. **`--report` 的 digest 链现在能闭合**：`entity → mjcf → preset` 三层都有 sha256，report 里各一行。这是 incident 链的起点。
+
+**遗留**
+
+- 观测语义还内联在 `pd_hold.py`（8 个槽里的 5 个 + `base_height`），W6 迁到 `contract/policy/manifest` 后才算有契约。
+- G1 / 天工仍是 `BLOCKED`（没有执行器参数），W3 只在鸭子上验收。
+- 站立/行走：等策略。

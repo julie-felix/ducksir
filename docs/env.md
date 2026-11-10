@@ -78,3 +78,8 @@ python3 tools/robot/compare_mjcf.py build/mjcf/duck-hd1910.xml \
 
 产物全部落 `build/`（gitignore）：`build/mjcf/<robot>.xml`、`build/meshes/<robot>/`、`build/preset/<robot>.preset.yaml`。
 **preset 是派生物，不手改**；它带 `generated.entity_sha256` 与 `generated.mjcf_sha256`，能追到是哪份实体、哪份导出。
+
+## 5. 仿真跑法
+
+宿主物理与报告在 `sim/`：[`sim/README.md`](../sim/README.md) 有两条现成命令（链路验证 / 物理验证）。
+依赖同上（`PYTHONPATH=$HOME/.local/share/ducksir/pylibs`），前置产物由 `tools/robot/mjcf_smoke.py` 生成。
