@@ -349,3 +349,40 @@ body 与 joint 名单一致、actuator 顺序一致、关节轴与限位全部�
 - `policy_manifest_digest` 还是空串——manifest 是 W6 的事（D12）。
 - 核里仍只有 8 个节点；计划的「27 节点」里剩下的是 `select` / `state_machine` / `phase_clock` / `delay` / `low_pass` 这类编排与时序节点，按需加（W6 做 DSL 时一起）。
 - wasm 端要另走 ORT Web（W7）。
+
+### W5b（2026-11-10）与 botlab 对齐模型 IO / 整个计算图 / 频率
+
+庆喆看回放提的问题：*「机器人看着都没有挣扎，感觉推理不太对，能不能跟 botlab 完全对齐模型输入输出、整个计算图、以及推理频率」*。
+先把「是不是推理错」用数字问清楚，再把缺口补上。
+
+**诊断：不是推理错，是这份策略本来就「不出力」**
+
+同一次 30 s 运行里的三个量：
+
+| 量 | 实测 | 说明 |
+|---|---|---|
+| `\|action\|` 均值 | 0.016 rad | 策略几乎不说话（`action = -q`，而 `q` 一直贴着 0） |
+| PD 误差 `\|ctrl - q\|` | 0.032 rad | 太小，推不动任何东西 |
+| 实际力矩 | 0.018 Nm | forcerange 是 ±0.96 Nm，**只用了 2%** |
+
+为了排除「action 根本没到关节」这一可能，用一份**常值目标 0.3 rad** 的策略跑 5 s：关节末态均值 **+0.294 rad**（目标 0.300）。
+所以 `obs → 图 → ONNX → action → ctrl → 关节` 这一段是通的；鸭子「不挣扎」是因为策略输出接近零，不是因为链断了。
+
+**补上的对齐**（这才是这次真正做的事）
+
+1. **`contract/policy/` 落地**（D12）：manifest 定 obs 槽顺序与缩放、history 布局、动作映射与夹取、三个频率。
+   图**从 manifest 长出来**，不再写死在脚本里；manifest 与模型/preset 对不上就红着退出。
+2. **夹取范围改成 `ctrlrange`**（原来是我自己编的 ±0.5 rad）。botlab 夹的就是执行器 ctrlrange（鸭子是 ±10），
+   这是之前一处实打实的不一致。
+3. **`history` 支持**：manifest 里 `length > 0` 就自动挂 `history` 节点，`layout` 只接受 `by-frame`（botlab 要求显式声明，选错不报错）。
+4. **频率显式化并核对**：`rates: {control_hz: 50, physics_hz: 200, inference_decimation: 1}`，
+   实测 `inference_hz == 50.0`（1500 帧 / 30 s，推理 1500 次），报告里带 `rates_match` 判据。
+5. **报告补 `policy_manifest_digest`**：digest 链现在是 `entity → mjcf → preset → manifest → model → plan` 六层。
+
+**和 botlab 仍然没对齐的**
+
+- 它的 `proc-policy-input` 是「按策略装箱观测」的节点，我们现在是 `concat` 直接拼（等价，但没有「多策略共用一套 obs」的装箱概念）。
+- `state_machine` / `mode_select` / `phase_clock` / `delay` / `low_pass` 这些编排与时序节点还没做（W6）。
+- 它的 `control_decimation` 是 policy 每 N 个控制步推一次；我们现在 `inference_decimation` 实现了同样的节流，但还没验证过 N>1 的行为。
+
+**结论**：链是对的，缺的是「一份真策略」。合成策略换成训练产物之前，任何「挣扎/不挣扎」都只是那份策略的脾气。

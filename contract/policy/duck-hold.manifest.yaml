@@ -1,0 +1,25 @@
+# 合成测试策略的清单：用来打通「obs → 图 → ONNX → 动作」这条链，不代表运控能力。
+# 生成方式见 sim/plan/make_test_policy.py；换成真策略时照这份结构填新的。
+kind: ducksir-policy-manifest
+version: 1
+policy_id: duck-hold
+
+model:
+  file: build/models/duck-hold.onnx
+  input: {name: obs, shape: [1, 34]}
+  output: {name: action, shape: [1, 14]}
+
+obs:
+  - {slot: base_ang_vel, len: 3, frame: body, scale: 1.0}
+  - {slot: projected_gravity, len: 3, scale: 1.0}
+  - {slot: joint_pos, len: 14, source: qpos, scale: 1.0}
+  - {slot: joint_vel, len: 14, source: qvel, scale: 1.0}
+
+history: {length: 0, layout: by-frame}
+
+action:
+  mapping: default_plus_scale
+  order: motor
+  clip: ctrlrange
+
+rates: {control_hz: 50, physics_hz: 200, inference_decimation: 1}

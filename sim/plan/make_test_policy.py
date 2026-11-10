@@ -36,10 +36,16 @@ OBS_DIM = 34
 N_JOINTS = 14
 
 
-def build(gain: float = 1.0) -> onnx.ModelProto:
+def build(gain: float = 1.0, mode: str = "hold", value: float = 0.0) -> onnx.ModelProto:
+    """mode=hold: action = -gain*q（把关节往零位拉）；mode=constant: action = value（常值目标）。"""
     w = np.zeros((OBS_DIM, N_JOINTS), dtype=np.float32)
-    w[OBS_JOINT_POS[0]:OBS_JOINT_POS[1], :] = -gain * np.eye(N_JOINTS, dtype=np.float32)
     b = np.zeros((N_JOINTS,), dtype=np.float32)
+    if mode == "hold":
+        w[OBS_JOINT_POS[0]:OBS_JOINT_POS[1], :] = -gain * np.eye(N_JOINTS, dtype=np.float32)
+    elif mode == "constant":
+        b[:] = value
+    else:
+        raise SystemExit(f"未知 mode: {mode}")
 
     nodes = [
         helper.make_node("MatMul", ["obs", "W"], ["mul"]),
@@ -63,11 +69,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("-o", "--output", required=True)
     ap.add_argument("--gain", type=float, default=1.0)
+    ap.add_argument("--mode", default="hold", choices=["hold", "constant"])
+    ap.add_argument("--value", type=float, default=0.0, help="mode=constant 时的目标（rad）")
     args = ap.parse_args()
     os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
-    model = build(args.gain)
+    model = build(args.gain, args.mode, args.value)
     onnx.save(model, args.output)
-    print(f"写入 {args.output}（obs {OBS_DIM} → action {N_JOINTS}，合成测试策略）")
+    print(f"写入 {args.output}（obs {OBS_DIM} → action {N_JOINTS}，mode={args.mode}）")
     return 0
 
 
