@@ -10,6 +10,14 @@ import { OrbitControls } from '/static/vendor/three/controls/OrbitControls.js';
 import { GLTFLoader } from '/static/vendor/three/loaders/GLTFLoader.js';
 
 const $ = (id) => document.getElementById(id);
+
+// 两种打开方式，端点前缀和静态资源前缀都不同：
+//   1) 面板里：页面来自 /ducksir-static/…，实时数据走插件代理 /ducksir-live/…
+//   2) `ducksir run` 直接打开：页面由 runner 的显示服务提供，端点在根路径
+const IN_PANEL = location.pathname.startsWith('/ducksir-static/');
+const API = IN_PANEL ? '/ducksir-live' : '';
+const ASSET = IN_PANEL ? '/ducksir-static/client/viewer' : '/static';
+const assets = (rel) => `${ASSET}/${rel.replace(/^\.\//, '')}`;
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
@@ -46,7 +54,7 @@ addEventListener('resize', resize);
 
 // ── 3D ────────────────────────────────────────────────────
 async function buildRobot() {
-  const data = await (await fetch('/static/data/duck-hd1910.json')).json();
+  const data = await (await fetch(assets('data/duck-hd1910.json'))).json();
   const loader = new GLTFLoader();
   await Promise.all(data.links.flatMap((link) => (link.geoms || []).map(async (g) => {
     let group = groups.get(link.name);
@@ -55,7 +63,7 @@ async function buildRobot() {
       robotGroup.add(group);
       groups.set(link.name, group);
     }
-    const url = g.mesh.replace('../../assets/', '/static/assets/').replace('../assets/', '/static/assets/');
+    const url = assets(g.mesh.replace('../../assets/', 'assets/').replace('../assets/', 'assets/'));
     const gltf = await loader.loadAsync(url);
     const inst = gltf.scene.clone(true);
     inst.position.fromArray(g.xyz);
@@ -111,9 +119,7 @@ function updateMetrics(s) {
 }
 
 async function loadDiag() {
-  const sc = await (await fetch('/scene')).json();
-  $('project-name').textContent = sc.project || '项目';
-  $('policy-name').textContent = sc.policy || '策略';
+  const sc = await (await fetch(`${API}/scene`)).json();
   $('diag').innerHTML = [
     ['项目', sc.project || '—'],
     ['策略', sc.policy || '—'],
@@ -133,7 +139,7 @@ function wireParams() {
     $('yaw-v').textContent = `${Number(yw.value).toFixed(2)} rad/s`;
     clearTimeout(timer);
     timer = setTimeout(() => {
-      fetch(`/command?forward=${fw.value}&yaw=${yw.value}`).catch(() => {});
+      fetch(`${API}/command?forward=${fw.value}&yaw=${yw.value}`).catch(() => {});
     }, 60);
   };
   fw.addEventListener('input', push);
@@ -150,7 +156,7 @@ function wireParams() {
 // ── 文件树（只读）─────────────────────────────────────────
 async function wireFiles() {
   const box = $('files');
-  const listing = await (await fetch('/files')).json();
+  const listing = await (await fetch(`${API}/files`)).json();
   const code = $('code'), view = $('view');
   box.querySelectorAll('button').forEach((b) => b.remove());
   for (const rel of listing.files || []) {
@@ -160,7 +166,7 @@ async function wireFiles() {
     btn.onclick = async () => {
       box.querySelectorAll('button').forEach((b) => b.classList.remove('on'));
       btn.classList.add('on');
-      const res = await fetch('/file?path=' + encodeURIComponent(rel));
+      const res = await fetch(`${API}/file?path=` + encodeURIComponent(rel));
       const text = await res.text();
       code.textContent = text;
       code.classList.add('on');
@@ -196,19 +202,59 @@ function wireTabs() {
   });
 }
 
+// ── 启动 / 停止（面板里用插件代理；直开时调 runner 自己的根路径）──
+async function refreshConn() {
+  try {
+    const st = await (await fetch(`${API}/status`)).json();
+    $('conn').textContent = st.running ? `运行中 :${st.port}` : '未运行';
+    $('conn').className = 'pill ' + (st.running ? 'ok' : '');
+    return st.running;
+  } catch {
+    $('conn').textContent = '连不上服务';
+    return false;
+  }
+}
+
+function wireRunControls() {
+  $('btn-start').onclick = async () => {
+    const project = $('project-path').value.trim() || 'sim/test/fixtures/project_demo.py';
+    $('conn').textContent = '启动中…';
+    const res = await fetch(`${API}/start`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ project, seconds: 600 }),
+    });
+    const out = await res.json();
+    if (!out.ok) { $('conn').textContent = '启动失败：' + (out.error || ''); return; }
+    await refreshConn();
+    startStream();
+  };
+  $('btn-stop').onclick = async () => {
+    await fetch(`${API}/stop`, { method: 'POST' });
+    await refreshConn();
+  };
+}
+
+let streamSrc = null;
+function startStream() {
+  if (streamSrc) streamSrc.close();
+  streamSrc = new EventSource(`${API}/stream`);
+  streamSrc.onmessage = (ev) => { try { applyFrame(JSON.parse(ev.data)); } catch (e) { console.warn(e); } };
+  streamSrc.onerror = () => { $('conn').textContent = '断开了'; };
+}
+
 async function main() {
   wireTabs();
   wireParams();
+  wireRunControls();
   try {
-    const sc = await (await fetch('/scene')).json();
+    const running = await refreshConn();
+    const sc = await (await fetch(`${API}/scene`)).json();
     (sc.bodies || []).forEach((n, i) => bodyIndex.set(n, i));
     await buildRobot();
     await wireFiles();
     await loadDiag();
     loop();
-    const es = new EventSource('/stream');
-    es.onmessage = (ev) => { try { applyFrame(JSON.parse(ev.data)); } catch (e) { console.warn(e); } };
-    es.onerror = () => { $('conn').textContent = '断开了'; };
+    if (running) startStream();
   } catch (e) {
     $('conn').textContent = '连不上服务：' + (e?.message || e);
   }

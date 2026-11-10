@@ -195,7 +195,8 @@ from ducksir import Project
 project = (Project("duck-hd1910").policy("walking").command(forward=0.25).rates(control_hz=50, physics_hz=200))
 ```
 
-显示：`run` 默认起本机显示服务（SSE，只绑 127.0.0.1）并打开 `follow.html` 实时跟随；
+面板里也能用：工具栏「工作台」页签 → 填项目路径 → 点「启动仿真」（插件会在空闲端口起进程并代理，
+所以手机走同源地址就能用）。显示：`run` 默认起本机显示服务（SSE，只绑 127.0.0.1）并打开 `follow.html` 实时跟随；
 `--no-open` 只起服务不开浏览器、`--no-browser` 全关。`--pace realtime|max|auto` 控制节拍。
 冒烟：`bash sim/test/test_cli.sh`。
 

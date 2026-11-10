@@ -82,10 +82,17 @@
 <div id="app">
   <div id="top">
     <span class="name">ducksir</span><span class="dot"></span>
-    <span id="project-name" class="pill">项目</span>
-    <span id="policy-name" class="pill">策略</span>
+    <input id="project-path" value="sim/test/fixtures/project_demo.py" spellcheck="false"
+           style="background:#0e151d;border:1px solid var(--line2);color:var(--ink);border-radius:8px;
+                  padding:4px 8px;font:inherit;font-size:12px;width:min(42vw,320px)" />
+    <button id="btn-start" type="button"
+            style="background:#1b6e3f;border:1px solid #2f8f57;color:#e8fff1;border-radius:8px;
+                   padding:4px 12px;font:inherit;cursor:pointer">启动仿真</button>
+    <button id="btn-stop" type="button"
+            style="background:#2a1b1b;border:1px solid #7a3b3b;color:#ffd9d9;border-radius:8px;
+                   padding:4px 12px;font:inherit;cursor:pointer">停止</button>
     <span class="grow"></span>
-    <span id="conn" class="pill">连显示服务…</span>
+    <span id="conn" class="pill">未连接</span>
   </div>
 
   <div id="files">
@@ -137,9 +144,22 @@
     <button data-rail="diag">诊断</button>
   </div>
 </div>
-<script type="importmap">
-{ "imports": { "three": "/static/vendor/three/three.module.js", "three/addons/": "/static/vendor/three/" } }
+<script>
+  // 同一份页面在两处跑：面板（/ducksir-static/…）与 runner 直开（/）
+  (function () {
+    var inPanel = location.pathname.indexOf('/ducksir-static/') === 0;
+    var base = inPanel ? '/ducksir-static/client/viewer/' : '/static/';
+    var map = document.createElement('script');
+    map.type = 'importmap';
+    map.textContent = JSON.stringify({
+      imports: { three: base + 'vendor/three/three.module.js', 'three/addons/': base + 'vendor/three/' }
+    });
+    document.head.appendChild(map);
+    var mod = document.createElement('script');
+    mod.type = 'module';
+    mod.src = base + 'studio.js';
+    document.head.appendChild(mod);
+  })();
 </script>
-<script type="module" src="/static/studio.js"></script>
 </body>
 </html>
