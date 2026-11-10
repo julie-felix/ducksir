@@ -78,6 +78,22 @@ def plan_rich() -> dict:
     return p.to_json()
 
 
+def plan_orchestration() -> dict:
+    """编排节点：constant / select / where / phase_clock。"""
+    p = ir.Plan(input_dim=6, output_dim=5, name="orch")
+    a = p.obs(0, 4)
+    mode = p.obs(4, 1)
+    cond = p.obs(5, 1)
+    steps = p.obs(5, 1)
+    const1 = p.constant([1.0, 2.0, 3.0, 4.0])
+    sel = p.select(mode, {0.0: a, 1.0: const1, 2.0: a})
+    wh = p.where(cond, sel, const1)
+    ph = p.phase_clock(steps, 8)
+    out = p.concat(wh, ph)
+    p.out_action(out)
+    return p.to_json()
+
+
 def run_c(lib, doc, obs_seq):
     blob = ir.compile_blob(doc)
     err = ctypes.create_string_buffer(256)
@@ -113,7 +129,13 @@ def run_oracle(doc, obs_seq):
 
 def compare(name, lib, doc, steps=40, seed=0):
     rng = np.random.default_rng(seed)
-    obs_seq = [rng.uniform(-2, 2, doc["input_dim"]).astype(np.float32) for _ in range(steps)]
+    obs_seq = []
+    for k in range(steps):
+        v = rng.uniform(-2, 2, doc["input_dim"]).astype(np.float32)
+        if doc["name"] == "orch":
+            v[4] = float(k % 3)          # mode 走 0/1/2，让 select 的两个分支都命中
+            v[5] = float(k % 2)          # cond 走 0/1
+        obs_seq.append(v)
     c_outs, info = run_c(lib, doc, obs_seq)
     o_outs = run_oracle(doc, obs_seq)
     worst = 0.0
@@ -151,6 +173,7 @@ def main() -> int:
     print("对拍：")
     oks.append(compare("simple", lib, plan_simple())[0])
     oks.append(compare("rich", lib, plan_rich())[0])
+    oks.append(compare("orch", lib, plan_orchestration())[0])
 
     print("\n拒绝路径：")
     rich = plan_rich()

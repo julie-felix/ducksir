@@ -34,6 +34,11 @@ enum ds_node_type {
     DS_NODE_HISTORY = 6,
     DS_NODE_MODEL = 7,
     DS_NODE_OUT_ACTION = 8,
+    DS_NODE_CONSTANT = 9,
+    DS_NODE_SELECT = 10,
+    DS_NODE_WHERE = 11,
+    DS_NODE_PHASE_CLOCK = 12,
+    DS_NODE_ADD = 13,
 };
 
 /* 节点 flag */
@@ -92,6 +97,8 @@ uint16_t ds_abi_version(void);
  * 一个实例绑一份模型；多模型就建多个。失败返回 NULL 并把原因写进 err。
  */
 ds_backend* ds_ort_create(const char* model_path, char* err, size_t err_len);
+/* 一份后端挂多份模型：plan 里 `model` 节点的 model_id 就是这里的下标（多策略编排用）。 */
+ds_backend* ds_ort_create_multi(const char* const* paths, int count, char* err, size_t err_len);
 void ds_ort_destroy(ds_backend* backend);
 int64_t ds_ort_input_len(const ds_backend* backend);
 int64_t ds_ort_output_len(const ds_backend* backend);

@@ -88,7 +88,7 @@ uint64_t fnv1a64(const uint8_t* data, size_t len) {
     return h;
 }
 
-bool known_type(uint16_t t) { return t >= DS_NODE_OBS && t <= DS_NODE_OUT_ACTION; }
+bool known_type(uint16_t t) { return t >= DS_NODE_OBS && t <= DS_NODE_ADD; }
 
 void set_err(char* err, size_t err_len, const char* msg) {
     if (!err || err_len == 0) return;
@@ -447,6 +447,65 @@ int ds_step(ds_plan* p, const float* obs, float* action, const ds_backend* backe
                                                  static_cast<int>(n.in[0].len), out,
                                                  static_cast<int>(n.out_len));
                 if (rc != 0) return DS_ERR_GRAPH;
+                break;
+            }
+            case DS_NODE_CONSTANT: {
+                if (n.param_len < n.out_len) return DS_ERR_BAD_BLOB;
+                if (n.n_in != 0) return DS_ERR_GRAPH;
+                std::memcpy(out, prm, sizeof(float) * n.out_len);
+                break;
+            }
+            case DS_NODE_SELECT: {
+                if (n.n_in < 2 || n.param_len < 2) return DS_ERR_BAD_BLOB;
+                const int n_choices = n.n_in - 1;
+                const int width = static_cast<int>(prm[n_choices]);
+                const int passive = static_cast<int>(prm[n_choices + 1]);
+                if (width != static_cast<int>(n.out_len)) return DS_ERR_GRAPH;
+                const float mode_val = in0[0];
+                const float* picked = nullptr;
+                for (int k = 0; k < n_choices; ++k) {
+                    if (prm[k] == mode_val) {
+                        picked = p->arena + n.in[1 + k].off;
+                        break;
+                    }
+                }
+                if (!picked) {
+                    if (passive >= 0 && passive < n_choices) {
+                        picked = p->arena + n.in[1 + passive].off;
+                    } else {
+                        std::memset(out, 0, sizeof(float) * n.out_len);
+                        break;
+                    }
+                }
+                std::memcpy(out, picked, sizeof(float) * n.out_len);
+                break;
+            }
+            case DS_NODE_WHERE: {
+                if (n.n_in != 3) return DS_ERR_GRAPH;
+                const float* cond = p->arena + n.in[0].off;
+                const float* a = p->arena + n.in[1].off;
+                const float* b = p->arena + n.in[2].off;
+                const float* src = cond[0] != 0.0f ? a : b;
+                std::memcpy(out, src, sizeof(float) * n.out_len);
+                break;
+            }
+            case DS_NODE_PHASE_CLOCK: {
+                if (n.param_len < 1 || n.n_in != 1) return DS_ERR_GRAPH;
+                const float period = prm[0];
+                if (period < 1.0f) return DS_ERR_BAD_BLOB;
+                const float steps = in0[0];
+                // 与 Python 的 `steps % period` 对齐：结果始终落在 [0,1)，负数步数也不出负相位
+                float phase = std::fmod(steps, period);
+                if (phase < 0.0f) phase += period;
+                out[0] = phase / period;
+                break;
+            }
+            case DS_NODE_ADD: {
+                for (uint16_t j = 0; j < n.out_len; ++j) out[j] = 0.0f;
+                for (uint8_t k = 0; k < n.n_in; ++k) {
+                    const float* src = p->arena + n.in[k].off;
+                    for (uint16_t j = 0; j < n.out_len; ++j) out[j] += src[j];
+                }
                 break;
             }
             case DS_NODE_OUT_ACTION: {

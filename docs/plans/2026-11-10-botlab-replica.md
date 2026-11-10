@@ -423,3 +423,31 @@ body 与 joint 名单一致、actuator 顺序一致、关节轴与限位全部�
 （8 s 2.08 m），0.6 反而走 6.7 m——链路是通的，但「UI 的 m/s」和「策略吃到的数值」之间差一个系数或标定，
 而 botlab 的 `commands()` 代码里没有任何缩放，所以这一层要么在它的运行时里，要么在训练配置里。
 **不猜**：先按 `--vx 0.5` 出片，把它记成待查项（下一步去 HF Space 的源码里找）。
+
+### W6（2026-11-10）编排节点 + 多策略 policy_bank
+
+botlab 的 MicroDuck 编排用的是 `state_machine + mode_select + policy_bank + phase_clock + where + constant`。
+先把**节点**补齐，多策略跑通：
+
+**新增 5 个节点**（C 核 + numpy oracle 双实现，对拍仍是 0.000e+00）
+
+| id | 节点 | 用途 |
+|---|---|---|
+| 9 | `constant` | 常值向量（模式号、被动指令） |
+| 10 | `select` | 按 mode 选一路（≤3 路，多了折叠）；不匹配输出全零或 passive 那一路 |
+| 11 | `where` | `cond ? a : b`，两边都算不短路 |
+| 12 | `phase_clock` | 步数 → [0,1) 相位（ground_pick 用） |
+| 13 | `add` | 逐元素相加，分块 select 后消零用 |
+
+**多策略 policy_bank 跑通**：`contract/policy/duck-multipolicy.manifest.yaml` 把 botlab 的 **7 份 ONNX**
+挂在同一个后端上（`ds_ort_create_multi`，`model` 节点的 `model_id` 就是下标），同一份 61 维观测喂进去，
+`select` 按 mode 选一路。对应它的 `policy_bank(mode, inputs={...})`。
+
+**验收**
+
+- 多策略 mode=0 与单模型 walking 的 action **逐步完全相同**（同一张图、同一份 obs，5 步差 0.00e+00）。
+- mode=1 换成 sitstand，行为明显不同（直立度 0.884 vs 0.032），回放有两条片源。
+- `--mode` 现在是常量节点；**动态切换要等 `state_machine`（下一步）**。
+
+**踩到的一个坑**：ORT 多模型后端里把槽拷回基座 ctx，析构时同一个 session 被释放两次 → `free(): invalid pointer`。
+改成持槽指针、不拷贝。凡是「共享 env/opts、独立 session」的结构，析构必须只释放一次。

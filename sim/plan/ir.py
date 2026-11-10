@@ -43,6 +43,11 @@ NODE_TYPES = {
     "history": (6, 1),
     "model": (7, 1),
     "out_action": (8, 1),
+    "constant": (9, 1),
+    "select": (10, 1),
+    "where": (11, 1),
+    "phase_clock": (12, 1),
+    "add": (13, 1),
 }
 TYPE_BY_ID = {tid: name for name, (tid, _) in NODE_TYPES.items()}
 NODE_VERSION = {name: ver for name, (_, ver) in NODE_TYPES.items()}
@@ -155,6 +160,55 @@ class Plan:
         if pass_through and out_len != ref.length:
             raise ValueError("pass_through 要求 out_len == 输入长度")
         return self._add("model", [ref], out_len, [float(model_id)], flags)
+
+    def constant(self, values) -> NodeRef:
+        """常值向量：botlab 的 `constant(0, size=10)`。"""
+        vals = [float(v) for v in values]
+        return self._add("constant", [], len(vals), vals)
+
+    def select(self, mode: NodeRef, choices: dict, passive: int = -1,
+               default_width: int | None = None) -> NodeRef:
+        """按 mode 选一路：`choices={mode值: ref}`，最多 3 路（核里 concat/select 都受 4 输入限制，
+        更多路要自己折）。mode 不匹配时输出全零（passive=-1）或指定那一路（passive=下标）。"""
+        if len(choices) > 3:
+            raise ValueError("select 一次最多 3 路，更多请先折叠")
+        refs = list(choices.values())
+        width = refs[0].length if refs else (default_width or mode.length)
+        for r in refs:
+            if r.length != width:
+                raise ValueError("select 的几路宽度必须一致")
+        if passive is not None and passive >= 0 and passive >= len(refs):
+            raise ValueError("passive 下标越界")
+        params = [float(k) for k in choices.keys()]
+        params.append(float(width))
+        params.append(float(-1 if passive is None else passive))
+        return self._add("select", [mode] + refs, width, params)
+
+    def where(self, cond: NodeRef, a: NodeRef, b: NodeRef) -> NodeRef:
+        """cond 为真取 a，否则取 b（两边都会算，不做短路）。"""
+        if cond.length != 1:
+            raise ValueError("where 的条件必须是 1 维")
+        if a.length != b.length:
+            raise ValueError("where 的两路宽度必须一致")
+        return self._add("where", [cond, a, b], a.length, [])
+
+    def phase_clock(self, steps: NodeRef, period_steps: int) -> NodeRef:
+        """把步数折成 [0,1) 的相位：botlab 的 `phase_clock(machine.steps, period_steps=...)`。"""
+        if steps.length != 1:
+            raise ValueError("phase_clock 的输入必须是 1 维步数")
+        if period_steps < 1:
+            raise ValueError("period_steps 至少 1")
+        return self._add("phase_clock", [steps], 1, [float(period_steps)])
+
+    def add(self, *refs: NodeRef) -> NodeRef:
+        """逐元素相加（最多 4 路）。多策略分块选择后用它对消——没命中的那几路输出全零。"""
+        if not refs:
+            raise ValueError("add 至少要一个输入")
+        width = refs[0].length
+        for r in refs:
+            if r.length != width:
+                raise ValueError("add 各路宽度必须一致")
+        return self._add("add", list(refs), width, [])
 
     def out_action(self, ref: NodeRef) -> NodeRef:
         if any(n["name"] == "out_action" for n in self.nodes):

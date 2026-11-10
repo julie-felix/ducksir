@@ -1,8 +1,13 @@
 {
   "clips": [
     {
-      "label": "真策略：botlab walking.onnx · 原地站/走（30 s）",
+      "label": "多策略 mode=0 walk（botlab 7 个 ONNX 编排）",
       "file": "replay-duck-walk.json",
+      "robot": "duck-hd1910"
+    },
+    {
+      "label": "多策略 mode=1 sitstand（同一张图换 mode）",
+      "file": "replay-duck-sit.json",
       "robot": "duck-hd1910"
     },
     {

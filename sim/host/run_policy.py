@@ -61,6 +61,9 @@ def load_libs():
     ort = ctypes.CDLL(LIB_ORT)
     ort.ds_ort_create.restype = ctypes.c_void_p
     ort.ds_ort_create.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_size_t]
+    ort.ds_ort_create_multi.restype = ctypes.c_void_p
+    ort.ds_ort_create_multi.argtypes = [ctypes.POINTER(ctypes.c_char_p), ctypes.c_int,
+                                        ctypes.c_char_p, ctypes.c_size_t]
     ort.ds_ort_destroy.argtypes = [ctypes.c_void_p]
     ort.ds_ort_input_len.restype = ctypes.c_int64
     ort.ds_ort_output_len.restype = ctypes.c_int64
@@ -72,6 +75,10 @@ def check_manifest(man: dict, preset: dict, n_joints: int) -> None:
     errs = []
     in_shape = man["model"]["input"]["shape"]
     out_shape = man["model"]["output"]["shape"]
+    if man.get("policies"):
+        for pol in man["policies"]:
+            if not os.path.exists(os.path.join(ROOT, pol["file"])):
+                errs.append(f"策略文件不存在：{pol['file']}")
     total = sum(o["len"] for o in man["obs"])
     if in_shape[-1] != total:
         errs.append(f"obs 总长 {total} != 模型输入 {in_shape[-1]}")
@@ -92,6 +99,41 @@ def check_manifest(man: dict, preset: dict, n_joints: int) -> None:
         errs.append("motorJointOrder 不是 0..n-1 的置换")
     if errs:
         raise SystemExit("manifest 校验失败：\n  " + "\n  ".join(errs))
+
+
+def build_multi_plan(man: dict, preset: dict, n_joints: int, ctrl_lo, ctrl_hi, mode: int) -> dict:
+    """多策略：同一份 obs 喂给 N 个 model 节点，按 mode 选一路（分块 select 后相加消掉全零的那几块）。"""
+    total = sum(o["len"] for o in man["obs"])
+    p = ir.Plan(input_dim=total, output_dim=n_joints, name=man["policy_id"])
+    sl, off = [], 0
+    for o in man["obs"]:
+        sl.append(p.obs(off, o["len"]))
+        off += o["len"]
+
+    def concat_all(refs):
+        level = list(refs)
+        while len(level) > 4:
+            nxt = []
+            for i in range(0, len(level), 4):
+                chunk = level[i:i + 4]
+                nxt.append(chunk[0] if len(chunk) == 1 else p.concat(*chunk))
+            level = nxt
+        return p.concat(*level) if len(level) > 1 else level[0]
+
+    obs = concat_all(sl)
+    mode_sig = p.constant([float(mode)])
+    pols = man["policies"]
+    outs = [p.model(obs, out_len=n_joints, model_id=i) for i in range(len(pols))]
+    chunks = []
+    for i in range(0, len(pols), 3):
+        part = pols[i:i + 3]
+        choices = {float(pol["mode"]): outs[i + k] for k, pol in enumerate(part)}
+        chunks.append(p.select(mode_sig, choices, passive=-1))
+    mixed = chunks[0] if len(chunks) == 1 else p.add(*chunks[:4])
+    s = p.affine(mixed, preset["actionScale"], preset["defaultJointPositions"])
+    k = p.clip(s, ctrl_lo, ctrl_hi)
+    p.out_action(k)
+    return p.to_json()
 
 
 def build_plan(man: dict, preset: dict, n_joints: int, ctrl_lo, ctrl_hi) -> dict:
@@ -155,6 +197,7 @@ def main() -> int:
     ap.add_argument("--seconds", type=float, default=30.0)
     ap.add_argument("--start-height", type=float, default=0.25)
     ap.add_argument("--clip-rad", type=float, help="覆盖 manifest 的 ctrlrange 夹取（调试用）")
+    ap.add_argument("--mode", type=int, help="多策略模式下选哪一路（0=walk 1=sitstand 2=kick_l 3=kick_r 4=roll 5=ground_pick 6=stand）")
     ap.add_argument("--vx", type=float, help="覆盖 manifest 里 command 的第 0 维（前进速度 m/s）")
     ap.add_argument("--vy", type=float, help="覆盖第 1 维（横向 m/s）")
     ap.add_argument("--yaw", type=float, help="覆盖第 2 维（转向 rad/s）")
@@ -183,7 +226,12 @@ def main() -> int:
     if args.clip_rad is not None:
         lo, hi = [-args.clip_rad] * n, [args.clip_rad] * n
 
-    plan = build_plan(man, preset, n, lo, hi)
+    multi = bool(man.get("policies"))
+    mode = int(args.mode if args.mode is not None else man.get("mode", 0))
+    if multi:
+        plan = build_multi_plan(man, preset, n, lo, hi, mode)
+    else:
+        plan = build_plan(man, preset, n, lo, hi)
     blob = ir.compile_blob(plan)
 
     rates = man["rates"]
@@ -193,10 +241,20 @@ def main() -> int:
 
     core, ort = load_libs()
     err = ctypes.create_string_buffer(512)
-    model_path = os.path.join(ROOT, man["model"]["file"])
-    be = ort.ds_ort_create(model_path.encode(), err, 512)
-    if not be:
-        raise SystemExit("ORT 后端创建失败：" + err.value.decode())
+    if multi:
+        paths = [os.path.join(ROOT, pol["file"]) for pol in man["policies"]]
+        arr = (ctypes.c_char_p * len(paths))(*[p.encode() for p in paths])
+        be = ort.ds_ort_create_multi(arr, len(paths), err, 512)
+        if not be:
+            raise SystemExit("ORT 多模型后端创建失败：" + err.value.decode())
+        model_path = paths[mode] if 0 <= mode < len(paths) else paths[0]
+        model_digest = ",".join(sha256(p)[:12] for p in paths)
+    else:
+        model_path = os.path.join(ROOT, man["model"]["file"])
+        be = ort.ds_ort_create(model_path.encode(), err, 512)
+        if not be:
+            raise SystemExit("ORT 后端创建失败：" + err.value.decode())
+        model_digest = sha256(model_path)
     obs_dim = sum(o["len"] for o in man["obs"])
     if ort.ds_ort_input_len(be) != obs_dim or ort.ds_ort_output_len(be) != n:
         raise SystemExit(
@@ -353,7 +411,8 @@ def main() -> int:
         "policy_manifest_digest": sha256(args.manifest),
         "policy_id": man["policy_id"],
         "mjcf_digest": sha256(args.mjcf) if os.path.exists(args.mjcf) else "",
-        "model_digest": sha256(model_path),
+        "model_digest": model_digest,
+        "policy_mode": mode if multi else None,
         "entity_digest": preset["generated"]["entity_sha256"],
         "rates": rates,
         "nodes": info.node_count,
@@ -362,6 +421,8 @@ def main() -> int:
         "verdict": verdict,
     }
 
+    if multi:
+        print(f"  多策略 mode={mode}（{man['policies'][mode]['key'] if mode < len(man['policies']) else '?'}）")
     print(f"策略闭环 {args.seconds}s @ {control_hz:g}/{physics_hz:g} Hz · 推理 {infer_calls} 次"
           f"（{metrics['inference_hz']} Hz，decimation={infer_every}）· 图 {info.node_count} 节点")
     print(f"  帧数 {len(heights)}/{steps}｜墙钟 {wall:.2f}s（{metrics['rtf']}× 实时）")
