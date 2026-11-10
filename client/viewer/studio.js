@@ -6,8 +6,10 @@
 //   /files /file?path=   只读文件树与内容
 //   /command?forward=&yaw=   滑杆 → runner（下一步生效）
 import * as THREE from 'three';
-import { OrbitControls } from '/static/vendor/three/controls/OrbitControls.js';
-import { GLTFLoader } from '/static/vendor/three/loaders/GLTFLoader.js';
+// 相对路径：面板里相对 /ducksir-static/client/viewer/，直开时相对 /。绝对 /static/… 在面板里是 404，
+// 而 import 失败会让**整个 module 不执行**（整页只剩静态 HTML）。
+import { OrbitControls } from './vendor/three/controls/OrbitControls.js';
+import { GLTFLoader } from './vendor/three/loaders/GLTFLoader.js';
 
 const $ = (id) => document.getElementById(id);
 
