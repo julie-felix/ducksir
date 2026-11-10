@@ -8,7 +8,7 @@
 - [AGENTS.md](../AGENTS.md) — 给 agent 的仓库地图与工作约定。
 - [GLOSSARY.md](../GLOSSARY.md) — 术语表，含「别用这个词」和已解决的歧义。
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — 分支、提交、PR 规则。
-- [`docs/env.md`](env.md) — 本机 Python 依赖（`PYTHONPATH` 目录）、mesh 格式（MuJoCo 不认 glb）、冒烟怎么跑。
+- [`docs/env.md`](env.md) — 本机 Python 依赖（`PYTHONPATH` 目录）、mesh 格式（MuJoCo 不认 glb）、冒烟/preset/结构对比三条命令与产物位置。
 
 ## 流程与边界
 

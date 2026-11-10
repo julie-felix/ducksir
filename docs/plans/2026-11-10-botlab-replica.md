@@ -180,3 +180,40 @@ v0.1 补：`compare` / `logic`（`state_machine` 的 `when` 需要真值输入�
 
 - MJCF 产物暂时只写到 `build/mjcf/`（gitignore）。它以后的家（`sim/` 还是 `contract/robot/export/`）等 W4 建 `sim/` 时一起定。
 - 环境仍靠 `PYTHONPATH` 约定，没有锁文件。若以后上 CI，需要在 runner 上装 mujoco 才能跑冒烟。
+
+### W2（2026-11-10）preset 生成器 + C8 双射 + 与上游 MJCF 结构对比
+
+**交付**
+
+- `tools/robot/export_preset.py`（新）：canonical → botlab 形状的 `*.preset.yaml`，13 个字段。`jointQposOffset` / `jointQvelOffset` **从导出的 MJCF 实测**（有 mujoco 时读 `jnt_qposadr`/`jnt_dofadr`），其余从 canonical 的 `actuators` 派生；没有上游依据的四个字段写进 `assumptions`。
+- `tools/robot/compare_mjcf.py`（新）：两份 MJCF 的结构对比——规模、名字集合与顺序、同名关节的轴与限位、同名 body 的质量。
+- `check_entity.py` 加 **C8**：`actuators` 与 actuated 关节必须双射（无重复、无缺、无多），并打印 ctrl 序 ↔ 驱动序的置换。
+- `mjcf_smoke.py` 扩展：导出后顺便生成 preset，并核 `actionDimension == nu`、逐条 `actuatorJointOrder` 指向的关节、`jointQposOffset == jnt_qposadr`。状态分三档：`OK` / `BLOCKED`（canonical 没执行器参数）/ `DIFF`（真错）。
+
+**验收**
+
+```
+机型             load   body  jnt  act        质量(kg)  preset warn
+duck-hd1910    OK       16   15   14    0.73724318      OK    0
+g1-29dof       OK       40   30    0   33.34114202 BLOCKED    0
+tienkung-lite  OK       23   21    0   42.51599707 BLOCKED    0
+3/3 通过
+```
+
+鸭子与上游 `third_party/fanhao-microduck-replica/robot_walk.xml` 对比（`compare_mjcf.py`）：
+
+```
+body 16 / joint 15 / qpos 21 / dof 20 / actuator 14，质量都是 0.73724318 kg
+body 与 joint 名单一致、actuator 顺序一致、关节轴与限位全部一致、每 body 质量一致
+结论：结构一致
+```
+
+**三个发现**
+
+1. **我们的导出与上游 MJCF 结构完全一致**——说明前一段的导入（`importer_mjcf`）一个字段都没丢；这不是「看起来像」，是逐 body 质量、逐关节轴点积、逐限位比对出来的。
+2. **preset 有 4 个字段没有上游依据**：`defaultJointPositions`、`initialQpos`、`actionScale`、`imuExtrinsic`。上游 MJCF 没有 `keyframe`/`home`，标定也没有。所以它们一律以 `assumptions` 显式写在 preset 里（零位 / 原点+单位四元数 / 全 1 / 单位变换），**宁可写清假设，不冒充规格**。
+3. **G1 与天工的 `actuators` 为空**，preset 因此是 `BLOCKED`。而且它们的力矩上限只存在于 `third_party/unitree-g1/motor_info.md` 那张 5 行的**模式表**里（`shoulder.{roll,yaw}` 这种写法），映射到 29 个具体关节需要人判读，机器猜不起。
+
+**遗留 / 要拍板**
+
+- G1 与天工**要不要做成可驱动**？现在它们是「load-only」：几何与质量可信，控制参数空着。若要做，得先人判读 `motor_info.md` 的关节归类，再由训练侧给 `kp/kd`——不是写代码能解决的。
