@@ -37,11 +37,13 @@
   <div id="perf"></div>
 </div>
 <div id="keys">
-  <kbd>W</kbd>/<kbd>S</kbd> 前进 ±0.05 · <kbd>X</kbd> 坐/站 · <kbd>Z</kbd> 左脚踢 · <kbd>C</kbd> 右脚踢 ·
+  <kbd>W</kbd>/<kbd>S</kbd> 前进 ±0.05（上限 0.25）· <kbd>A</kbd>/<kbd>D</kbd> 转向 · <kbd>X</kbd> 坐/站 · <kbd>Z</kbd> 左脚踢 · <kbd>C</kbd> 右脚踢 ·
   <kbd>V</kbd> 翻滚 · <kbd>B</kbd> 地面拾取 · <kbd>R</kbd> 起身/复位
   <div id="pad">
+    <button id="btn-left" type="button">↰ 左转</button>
     <button id="btn-slow" type="button">− 慢</button>
     <button id="btn-fast" type="button">+ 快</button>
+    <button id="btn-right" type="button">↱ 右转</button>
     <button id="btn-reset" type="button">复位</button>
   </div>
 </div>
