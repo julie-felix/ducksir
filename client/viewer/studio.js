@@ -178,6 +178,8 @@ async function wireFiles() {
       const text = await res.text();
       code.textContent = text;
       code.classList.add('on');
+      code.scrollTop = 0;          // 换文件要回到顶部，别停在上一个文件的滚动位置
+      code.scrollLeft = 0;
       view.classList.add('off');
       setRail('code');
     };

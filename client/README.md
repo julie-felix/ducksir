@@ -107,3 +107,16 @@ client/lib/client.js   web：侧栏「机器人」入口 + main 面板（iframe 
 `contract/` 有内容之后，`ducksir_status` 应该从「数文件」升级成「核对契约」：
 关节表能不能对上、obs/action schema 版本是否一致、policy manifest 缺哪些字段。
 那才是真正的预检。
+
+## 面板里跑的前端：三条铁律
+
+都在 `viewer/` 下，被面板 iframe 直接加载（`/ducksir-static/client/viewer/*`），踩过一次就别再踩：
+
+1. **不允许绝对 `/static/` 引用**（`import`、`fetch`、`src` 都不行）。面板里那是 404，
+   而 **import 失败会让整个 module 不执行**——页面只剩静态 HTML，看起来像「按钮没反应」。
+   守卫：`node sim/test/test_play_page_ids.mjs`。
+2. **网格子项必须 `min-width: 0`**。默认 `min-width:auto` 会让长代码行 / 宽表格把中列顶宽，
+   整页出现横向滚动条。
+3. **宽内容自己滚**：`pre`、文件树、底部面板各自 `overflow:auto`，并加 `overscroll-behavior: contain`
+   防止滚到底传给外层。底部参数区要有**上界**（`max-height: min(46vh, 420px)`）+ 内部滚动，
+   否则参数一多就把整页顶出视口；滑杆要 `touch-action: none`，不然移动端拖滑杆会连带滚页面。
