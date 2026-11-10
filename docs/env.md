@@ -167,7 +167,12 @@ env -u https_proxy -u HTTPS_PROXY -u http_proxy -u HTTP_PROXY -u all_proxy -u AL
 ```bash
 bin/ducksir validate              # 实体 C1–C9 + manifest + 图编译 + MJCF load，一次查完
 bin/ducksir build                 # 产出 build/release/<时间戳>/：duck.xml + preset + blob + 模型 + contract.json + release.json
-bin/ducksir run sim/test/fixtures/project_demo.py --seconds 20   # 跑项目脚本（默认自动开浏览器实时跟随）
+# 编译（Python 只在这里出现）：
+bin/ducksir build --project sim/test/fixtures/project_demo.py --out build/release/demo
+# 运行（只吃产物）：
+bin/ducksir run build/release/demo --seconds 20 --vx 0.25
+bin/ducksir run build/release/demo --seconds 18 --fsm --pulses 3:1,8:1
+bin/ducksir run sim/test/fixtures/project_demo.py --seconds 20   # 兼容老路径（逐步淘汰）
 bin/ducksir run project.py --no-browser --report build/report/p.json
 bin/ducksir sim --seconds 20 --vx 0.25      # 单策略闭环（原 `run --policy`）
 bin/ducksir sim --fsm --pulses 3:1,8:1      # 14 状态机（原 `run --fsm`）

@@ -1,0 +1,291 @@
+#!/usr/bin/env python3
+"""跑一个 **bundle**（编译产物目录）——运行时不碰 Python 声明，只吃产物。
+
+    python3 sim/host/run_bundle.py --bundle build/release/test --seconds 20 --forward 0.25
+    python3 sim/host/run_bundle.py --bundle bundle/ --fsm --pulses 3:1,8:1 --report out.json
+
+bundle 里有什么（`export_artifacts.py` 产出）：
+- `contract.json`：计划的形状 + 具名槽位 + 策略清单 + 观测配方 + 频率 + 机器人元数据
+- `pre.blob` / `post.blob` / `fsm.blob`
+- `*.onnx`：各策略权重
+
+执行顺序（与浏览器那条链**逐项相同**）：
+1. `fsm.blob`（若有）：吃 [脉冲, 重力z, vx, wz] → 吐 [state, mode, command, clear]
+2. 观测按契约配方装配（`contract_obs`，与 `play-core.mjs` 同一套 source 语义）
+3. `pre.blob`（若有）→ 模型（按 mode 选会话）→ `post.blob` → ctrl
+4. 物理 4 子步，循环
+
+这条脚本存在的意义：把「宿主跑」从「跑 Python 声明」降级为「跑产物」，
+于是宿主与浏览器真的只是两个 target，而不是两套实现。
+"""
+
+from __future__ import annotations
+
+import argparse
+import ctypes
+import json
+import os
+import sys
+import time
+
+import numpy as np
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(HERE))
+sys.path.insert(0, os.path.join(ROOT, "sim", "plan"))
+sys.path.insert(0, os.path.join(ROOT, "sim", "host"))
+
+import contract as C  # noqa: E402
+import contract_obs as CO  # noqa: E402
+import panel as PANEL  # noqa: E402
+import ir  # noqa: E402
+from run_policy import Info, load_libs  # noqa: E402
+
+
+class Plan:
+    """一个已加载的 plan：句柄 + 契约里的形状与槽位。"""
+
+    def __init__(self, core, name: str, blob: bytes, entry: dict, err):
+        self.name = name
+        self.entry = entry
+        self.handle = core.ds_load(blob, len(blob), err, 512)
+        if not self.handle:
+            raise SystemExit(f"加载 {name} 失败：" + err.value.decode())
+        info = Info()
+        core.ds_info_of(self.handle, ctypes.byref(info))
+        if info.input_dim != entry["input_dim"] or info.output_dim != entry["output_dim"]:
+            raise SystemExit(
+                f"{name} 维度不符：blob {info.input_dim}→{info.output_dim}，"
+                f"契约 {entry['input_dim']}→{entry['output_dim']}")
+
+    def slot(self, name: str) -> tuple[int, int]:
+        s = (self.entry.get("slots") or {}).get(name)
+        if not s:
+            raise SystemExit(f"plan {self.name} 没有槽位 {name}")
+        return int(s[0]), int(s[1])
+
+
+def run_plan(core, plan: Plan, values) -> np.ndarray:
+    n_in = plan.entry["input_dim"]
+    n_out = plan.entry["output_dim"]
+    bi = (ctypes.c_float * n_in)(*[float(v) for v in values])
+    bo = (ctypes.c_float * n_out)()
+    rc = core.ds_step(plan.handle, bi, bo, ctypes.create_string_buffer(512))
+    if rc != 0:
+        raise SystemExit(f"ds_step({plan.name}) 返回 {rc}")
+    return np.array(bo[:], dtype=np.float32)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--bundle", required=True, help="bundle 目录（含 contract.json 与 blob/模型）")
+    ap.add_argument("--mjcf", help="物理模型（默认 bundle/duck.xml，没有就用 build/mjcf/duck-hd1910-all.xml）")
+    ap.add_argument("--seconds", type=float, default=20.0)
+    ap.add_argument("--steps", type=int)
+    ap.add_argument("--forward", type=float, default=0.0)
+    ap.add_argument("--yaw", type=float, default=0.0)
+    ap.add_argument("--fsm", action="store_true", help="用 fsm.blob 驱动（否则单策略常值指令）")
+    ap.add_argument("--pulses", default="", help="FSM 指令脉冲，格式 秒:值,秒:值")
+    ap.add_argument("--report")
+    ap.add_argument("--trajectory")
+    args = ap.parse_args()
+
+    import mujoco
+    import onnxruntime as ort_py   # 模型在 Python 侧跑（与浏览器 ORT Web 对位）
+
+    bdir = os.path.join(ROOT, args.bundle) if not os.path.isabs(args.bundle) else args.bundle
+    con = C.load(os.path.join(bdir, "contract.json"))
+
+    mjcf = args.mjcf or (os.path.join(bdir, "duck.xml") if os.path.exists(os.path.join(bdir, "duck.xml"))
+                         else "build/mjcf/duck-hd1910-all.xml")
+    mjcf = mjcf if os.path.isabs(mjcf) else os.path.join(ROOT, mjcf)
+
+    core, _ort_c = load_libs()   # 核用 native .so；模型走 onnxruntime Python 绑定
+    err = ctypes.create_string_buffer(512)
+    plans = {}
+    for name, entry in con["plans"].items():
+        path = os.path.join(bdir, entry.get("file") or f"{name}.blob")
+        with open(path, "rb") as f:
+            plans[name] = Plan(core, name, f.read(), entry, err)
+
+    policies = con["policies"]
+    if not policies:
+        raise SystemExit("契约里没有策略")
+    mode_to_key = {int(p["mode"]): p["key"] for p in policies}
+    sessions = {}
+    for p in policies:
+        path = os.path.join(bdir, p["file"])
+        if not os.path.exists(path):
+            raise SystemExit(f"缺模型 {path}")
+        sessions[p["key"]] = ort_py.InferenceSession(path, providers=["CPUExecutionProvider"])
+
+    robot = con["robot"]
+    rates = con["rates"]
+    control_hz = float(rates["control_hz"])
+    physics_hz = float(rates["physics_hz"])
+    decim = int(round(physics_hz / control_hz))
+    steps = int(args.seconds * control_hz)
+    if args.steps:
+        steps = min(steps, args.steps)
+
+    spec = mujoco.MjSpec.from_file(mjcf)
+    geom = spec.worldbody.add_geom()
+    geom.type = mujoco.mjtGeom.mjGEOM_PLANE
+    geom.size = [6.0, 6.0, 0.1]
+    geom.condim = 3
+    m = spec.compile()
+    d = mujoco.MjData(m)
+    m.opt.timestep = 1.0 / physics_hz
+    d.qpos[:] = robot["initial_qpos"]
+    mujoco.mj_forward(m, d)
+
+    driven = robot["joints"]
+    n = len(driven)
+    qpos_off = [int(m.jnt_qposadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, nm)]) for nm in driven]
+    dof_off = [int(m.jnt_dofadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, nm)]) for nm in driven]
+
+    def sensor_adr(name: str) -> int:
+        sid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, name)
+        if sid < 0:
+            raise SystemExit(f"MJCF 里没有传感器 {name}")
+        return int(m.sensor_adr[sid])
+
+    def quat_of(body: str):
+        bid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, body)
+        if bid < 0:
+            raise SystemExit(f"MJCF 里没有 body {body}")
+        return d.xquat[bid]
+
+    view = {"data": d, "qpos_off": qpos_off, "dof_off": dof_off,
+            "sensor_adr": sensor_adr, "quat_of": quat_of}
+
+    pulses = {}
+    for part in (args.pulses.split(",") if args.pulses else []):
+        sec, val = part.split(":")
+        pulses[round(float(sec) * control_hz)] = float(val)
+
+    fsm = plans.get("fsm") if args.fsm else None
+    if args.fsm and fsm is None:
+        raise SystemExit("这个 bundle 里没有 fsm.blob")
+
+    last_action = np.zeros(n, dtype=np.float32)
+    cmd = np.zeros(13, dtype=np.float32)
+    cmd[0], cmd[2] = args.forward, args.yaw
+    act = np.zeros(n, dtype=np.float32)
+    heights, tilts, step_times, frames = [], [], [], []
+    x0, y0 = float(d.qpos[0]), float(d.qpos[1])
+    path_len, speed, prev_xy, speed_hist = 0.0, 0.0, (x0, y0), []
+    states, pulse = [], 0.0
+    t0 = time.time()
+    dead = False
+    mode_key = policies[0]["key"]
+
+    for k in range(steps):
+        if k in pulses:
+            pulse = pulses[k]
+        t_step = time.perf_counter()
+
+        if fsm is not None:
+            buf = np.zeros(fsm.entry["input_dim"], dtype=np.float32)
+            for slot_name, val in (("in:policy_command", pulse), ("in:gravity_z", -(1 - 2 * (d.qpos[4] ** 2 + d.qpos[5] ** 2))),
+                                   ("in:vx", cmd[0]), ("in:wz", cmd[2])):
+                off, _ = fsm.slot(slot_name)
+                buf[off] = val
+            out = run_plan(core, fsm, buf)
+            pulse = 0.0
+            off_s, _ = fsm.slot("out:state")
+            off_m, _ = fsm.slot("out:mode")
+            off_c, len_c = fsm.slot("out:command")
+            off_clr, _ = fsm.slot("out:clear_last_action")
+            states.append(int(out[off_s]))
+            mode_key = mode_to_key.get(int(out[off_m]), mode_key)
+            cmd = out[off_c:off_c + len_c].copy()
+            if out[off_clr]:
+                last_action = np.zeros(n, dtype=np.float32)
+
+        obs = CO.make_obs(con, view, last_action=last_action, command=cmd)
+        if "pre" in plans:
+            obs = run_plan(core, plans["pre"], obs)
+        sess = sessions[mode_key]
+        feed = {sess.get_inputs()[0].name: obs.reshape(1, -1).astype(np.float32)}
+        raw = np.asarray(sess.run(None, feed)[0]).reshape(-1).astype(np.float32)
+        last_action = raw
+        if "post" in plans:
+            act = run_plan(core, plans["post"], raw)
+        else:
+            act = raw
+        d.ctrl[:] = act
+        for _ in range(decim):
+            mujoco.mj_step(m, d)
+        if not np.isfinite(d.qpos).all():
+            dead = True
+            break
+
+        step_times.append(time.perf_counter() - t_step)
+        heights.append(float(d.qpos[2]))
+        tilts.append(float(1 - 2 * (d.qpos[4] ** 2 + d.qpos[5] ** 2)))
+        cur_xy = (float(d.qpos[0]), float(d.qpos[1]))
+        seg = float(np.hypot(cur_xy[0] - prev_xy[0], cur_xy[1] - prev_xy[1]))
+        path_len += seg
+        speed_hist.append(seg * control_hz)
+        if len(speed_hist) > 10:
+            speed_hist.pop(0)
+        speed = sum(speed_hist) / len(speed_hist)
+        prev_xy = cur_xy
+        if args.trajectory:
+            frames.append({"t": round(k / control_hz, 4),
+                           "pos": [round(float(x), 6) for x in d.qpos[0:3]],
+                           "quat": [round(float(x), 6) for x in d.qpos[3:7]],
+                           "q": [round(float(d.qpos[i]), 6) for i in qpos_off]})
+
+    wall = time.time() - t0
+    completed = len(heights)
+    report = {
+        "report_kind": "ducksir-bundle-run",
+        "bundle": os.path.basename(bdir),
+        "plans": {k2: {"nodes": v.entry["nodes"], "digest": v.entry["digest"][:16]} for k2, v in plans.items()},
+        "policy": mode_key if fsm is not None else policies[0]["key"],
+        "steps": steps, "completed_steps": completed, "dead": dead,
+        "state_transitions": [f"{i / control_hz:.2f}s→{s}" for i, s in
+                              enumerate(states) if i and s != states[i - 1]][:12],
+        "verdict": {"finite": not dead,
+                    "no_sink": bool(heights and min(heights) > -0.05),
+                    "ran_full": completed >= steps,
+                    "pass": (not dead) and bool(heights) and min(heights) > -0.05},
+        "panel": PANEL.build_panel(
+            control_hz=control_hz, physics_hz=physics_hz,
+            seconds=completed / control_hz, wall=wall, step_times=step_times,
+            base_height_min=min(heights) if heights else 0.0,
+            upright_final=tilts[-1] if tilts else 0.0,
+            distance=float(np.hypot(d.qpos[0] - x0, d.qpos[1] - y0))),
+    }
+    print(f"bundle {report['bundle']}｜{completed}/{steps} 步｜{report['panel']['realtime_factor']}× 实时"
+          f"｜p95 {report['panel']['control_p95_ms']} ms")
+    if states:
+        print("  状态迁移：" + ("，".join(report["state_transitions"]) or "（无）"))
+    print(f"  基座 终 {heights[-1]:+.3f} 最低 {min(heights):+.3f} m｜直立 {tilts[-1]:+.3f}"
+          if heights else "  没采到帧")
+    print(f"  指令 forward {cmd[0]:+.2f} → 实际速度 {speed:.3f} m/s｜路程 {path_len:.2f} m")
+
+    if args.report:
+        out = os.path.join(ROOT, args.report)
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        with open(out, "w", encoding="utf-8") as f:
+            json.dump(report, f, ensure_ascii=False, indent=2)
+        print(f"  报告 → {args.report}")
+    if args.trajectory:
+        out = os.path.join(ROOT, args.trajectory)
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        with open(out, "w", encoding="utf-8") as f:
+            json.dump({"meta": {"joints": driven, "control_hz": control_hz,
+                                "physics_hz": physics_hz, "policy": report["policy"]},
+                       "frames": frames}, f, ensure_ascii=False)
+        print(f"  轨迹 → {args.trajectory}（{len(frames)} 帧）")
+
+    for p in plans.values():
+        core.ds_free(p.handle)
+    return 0 if report["verdict"]["pass"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

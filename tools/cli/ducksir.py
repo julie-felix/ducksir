@@ -143,6 +143,20 @@ def cmd_build(args) -> int:
     os.makedirs(out_abs, exist_ok=True)
     say(f"== 产出到 {out_dir}")
 
+    # 项目脚本是**编译期的输入**：这里只取它的 manifest 与常值指令，
+    # 运行时不执行它（bundle 里不带 .py）。
+    project_meta = None
+    manifest = args.manifest
+    if getattr(args, "project", None):
+        sys.path.insert(0, os.path.join(ROOT, "sim", "host"))
+        import run_project as RP  # noqa: WPS433
+        cfg = RP.load_project(os.path.join(ROOT, args.project)
+                              if not os.path.isabs(args.project) else args.project)
+        manifest = cfg["manifest"]
+        project_meta = cfg
+        ok(f"项目脚本：{os.path.basename(args.project)}"
+           f"（策略 {[p['key'] for p in cfg['policies']]}，manifest {manifest}）")
+
     steps = [
         ("MJCF（碰撞集 all）", ["tools/robot/export_mjcf.py", args.robot,
                              "-o", os.path.join(out_dir, "duck.xml"),
@@ -153,7 +167,7 @@ def cmd_build(args) -> int:
                     "--default-pose", "contract/robot/postures/duck-hd1910.yaml",
                     "-o", os.path.join(out_dir, "preset.yaml")]),
         ("策略包（blob + 模型 + 契约）", ["sim/host/export_artifacts.py",
-                                   "--manifest", args.manifest,
+                                   "--manifest", manifest,
                                    "--preset", os.path.join(out_dir, "preset.yaml"),
                                    "--out", out_dir]),
     ]
@@ -179,6 +193,11 @@ def cmd_build(args) -> int:
         if os.path.isfile(path):
             index["artifacts"].append({"name": name, "bytes": os.path.getsize(path),
                                        "sha256": _sha256(path)})
+    if project_meta:
+        with open(os.path.join(out_abs, "project.json"), "w", encoding="utf-8") as f:
+            json.dump(project_meta, f, ensure_ascii=False, indent=2)
+        ok("project.json（编译期输入，运行时不需要 .py）")
+
     with open(os.path.join(out_abs, "release.json"), "w", encoding="utf-8") as f:
         json.dump(index, f, ensure_ascii=False, indent=2)
     ok(f"release.json（{len(index['artifacts'])} 个文件）")
@@ -213,9 +232,26 @@ def cmd_golden(args) -> int:
     return 0
 
 
-# ───────────────────────── run（项目脚本）─────────────────────────
+# ───────────────────────── run（bundle 或项目脚本）─────────────────────────
 def cmd_run(args) -> int:
-    argv = ["--project", args.project]
+    target = args.target
+    if not target.endswith(".py"):
+        # bundle：只吃编译产物，运行时不碰 Python 声明
+        argv = ["--bundle", target, "--seconds", str(args.seconds)]
+        if args.steps is not None:
+            argv += ["--steps", str(args.steps)]
+        if args.fsm:
+            argv += ["--fsm", "--pulses", args.pulses]
+        if args.vx is not None:
+            argv += ["--forward", str(args.vx)]
+        if args.report:
+            argv += ["--report", args.report]
+        if args.trajectory:
+            argv += ["--trajectory", args.trajectory]
+        return _py("sim/host/run_bundle.py", *argv, quiet=False).returncode
+
+    # 兼容：直接跑 .py（内部仍是「加载脚本 → 建图 → 跑」的老路径，逐步被 build+run 取代）
+    argv = ["--project", target]
     if args.seconds is not None:
         argv += ["--seconds", str(args.seconds)]
     if args.steps is not None:
@@ -271,10 +307,11 @@ def main(argv=None) -> int:
     b = sub.add_parser("build", help="从声明产出一包（blob + 模型 + 契约 + release 索引）")
     common(b)
     b.add_argument("--out", help="输出目录（默认 build/release/<时间戳>）")
+    b.add_argument("--project", help="可选：项目脚本（只取它的 manifest 与常值指令，写进 bundle/project.json）")
     b.set_defaults(fn=cmd_build)
 
-    r = sub.add_parser("run", help="跑一个项目脚本（project.py）")
-    r.add_argument("project", help="项目脚本路径，例如 project.py")
+    r = sub.add_parser("run", help="跑一个 bundle 目录或项目脚本")
+    r.add_argument("target", help="bundle 目录（build/release/xxx）或 project.py")
     r.add_argument("--seconds", type=float, help="跑多久（默认取脚本里的，否则 20s）")
     r.add_argument("--steps", type=int, help="控制步上限（与 --seconds 先到先停）")
     r.add_argument("--report", help="写 JSON 报告")
@@ -282,6 +319,9 @@ def main(argv=None) -> int:
     r.add_argument("--port", type=int, help="显示服务端口（默认 8765）")
     r.add_argument("--no-browser", action="store_true", help="不起显示服务也不开浏览器")
     r.add_argument("--no-open", action="store_true", help="起显示服务但不自动开浏览器")
+    r.add_argument("--vx", "--forward", dest="vx", type=float, help="前进指令（bundle 用 --forward）")
+    r.add_argument("--fsm", action="store_true", help="bundle 里用 fsm.blob 驱动（坐站/踢/翻滚）")
+    r.add_argument("--pulses", default="3:1,8:1", help="--fsm 的指令脉冲，秒:值")
     r.set_defaults(fn=cmd_run)
 
     s = sub.add_parser("sim", help="跑内置策略或 14 状态机（宿主）")

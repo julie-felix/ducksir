@@ -17,6 +17,16 @@ const PULSES = '3:1,8:1';          // 3 s 坐下，8 s 起身
 const SECONDS = 18;
 const HOST_OUT = '/tmp/host_fsm_parity.json';
 
+// ── 0) bundle 跑一遍（目标形态：同一份编译产物给两个 target）────────
+const BUNDLE = 'build/release/test';
+const BUNDLE_OUT = '/tmp/bundle_fsm_parity.json';
+execFileSync('python3', [
+  'sim/host/run_bundle.py', '--bundle', BUNDLE,
+  '--seconds', String(SECONDS), '--fsm', '--pulses', PULSES, '--report', BUNDLE_OUT,
+], { cwd: ROOT, stdio: ['ignore', 'pipe', 'inherit'] });
+const bundleReport = JSON.parse(readFileSync(BUNDLE_OUT, 'utf8'));
+const bundleTrans = bundleReport.state_transitions || [];
+
 // ── 1) 宿主跑一遍 ───────────────────────────────────────────────
 execFileSync('python3', [
   'sim/host/run_fsm.py',
@@ -119,6 +129,7 @@ const hostStateSeq = hostStates.join(',');
 const browserStateSeq = browserStates.join(',');
 const firstDiff = hostStates.findIndex((v, i) => v !== browserStates[i]);
 const trans = (a) => a.map((v, i) => (i && v !== a[i - 1] ? `${(i / 50).toFixed(2)}s→${v}` : null)).filter(Boolean).join('，');
+console.log(`bundle 状态迁移：${bundleTrans.join('，') || '（无）'}`);
 console.log(`宿主状态迁移：${trans(hostStates)}`);
 console.log(`浏览器状态迁移：${trans(browserStates)}`);
 console.log(`状态序列一致：${firstDiff < 0 ? '是' : `否（第一处不同在第 ${firstDiff} 步 = ${(firstDiff / 50).toFixed(2)}s：宿主 ${hostStates[firstDiff]} / 浏览器 ${browserStates[firstDiff]}）`}`);
@@ -126,8 +137,12 @@ console.log(`状态序列一致：${firstDiff < 0 ? '是' : `否（第一处不�
 //   1) 状态迁移必须**逐帧相同**——这是控制逻辑等价的硬指标；
 //   2) 末态基座高度差 < 3 cm —— 轨迹本身会因为 1e-6 的推理差在接触密集的步态里放大，
 //      中间帧差到几厘米是混沌，不是 bug（值照打出来，别拿来当判据）。
+const browserTrans = browserStates.map((v, i) => (i && v !== browserStates[i - 1]
+  ? `${(i / 50).toFixed(2)}s→${v}` : null)).filter(Boolean);
+const bundleSame = bundleTrans.join('|') === browserTrans.join('|');
+console.log(`bundle ↔ 浏览器状态迁移一致：${bundleSame ? '是' : '否'}`);
 const statesSame = hostStateSeq === browserStateSeq;
-const ok = statesSame && Math.abs(zEndHost - zEndBrowser) < 0.03 && zEndBrowser > 0.1;
+const ok = statesSame && bundleSame && Math.abs(zEndHost - zEndBrowser) < 0.03 && zEndBrowser > 0.1;
 console.log(ok
   ? 'PASS：状态迁移逐帧相同、末态高度一致（中间帧差属混沌放大）'
   : 'FAIL：两端对不上');
