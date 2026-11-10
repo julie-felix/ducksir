@@ -9,7 +9,9 @@
 
 ## 现在有什么
 
-只有一个只读工具 `ducksir_status`：读仓库五个平面的落地情况、git 分支与脏文件数。
+1. **只读工具 `ducksir_status`**：读仓库五个平面的落地情况、git 分支与脏文件数。
+2. **数字描述面板**：侧栏「机器人」→ 主区全屏面板，里面是 `client/viewer/` 那个查看器（iframe）。
+   视图本身由 host 侧的只读静态路由 `/ducksir-static/*` 提供，只放 `client/viewer/` 和 `assets/` 两棵子树。
 
 它是 Day-1 预检台的第一块砖，也是这个插件能否被加载、能否跑通的冒烟测试。
 
@@ -66,6 +68,23 @@ node client/scripts/smoke.mjs
 ```
 
 不需要装进 profile，假 ctx 跑一遍注册 / 执行 / 渲染。
+
+## 面板这一半怎么工作
+
+```
+client/src/index.mjs   host：ducksir_status 工具 + /ducksir-static 只读路由（ctx.inject(['webServer']) 可选）
+client/lib/client.js   web：侧栏「机器人」入口 + main 面板（iframe 指向 /ducksir-static/client/viewer/index.html）
+```
+
+- 为什么用 iframe 而不是把 three.js 打进宿主 bundle：查看器带 687 KB three + 22 MB GLB，
+  塞进宿主既拖慢启动，又和宿主的 React 版本耦合。iframe 还让查看器能独立开发、独立截图回归。
+- `client/lib/client.js` **是手写的**，不经打包器：面板只有一个 iframe，用 `React.createElement` 足够，
+  省掉 esbuild 依赖。格式照 ModuleLoader 的 CJS factory 包（`window.__ModuleLoader__.load`）。
+- 改 `client/src`（host）由 `dsh-autoreload` 触发热重组；改 `client/lib`（浏览器侧）要**刷新页面**。
+- 坑：插件的 `inject` 里没声明 `webServer` 时，`ctx.webServer` 是 `undefined`，路由会**静默不注册**。
+  用 `ctx.inject(['webServer'], (child) => …)` 起子 fiber，既让服务变成可选，也不吞错误。
+
+![查看器经 DSH 路由打开](../docs/images/viewer-via-dsh-route.png)
 
 ## 未定
 

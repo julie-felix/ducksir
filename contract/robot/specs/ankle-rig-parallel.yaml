@@ -1,0 +1,83 @@
+# 两个 rig（讲者的装配模型）的并联机构描述。
+#
+# 用途：把 rig 变成和 g1-29dof 同一口径的「带并联结构的机型」——查看器里能直接拖 A/B。
+# 几何来自 rig 自己的 XML（MIT），不是从 CAD 反推的。
+#
+# 注意：rig 的电机关节名是 right_motor_joint / left_motor_joint，
+# 与 SDK 的 A/B 谁对谁未核实，这里按 chains 顺序标注。
+
+mechanisms:
+  ankle-rig-tg10:
+    - id: tg10_ankle
+      kind: parallel_2dof
+      mount: base_link
+      platform: foot_link
+      charts:
+        pr:
+          joints: [pitch_joint, roll_joint]
+          semantic: [pitch, roll]
+        ab:
+          motors:
+            - {ab: B, joint: right_motor_joint}
+            - {ab: A, joint: left_motor_joint}
+      coupling:
+        kind: analytic
+        params:
+          frame: pitch_joint
+          units: m
+          mujoco_grid: mujoco-grid-tg10.json
+          # rig 里踝关节是被动的：真正驱动的是两个电机，闭链靠 connect 约束闭合
+          passive_pr: true
+          motor_joints: [right_motor_joint, left_motor_joint]
+          chains:
+            - {a: [0, -0.043247, 0.14], axis: [0, 1, 0], v: [-0.055821, 0, 0.022], rod: 0.14}
+            - {a: [0, 0.043252, 0.215], axis: [0, 1, 0], v: [-0.055821, 0, 0.022], rod: 0.215}
+          platform:
+            pitch_axis: [0, 1, 0]
+            pitch_pivot: [0, 0, 0]
+            roll_axis: [1, 0, 0]
+            roll_pivot: [0, 0, 0]
+            c0: [[-0.055821, -0.04325, 0.022], [-0.055821, 0.04325, 0.022]]
+        source: "rig 自己的 XML（MIT, feidedao/Parallel_Ankle_Joint）"
+        assumed:
+          - "ab_mapping: rig 的 right/left_motor 与 SDK 的 A/B 未核实"
+          - "geometry_from_rig: 这是他手搓装配的模型，不是官方 TC10-00 / G1"
+        anchor_zero: {A: 0, B: 0, roll: 0, pitch: 0}
+        todo: "接到真机前需换官方几何并核实 A/B 对应"
+  ankle-rig-g1:
+    - id: g1_ankle
+      kind: parallel_2dof
+      mount: base_link
+      platform: roll_link
+      charts:
+        pr:
+          joints: [pitch_joint, roll_joint]
+          semantic: [pitch, roll]
+        ab:
+          motors:
+            - {ab: B, joint: right_motor_joint}
+            - {ab: A, joint: left_motor_joint}
+      coupling:
+        kind: analytic
+        params:
+          frame: pitch_joint
+          units: m
+          mujoco_grid: mujoco-grid-g1.json
+          # rig 里踝关节是被动的：真正驱动的是两个电机，闭链靠 connect 约束闭合
+          passive_pr: true
+          motor_joints: [right_motor_joint, left_motor_joint]
+          chains:
+            - {a: [0.022, 0, 0.21587], axis: [1, 0, 0], v: [0.0175, -0.016359, -0.004624], rod: 0.2215}
+            - {a: [0.022, 0, 0.15087], axis: [1, 0, 0], v: [0.013, 0.016529, -0.003975], rod: 0.157}
+          platform:
+            pitch_axis: [0, 1, 0]
+            pitch_pivot: [0, 0, 0]
+            roll_axis: [1, 0, 0]
+            roll_pivot: [0, 0, -0.017558]
+            c0: [[0.022, -0.015, -0.009558], [0.022, 0.015, -0.009558]]
+        source: "rig 自己的 XML（MIT, feidedao/Parallel_Ankle_Joint）"
+        assumed:
+          - "ab_mapping: rig 的 right/left_motor 与 SDK 的 A/B 未核实"
+          - "geometry_from_rig: 这是他手搓装配的模型，不是官方 TC10-00 / G1"
+        anchor_zero: {A: 0, B: 0, roll: 0, pitch: 0}
+        todo: "接到真机前需换官方几何并核实 A/B 对应"

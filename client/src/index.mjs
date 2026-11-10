@@ -10,7 +10,8 @@
  */
 
 import { execFile } from 'node:child_process'
-import { readdir } from 'node:fs/promises'
+import { createReadStream } from 'node:fs'
+import { readdir, stat as statFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -172,12 +173,94 @@ function statusTool() {
   }
 }
 
+/** 静态路由前缀：查看器从这里取 html / js / glb。 */
+const STATIC_ROUTE = '/ducksir-static'
+/** 只放这两棵子树，别的路径一律 403 —— 这条路由等于一个只读的小静态服务器。 */
+const STATIC_ALLOWED = ['client/viewer', 'assets']
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.glb': 'model/gltf-binary',
+  '.gltf': 'model/gltf+json',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml',
+  '.wasm': 'application/wasm',
+  '.map': 'application/json',
+}
+
+/**
+ * 服务查看器的静态文件：`/ducksir-static/client/viewer/index.html`、
+ * `/ducksir-static/assets/g1/*.glb`。只读、只 GET/HEAD、只许两棵子树。
+ * @param {import('node:http').IncomingMessage} req - 请求。
+ * @param {import('node:http').ServerResponse} res - 响应。
+ */
+async function serveStatic(req, res) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.writeHead(405, { allow: 'GET, HEAD' })
+    res.end()
+    return
+  }
+  let rel = ''
+  try {
+    rel = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname.slice(STATIC_ROUTE.length))
+  } catch {
+    res.writeHead(400)
+    res.end()
+    return
+  }
+  const target = path.resolve(REPO, rel.replace(/^\/+/, ''))
+  const inside = STATIC_ALLOWED.some((dir) => {
+    const root = path.join(REPO, dir)
+    return target === root || target.startsWith(root + path.sep)
+  })
+  if (!inside) {
+    res.writeHead(403)
+    res.end()
+    return
+  }
+  let info
+  try {
+    info = await statFile(target)
+  } catch {
+    res.writeHead(404)
+    res.end()
+    return
+  }
+  if (!info.isFile()) {
+    res.writeHead(404)
+    res.end()
+    return
+  }
+  res.writeHead(200, {
+    'content-type': MIME[path.extname(target).toLowerCase()] ?? 'application/octet-stream',
+    'content-length': info.size,
+    'cache-control': 'no-cache',
+    'x-content-type-options': 'nosniff',
+  })
+  if (req.method === 'HEAD') {
+    res.end()
+    return
+  }
+  createReadStream(target).on('error', () => res.destroy()).pipe(res)
+}
+
 /**
  * 插件入口。
  * @param {object} ctx - cordis 上下文。
  */
 export function apply(ctx) {
   ctx.tools.register(statusTool())
+  // webServer 只在 web profile 里有：用 ctx.inject 起一个子 fiber，
+  // 服务不在时子 fiber 一直等（等于这个入口不存在），工具照常可用。
+  ctx.inject(['webServer'], (child) => {
+    child.effect(
+      () => child.webServer.register({ kind: 'prefix', path: STATIC_ROUTE, handler: serveStatic }),
+      'ducksir.static'
+    )
+  })
 }
 
 export { readStatus }

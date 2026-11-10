@@ -1,0 +1,3739 @@
+schema: ducksir/robot/v0
+robot:
+  id: duck-hd1910
+  name: microduck
+  type: duck-hd1910
+  source_ref: https://github.com/fanhao375/microduck-replica/blob/master/software/training/src/mjlab_microduck/robot/microduck/robot_walk.xml
+  license: Apache-2.0 (双许可)
+  generator:
+    name: importer_mjcf
+    version: 0.1.0
+    input: third_party/fanhao-microduck-replica/robot_walk.xml
+    sha256: 07af5e482200dfd2a7bf80ddde371153c88768a3a5aebc2f58ea42136fc7dadb
+  created_at: '2026-11-09'
+  assets_dir: assets/microduck
+  mesh_manifest: assets/microduck/manifest.json
+frames:
+  root: trunk_base
+  world_attachment: floating
+  axes:
+    x: forward
+    y: left
+    z: up
+  units:
+    length: m
+    mass: kg
+    angle: rad
+    time: s
+    force: N
+    torque: N*m
+    inertia: kg*m^2
+    angular_velocity: rad/s
+    velocity: m/s
+    stiffness: N*m/rad
+    damping: N*m*s/rad
+  quat_order: wxyz
+  euler_order: rpy
+  angular_velocity_frame: body
+  freejoint: trunk_base_freejoint
+links:
+- name: trunk_base
+  parent: world
+  transform:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.12
+    quat:
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.199224
+  com:
+  - -0.0226332
+  - -2.70828e-05
+  - 0.00280064
+  inertia:
+    ixx: 0.000123975
+    ixy: 7.1651e-08
+    ixz: -2.06915e-05
+    iyy: 0.000145931
+    iyz: 1.32429e-07
+    izz: 0.000115351
+  visual:
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
+    mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
+    origin:
+      xyz:
+      - 0.006
+      - 0.0175
+      - -0.005
+      quat:
+      - 1.0
+      - -0.0
+      - -0.0
+      - 0.0
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  - mesh: assets/microduck/right_shell.glb
+    mesh_name: right_shell
+    source_file: right_shell.stl
+    origin:
+      xyz:
+      - 0.004
+      - -0.0005
+      - -0.0175
+      quat:
+      - 0.707107
+      - -0.0
+      - -0.0
+      - 0.707107
+    material:
+    - 0.8
+    - 0.8
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 76b3adaf6a55a2d6f010713637a3ed00bd2000061fff23609bdb80eaa4dadee1
+    bytes: 568744
+  - mesh: assets/microduck/banana_pcb_locker.glb
+    mesh_name: banana_pcb_locker
+    source_file: banana_pcb_locker.stl
+    origin:
+      xyz:
+      - 0.0042
+      - -0.0
+      - -0.0175215
+      quat:
+      - 0.707107
+      - -0.0
+      - 0.0
+      - 0.707107
+    material:
+    - 0.647059
+    - 0.647059
+    - 0.647059
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 95fc8f1800f652fa2f1f97daa83cc28a2da1786fcb90d1967bb4d5df4a06df22
+    bytes: 46812
+  - mesh: assets/microduck/trunk_base.glb
+    mesh_name: trunk_base
+    source_file: trunk_base.stl
+    origin:
+      xyz:
+      - 0.004
+      - -0.0
+      - -0.0175
+      quat:
+      - 0.707107
+      - -0.0
+      - -0.0
+      - 0.707107
+    material:
+    - 0.34902
+    - 0.376471
+    - 0.4
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: eafe8ef090a47eb40fa6a5171240a6b3bc42f62134b75ab150f7ae121c9e9f2b
+    bytes: 118444
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - 0.006
+      - 0.0175
+      - 0.0115
+      quat:
+      - 0.0
+      - 0.707107
+      - -0.0
+      - 0.707107
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/power_support.glb
+    mesh_name: power_support
+    source_file: power_support.stl
+    origin:
+      xyz:
+      - 0.004
+      - -0.0
+      - -0.0175215
+      quat:
+      - 0.707107
+      - -0.0
+      - 0.0
+      - 0.707107
+    material:
+    - 0.901961
+    - 0.901961
+    - 0.901961
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: f5944a0418557964e5a5405b3194cb71af0f30ef5c91db2bfc20ca8dc968ea7f
+    bytes: 358888
+  - mesh: assets/microduck/np_f970.glb
+    mesh_name: np_f970
+    source_file: np_f970.stl
+    origin:
+      xyz:
+      - -0.0359693
+      - 0.0
+      - -0.00385049
+      quat:
+      - 0.00617059
+      - 0.70708
+      - -0.70708
+      - -0.00617059
+    material:
+    - 0.901961
+    - 0.901961
+    - 0.901961
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 9961e07e4507262a2bf445aa5d5089570b54af05613d6011e25d0c11566f486c
+    bytes: 162724
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - 0.006
+      - -0.0175
+      - 0.0115
+      quat:
+      - 0.0
+      - 0.707107
+      - -0.0
+      - 0.707107
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/left_shell.glb
+    mesh_name: left_shell
+    source_file: left_shell.stl
+    origin:
+      xyz:
+      - 0.004
+      - -0.0
+      - -0.0175785
+      quat:
+      - 0.707107
+      - 0.0
+      - -0.0
+      - 0.707107
+    material:
+    - 0.8
+    - 0.8
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 0976ab6582b14ce8fed3b3b1c90f510d4a4f2feecc4fe2a75bc958f36fd4ca5b
+    bytes: 566340
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
+    mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
+    origin:
+      xyz:
+      - 0.006
+      - -0.0175
+      - -0.005
+      quat:
+      - 1.0
+      - -0.0
+      - -0.0
+      - 0.0
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  collision:
+  - mesh: assets/microduck/power_support.glb
+    mesh_name: power_support
+    source_file: power_support.stl
+    origin:
+      xyz:
+      - 0.004
+      - -0.0
+      - -0.0175215
+      quat:
+      - 0.707107
+      - -0.0
+      - 0.0
+      - 0.707107
+    material:
+    - 0.901961
+    - 0.901961
+    - 0.901961
+    - 1.0
+    class: self_collision_only
+    vendored: false
+    self_collision: true
+- name: yaw2roll
+  parent: trunk_base
+  transform:
+    xyz:
+    - 0.006
+    - 0.0175
+    - -0.005
+    quat:
+    - 0.0
+    - -0.707107
+    - -0.707107
+    - -0.0
+  mass: 0.0230406
+  com:
+  - -8.8e-11
+  - 0.00099414
+  - 0.0168917
+  inertia:
+    ixx: 4.1964e-06
+    ixy: -0.0
+    ixz: -0.0
+    iyy: 3.41752e-06
+    iyz: -5.0881e-08
+    izz: 2.3265e-06
+  visual:
+  - mesh: assets/microduck/yaw2roll.glb
+    mesh_name: yaw2roll
+    source_file: yaw2roll.stl
+    origin:
+      xyz:
+      - -0.0175
+      - -0.002
+      - 0.0125
+      quat:
+      - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    material:
+    - 0.647059
+    - 0.647059
+    - 0.647059
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: a3b90958453a6169280b6ecb8eaaaa316d75d17bc6a7190774431043fe44993f
+    bytes: 277876
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - -0.0
+      - 0.0
+      - 0.0125
+      quat:
+      - 0.0
+      - -0.707107
+      - 0.707107
+      - -0.0
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
+    mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
+    origin:
+      xyz:
+      - -0.0
+      - 0.0165
+      - 0.0125
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - -0.5
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  - mesh: assets/microduck/bearing_roll.glb
+    mesh_name: bearing_roll
+    source_file: bearing_roll.stl
+    origin:
+      xyz:
+      - -0.0175
+      - -0.002
+      - 0.0125
+      quat:
+      - 0.0
+      - -1.0
+      - -0.0
+      - -0.0
+    material:
+    - 0.262745
+    - 0.282353
+    - 0.301961
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: fbfbd1fc6fae269f72557cd1519cb070fe3def565671231e0b3588e2de0996d9
+    bytes: 80504
+  collision: []
+- name: hip_l
+  parent: yaw2roll
+  transform:
+    xyz:
+    - 0.0
+    - 0.0165
+    - 0.0125
+    quat:
+    - 0.707107
+    - -0.707107
+    - -0.0
+    - -0.0
+  mass: 0.00618934
+  com:
+  - 0.014815
+  - 1.6179e-08
+  - -0.00829992
+  inertia:
+    ixx: 8.60626e-07
+    ixy: 1.0e-12
+    ixz: 3.89882e-07
+    iyy: 1.15753e-06
+    iyz: -1.0e-12
+    izz: 6.51588e-07
+  visual:
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
+    mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
+    origin:
+      xyz:
+      - 0.021
+      - 0.0
+      - -0.0185
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  - mesh: assets/microduck/hip_l.glb
+    mesh_name: hip_l
+    source_file: hip_l.stl
+    origin:
+      xyz:
+      - -0.0175
+      - 0.0
+      - -0.0185
+      quat:
+      - 0.707107
+      - -0.707107
+      - 0.0
+      - -0.0
+    material:
+    - 0.901961
+    - 0.901961
+    - 0.901961
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 8900a8939fae470d1dd16ef258240907ba3865d33d453096dc5700ccf874b957
+    bytes: 611716
+  collision: []
+- name: upper_leg_left
+  parent: hip_l
+  transform:
+    xyz:
+    - 0.025
+    - 0.0
+    - -0.0185
+    quat:
+    - 0.5
+    - -0.5
+    - 0.5
+    - -0.5
+  mass: 0.0482067
+  com:
+  - 0.006766
+  - 0.0228838
+  - 0.0134531
+  inertia:
+    ixx: 1.68753e-05
+    ixy: -4.41852e-06
+    ixz: 2.27982e-07
+    iyy: 1.03691e-05
+    iyz: 3.89298e-07
+    izz: 1.98269e-05
+  visual:
+  - mesh: assets/microduck/upper_leg_left.glb
+    mesh_name: upper_leg_left
+    source_file: upper_leg_left.stl
+    origin:
+      xyz:
+      - -0.0
+      - -0.0
+      - -0.0425
+      quat:
+      - 0.5
+      - -0.5
+      - -0.5
+      - -0.5
+    material:
+    - 0.866667
+    - 0.866667
+    - 0.866667
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 49335a6f736e5fbcbc6ca295abd7c56b383c4590c990bfd251266bcbabed925f
+    bytes: 315400
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - 0.022
+      - 0.0357771
+      - 0.0125
+      quat:
+      - 0.0
+      - -0.707107
+      - -0.0
+      - -0.707107
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/upper_leg_rigidity_plate.glb
+    mesh_name: upper_leg_rigidity_plate
+    source_file: upper_leg_rigidity_plate.stl
+    origin:
+      xyz:
+      - 0.0
+      - -0.0
+      - -0.0425
+      quat:
+      - 0.5
+      - -0.5
+      - -0.5
+      - -0.5
+    material:
+    - 0.537255
+    - 0.854902
+    - 0.827451
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 464b15d58858c4123852d6d7d427d588a61ff68be4e9d504240f98db54fb2520
+    bytes: 124448
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
+    mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
+    origin:
+      xyz:
+      - 0.022
+      - 0.0357771
+      - -0.004
+      quat:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - -0.0
+      - -0.0
+      - 0.0125
+      quat:
+      - 0.5
+      - 0.5
+      - -0.5
+      - 0.5
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  collision: []
+- name: leg
+  parent: upper_leg_left
+  transform:
+    xyz:
+    - 0.022
+    - 0.0357771
+    - -0.004
+    quat:
+    - 0.0
+    - 0.707107
+    - 0.707107
+    - 0.0
+  mass: 0.0215844
+  com:
+  - -1.52e-10
+  - 0.0318937
+  - -0.00953505
+  inertia:
+    ixx: 5.25056e-06
+    ixy: -1.0e-12
+    ixz: 0.0
+    iyy: 2.15507e-06
+    iyz: 7.65005e-07
+    izz: 4.33925e-06
+  visual:
+  - mesh: assets/microduck/leg.glb
+    mesh_name: leg
+    source_file: leg.stl
+    origin:
+      xyz:
+      - -0.022
+      - 0.0357771
+      - 0.0385
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - -0.5
+    material:
+    - 0.811765
+    - 0.858824
+    - 0.898039
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 405c430bb92db8d3d506d6cec41d5bd9699f5edfcc24ef264a88ee476972f483
+    bytes: 414716
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - 0.0
+      - 0.042
+      - -0.0115
+      quat:
+      - 0.5
+      - -0.5
+      - -0.5
+      - -0.5
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  collision:
+  - mesh: assets/microduck/leg.glb
+    mesh_name: leg
+    source_file: leg.stl
+    origin:
+      xyz:
+      - -0.022
+      - 0.0357771
+      - 0.0385
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - -0.5
+    material:
+    - 0.811765
+    - 0.858824
+    - 0.898039
+    - 1.0
+    class: self_collision_only
+    vendored: false
+    self_collision: true
+- name: ankle_left
+  parent: leg
+  transform:
+    xyz:
+    - 0.0
+    - 0.042
+    - -0.026
+    quat:
+    - 0.0
+    - 1.0
+    - -0.0
+    - 0.0
+  mass: 0.0300246
+  com:
+  - -0.00615738
+  - -0.0137483
+  - -0.0156586
+  inertia:
+    ixx: 5.91525e-06
+    ixy: -2.0535e-07
+    ixz: 8.2152e-08
+    iyy: 1.11534e-05
+    iyz: 5.6714e-08
+    izz: 7.74015e-06
+  visual:
+  - mesh: assets/microduck/sole_left.glb
+    mesh_name: sole_left
+    source_file: sole_left.stl
+    origin:
+      xyz:
+      - -0.022
+      - 0.00622291
+      - -0.0647
+      quat:
+      - 0.5
+      - -0.5
+      - -0.5
+      - -0.5
+    material:
+    - 0.537255
+    - 0.854902
+    - 0.827451
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: b85743a16874459cc6c67573c291f2f39c62e7f7ed0a00b02056d2f8d0c51539
+    bytes: 389820
+  - mesh: assets/microduck/foot_left.glb
+    mesh_name: foot_left
+    source_file: foot_left.stl
+    origin:
+      xyz:
+      - -0.022
+      - 0.00622291
+      - -0.0647
+      quat:
+      - 0.5
+      - -0.5
+      - -0.5
+      - -0.5
+    material:
+    - 0.980392
+    - 0.713725
+    - 0.00392157
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: e5c2b68e3535188b823b11f0900c3ca26b8e4f54e5b311bbed386ae6c05307fe
+    bytes: 369440
+  - mesh: assets/microduck/seeed_bearing__configuration_default.glb
+    mesh_name: seeed_bearing__configuration_default
+    source_file: seeed_bearing__configuration_default.stl
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - -0.0322
+      quat:
+      - 0.0
+      - 0.0
+      - -0.0
+      - 1.0
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 111f1cafdd793e59392ae79e20e4e5b045dc7d310a50dd827379eeeaf188cc16
+    bytes: 655780
+  - mesh: assets/microduck/ankle_left.glb
+    mesh_name: ankle_left
+    source_file: ankle_left.stl
+    origin:
+      xyz:
+      - -0.022
+      - 0.00622291
+      - -0.0647
+      quat:
+      - 0.5
+      - -0.5
+      - -0.5
+      - -0.5
+    material:
+    - 0.980392
+    - 0.713725
+    - 0.00392157
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: e811163037adf2e0b06f13234b451cb8c74f072bdaf3d87064e92bfd26a44739
+    bytes: 176144
+  collision:
+  - mesh: assets/microduck/sole_left.glb
+    mesh_name: sole_left
+    source_file: sole_left.stl
+    origin:
+      xyz:
+      - -0.022
+      - 0.00622291
+      - -0.0647
+      quat:
+      - 0.5
+      - -0.5
+      - -0.5
+      - -0.5
+    material:
+    - 0.537255
+    - 0.854902
+    - 0.827451
+    - 1.0
+    class: collision
+    vendored: false
+    self_collision: false
+- name: neck
+  parent: trunk_base
+  transform:
+    xyz:
+    - 0.026
+    - 0.0145
+    - 0.0324215
+    quat:
+    - 0.0
+    - 0.0
+    - 0.707107
+    - -0.707107
+  mass: 0.0368414
+  com:
+  - 0.0
+  - -0.025
+  - 0.0141665
+  inertia:
+    ixx: 1.72925e-05
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 3.12694e-06
+    iyz: 0.0
+    izz: 1.63707e-05
+  visual:
+  - mesh: assets/microduck/neck.glb
+    mesh_name: neck
+    source_file: neck.stl
+    origin:
+      xyz:
+      - 0.022
+      - 0.05
+      - 0.028
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - -0.5
+    material:
+    - 0.8
+    - 0.8
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: e6fa1aa278d4f49cf049b31d7c349c263d9d4ae7f432cbeb5d80a4b00a88e59f
+    bytes: 48792
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0145
+      quat:
+      - 0.5
+      - -0.5
+      - -0.5
+      - -0.5
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - 0.0
+      - -0.05
+      - 0.0145
+      quat:
+      - 0.5
+      - 0.5
+      - -0.5
+      - 0.5
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/neck.glb
+    mesh_name: neck
+    source_file: neck.stl
+    origin:
+      xyz:
+      - 0.022
+      - 0.05
+      - 0.003
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - -0.5
+    material:
+    - 0.8
+    - 0.8
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: e6fa1aa278d4f49cf049b31d7c349c263d9d4ae7f432cbeb5d80a4b00a88e59f
+    bytes: 48792
+  collision: []
+- name: neck_pitch
+  parent: neck
+  transform:
+    xyz:
+    - 0.0
+    - -0.05
+    - -0.0
+    quat:
+    - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  mass: 0.00572
+  com:
+  - -6.533e-09
+  - 0.0116641
+  - -0.0145
+  inertia:
+    ixx: 1.09186e-06
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 9.66855e-07
+    iyz: 0.0
+    izz: 5.12111e-07
+  visual:
+  - mesh: assets/microduck/neck_pitch.glb
+    mesh_name: neck_pitch
+    source_file: neck_pitch.stl
+    origin:
+      xyz:
+      - -0.0
+      - 0.0287931
+      - -0.0145
+      quat:
+      - 0.5
+      - -0.5
+      - -0.5
+      - -0.5
+    material:
+    - 0.34902
+    - 0.376471
+    - 0.4
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: e9b070e47576bdf288ce00b21363ac69aef63db9dc8e2ecf9f8066b2d56eccc5
+    bytes: 246728
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
+    mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
+    origin:
+      xyz:
+      - -0.0
+      - 0.0207931
+      - -0.0145
+      quat:
+      - 0.707107
+      - 0.707107
+      - 0.0
+      - 0.0
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  collision: []
+- name: yaw_roll_motion
+  parent: neck_pitch
+  transform:
+    xyz:
+    - -0.0
+    - 0.0186931
+    - -0.0145
+    quat:
+    - 0.0
+    - 0.0
+    - -0.707107
+    - -0.707107
+  mass: 0.0486
+  com:
+  - -0.000166657
+  - -0.00500964
+  - 0.0178065
+  inertia:
+    ixx: 6.97903e-06
+    ixy: 3.21657e-07
+    ixz: -3.4797e-08
+    iyy: 8.10293e-06
+    iyz: 3.4295e-07
+    izz: 9.57884e-06
+  visual:
+  - mesh: assets/microduck/yaw_roll_motion.glb
+    mesh_name: yaw_roll_motion
+    source_file: yaw_roll_motion.stl
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.01
+      quat:
+      - 0.707107
+      - 0.0
+      - -0.0
+      - 0.707107
+    material:
+    - 0.768627
+    - 0.886275
+    - 0.952941
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 9bc9a7b0670379ecbd36551ffb30cb39babbf5c481d503b5a783f0dea74576ba
+    bytes: 207932
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0145
+      quat:
+      - 0.5
+      - -0.5
+      - -0.5
+      - -0.5
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
+    mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
+    origin:
+      xyz:
+      - -0.016
+      - 0.0
+      - 0.0145
+      quat:
+      - 0.707107
+      - -0.0
+      - -0.707107
+      - -0.0
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
+    mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
+    origin:
+      xyz:
+      - 0.018
+      - 0.0
+      - 0.0145
+      quat:
+      - 0.707107
+      - -0.0
+      - -0.707107
+      - -0.0
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  collision: []
+- name: jaw_soft
+  parent: yaw_roll_motion
+  transform:
+    xyz:
+    - -0.0179
+    - 0.0
+    - 0.0145
+    quat:
+    - 0.707107
+    - -0.0
+    - -0.707107
+    - -0.0
+  mass: 0.188766
+  com:
+  - 0.00460523
+  - 0.00120047
+  - -0.0324761
+  inertia:
+    ixx: 0.000320812
+    ixy: -6.32292e-07
+    ixz: 6.57154e-06
+    iyy: 0.0002541
+    iyz: 4.18476e-06
+    izz: 0.000149882
+  visual:
+  - mesh: assets/microduck/lens.glb
+    mesh_name: lens
+    source_file: lens.stl
+    origin:
+      xyz:
+      - 0.0155
+      - -9.13778e-05
+      - -0.05548
+      quat:
+      - 0.5
+      - -0.5
+      - 0.5
+      - -0.5
+    material:
+    - 0.262745
+    - 0.282353
+    - 0.301961
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: e6f77da9f7930f5ab30ab24acabe26840378293375fcb2676ce13b9840406d4a
+    bytes: 56204
+  - mesh: assets/microduck/face_part.glb
+    mesh_name: face_part
+    source_file: face_part.stl
+    origin:
+      xyz:
+      - -0.0045
+      - -9.13778e-05
+      - -0.0178
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.34902
+    - 0.376471
+    - 0.4
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 0149a7f2d4dfd5e52bcdd2ff8f6982590b2a0150b4cc3d406573c209077180dd
+    bytes: 376260
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - 0.003
+      - 0.0255
+      - -0.018
+      quat:
+      - 0.707107
+      - 0.0
+      - -0.0
+      - -0.707107
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/jaw_soft.glb
+    mesh_name: jaw_soft
+    source_file: jaw_soft.stl
+    origin:
+      xyz:
+      - -0.0046
+      - 0.0
+      - -0.0179996
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.85098
+    - 0.756863
+    - 0.866667
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: cad2379e4b9158e30ff205a37d1a823ceff4a182fa7c50ea596d0fa806644ba1
+    bytes: 101356
+  - mesh: assets/microduck/motor_support.glb
+    mesh_name: motor_support
+    source_file: motor_support.stl
+    origin:
+      xyz:
+      - -0.0045
+      - 0.0
+      - -0.018
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.262745
+    - 0.282353
+    - 0.301961
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: f2aec2f2ccd48fc3687a160f4c2539620f66b60213181e4d989f41dd0ca5089a
+    bytes: 133696
+  - mesh: assets/microduck/top_head_shell.glb
+    mesh_name: top_head_shell
+    source_file: top_head_shell.stl
+    origin:
+      xyz:
+      - -0.0045
+      - -0.0
+      - -0.018
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.901961
+    - 0.901961
+    - 0.901961
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: cacb156acc19fc04e5c38862daff5c3aac2f7eea37d62fe62cc5133ec1b6beeb
+    bytes: 444648
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0145
+      quat:
+      - 0.5
+      - -0.5
+      - -0.5
+      - -0.5
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/seeed_bearing__configuration_default.glb
+    mesh_name: seeed_bearing__configuration_default
+    source_file: seeed_bearing__configuration_default.stl
+    origin:
+      xyz:
+      - 0.0032
+      - -0.04
+      - -0.018
+      quat:
+      - 0.5
+      - -0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 111f1cafdd793e59392ae79e20e4e5b045dc7d310a50dd827379eeeaf188cc16
+    bytes: 655780
+  - mesh: assets/microduck/elec_rpi_robot_hat_pcb.glb
+    mesh_name: elec_rpi_robot_hat_pcb
+    source_file: elec_rpi_robot_hat_pcb.stl
+    origin:
+      xyz:
+      - 0.02694
+      - 0.0289936
+      - -0.0519
+      quat:
+      - 0.707107
+      - 0.0
+      - 0.0
+      - -0.707107
+    material:
+    - 0.313725
+    - 0.486275
+    - 0.411765
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: c77e644b67ea7873ee69634a262147c75acb4890f6b2f63be89009e58a495305
+    bytes: 375672
+  - mesh: assets/microduck/soft_mouth_top.glb
+    mesh_name: soft_mouth_top
+    source_file: soft_mouth_top.stl
+    origin:
+      xyz:
+      - -0.00420071
+      - 1.7776e-08
+      - -0.0180814
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.85098
+    - 0.756863
+    - 0.866667
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 6d881b08f4f85aac398bb5d1c8a8ee5bf68a8485ef7c091de37ce22a9992a05e
+    bytes: 89920
+  - mesh: assets/microduck/noenoeil.glb
+    mesh_name: noenoeil
+    source_file: noenoeil.stl
+    origin:
+      xyz:
+      - -0.0045
+      - -9.13778e-05
+      - -0.0178
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.262745
+    - 0.282353
+    - 0.301961
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: ba8013d381091344a9f763d0ad4b4314e253ed500bf2d97635cf3e495942f3f3
+    bytes: 36864
+  - mesh: assets/microduck/jaw.glb
+    mesh_name: jaw
+    source_file: jaw.stl
+    origin:
+      xyz:
+      - -0.0045
+      - 0.0
+      - -0.018
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.980392
+    - 0.713725
+    - 0.00392157
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 0589737e8e3889afd364a9b3af1eb6350fdcdf7e06b716d8a88280076207f1e0
+    bytes: 246520
+  - mesh: assets/microduck/bottom_head_shell.glb
+    mesh_name: bottom_head_shell
+    source_file: bottom_head_shell.stl
+    origin:
+      xyz:
+      - -0.0043
+      - -0.0
+      - -0.018
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.980392
+    - 0.713725
+    - 0.00392157
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 6ede36085361ac6e53aad95bad3a2b0836227de56af51e534fb5a489de9bafb5
+    bytes: 647932
+  - mesh: assets/microduck/m12_lens_holder.glb
+    mesh_name: m12_lens_holder
+    source_file: m12_lens_holder.stl
+    origin:
+      xyz:
+      - 0.0155
+      - -9.13778e-05
+      - -0.05558
+      quat:
+      - 0.5
+      - -0.5
+      - 0.5
+      - -0.5
+    material:
+    - 0.262745
+    - 0.282353
+    - 0.301961
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 17023094682c4a424bf5c25961fec042309054eabc87b5ae568b3f8acde33241
+    bytes: 101420
+  - mesh: assets/microduck/pcb__raspberry_pi_zero_2_w.glb
+    mesh_name: pcb__raspberry_pi_zero_2_w
+    source_file: pcb__raspberry_pi_zero_2_w.stl
+    origin:
+      xyz:
+      - 0.015435
+      - -1.13778e-05
+      - -0.06001
+      quat:
+      - 0.5
+      - -0.5
+      - -0.5
+      - 0.5
+    material:
+    - 0.498039
+    - 0.498039
+    - 0.498039
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 170189d366f1ab777621a58cc9c2e3ce14a44c860ec23f80a5aadf7bb9f42e50
+    bytes: 458620
+  - mesh: assets/microduck/speaker.glb
+    mesh_name: speaker
+    source_file: speaker.stl
+    origin:
+      xyz:
+      - 0.01
+      - -0.016786
+      - 0.0260226
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.294118
+    - 0.290196
+    - 0.290196
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 33f6528b75f59592c1e847a38b3d674ced55ddf8563bd2bf1a6734084cee9c2c
+    bytes: 1512
+  collision: []
+- name: bearing_roll
+  parent: trunk_base
+  transform:
+    xyz:
+    - 0.006
+    - -0.0175
+    - -0.005
+    quat:
+    - 0.0
+    - 0.707107
+    - 0.707107
+    - 0.0
+  mass: 0.0230406
+  com:
+  - -8.8e-11
+  - 0.00099414
+  - 0.0168917
+  inertia:
+    ixx: 4.1964e-06
+    ixy: -0.0
+    ixz: -0.0
+    iyy: 3.41752e-06
+    iyz: -5.0881e-08
+    izz: 2.3265e-06
+  visual:
+  - mesh: assets/microduck/yaw2roll.glb
+    mesh_name: yaw2roll
+    source_file: yaw2roll.stl
+    origin:
+      xyz:
+      - -0.0175
+      - -0.002
+      - 0.0125
+      quat:
+      - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    material:
+    - 0.647059
+    - 0.647059
+    - 0.647059
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: a3b90958453a6169280b6ecb8eaaaa316d75d17bc6a7190774431043fe44993f
+    bytes: 277876
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - -0.0
+      - 0.0
+      - 0.0125
+      quat:
+      - 0.0
+      - -0.707107
+      - 0.707107
+      - -0.0
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/bearing_roll.glb
+    mesh_name: bearing_roll
+    source_file: bearing_roll.stl
+    origin:
+      xyz:
+      - -0.0175
+      - -0.002
+      - 0.0125
+      quat:
+      - 0.0
+      - -1.0
+      - -0.0
+      - -0.0
+    material:
+    - 0.262745
+    - 0.282353
+    - 0.301961
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: fbfbd1fc6fae269f72557cd1519cb070fe3def565671231e0b3588e2de0996d9
+    bytes: 80504
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
+    mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
+    origin:
+      xyz:
+      - -0.0
+      - 0.0165
+      - 0.0125
+      quat:
+      - 0.5
+      - 0.5
+      - 0.5
+      - -0.5
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  collision: []
+- name: hip_l_2
+  parent: bearing_roll
+  transform:
+    xyz:
+    - -0.0
+    - 0.0165
+    - 0.0125
+    quat:
+    - 0.0
+    - -0.0
+    - 0.707107
+    - 0.707107
+  mass: 0.00618934
+  com:
+  - 0.014815
+  - 1.6212e-08
+  - -0.00829992
+  inertia:
+    ixx: 8.60626e-07
+    ixy: 1.0e-12
+    ixz: 3.89882e-07
+    iyy: 1.15753e-06
+    iyz: -1.0e-12
+    izz: 6.51588e-07
+  visual:
+  - mesh: assets/microduck/hip_l.glb
+    mesh_name: hip_l
+    source_file: hip_l.stl
+    origin:
+      xyz:
+      - -0.0175
+      - 0.0
+      - -0.0185
+      quat:
+      - 0.707107
+      - -0.707107
+      - -0.0
+      - -0.0
+    material:
+    - 0.901961
+    - 0.901961
+    - 0.901961
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 8900a8939fae470d1dd16ef258240907ba3865d33d453096dc5700ccf874b957
+    bytes: 611716
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
+    mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
+    origin:
+      xyz:
+      - 0.025
+      - 0.0
+      - -0.0185
+      quat:
+      - 0.5
+      - 0.5
+      - -0.5
+      - -0.5
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  collision: []
+- name: upper_leg_right
+  parent: hip_l_2
+  transform:
+    xyz:
+    - 0.025
+    - 0.0
+    - -0.0185
+    quat:
+    - 0.5
+    - -0.5
+    - 0.5
+    - -0.5
+  mass: 0.0482067
+  com:
+  - -0.006766
+  - 0.0228838
+  - 0.0134531
+  inertia:
+    ixx: 1.68753e-05
+    ixy: 4.41852e-06
+    ixz: -2.27982e-07
+    iyy: 1.03691e-05
+    iyz: 3.89298e-07
+    izz: 1.98269e-05
+  visual:
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - -0.022
+      - 0.0357771
+      - 0.0125
+      quat:
+      - 0.707107
+      - -0.0
+      - -0.707107
+      - -0.0
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/seeed_bearing__configuration__22x16x4.glb
+    mesh_name: seeed_bearing__configuration__22x16x4
+    source_file: seeed_bearing__configuration__22x16x4.stl
+    origin:
+      xyz:
+      - -0.022
+      - 0.0357771
+      - 0.0
+      quat:
+      - 0.0
+      - 1.0
+      - -0.0
+      - -0.0
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 5b69048abcb23715ecbcddd978d05a5a01f8350e4cf32ce93de4cca8a3c10aeb
+    bytes: 647044
+  - mesh: assets/microduck/upper_leg_rigidity_plate.glb
+    mesh_name: upper_leg_rigidity_plate
+    source_file: upper_leg_rigidity_plate.stl
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0435
+      quat:
+      - 0.5
+      - -0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.537255
+    - 0.854902
+    - 0.827451
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 464b15d58858c4123852d6d7d427d588a61ff68be4e9d504240f98db54fb2520
+    bytes: 124448
+  - mesh: assets/microduck/upper_leg_right.glb
+    mesh_name: upper_leg_right
+    source_file: upper_leg_right.stl
+    origin:
+      xyz:
+      - -0.0
+      - 0.0
+      - -0.0425
+      quat:
+      - 0.5
+      - -0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.866667
+    - 0.866667
+    - 0.866667
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 587618e4f6135c3ed6d7482c0e96ec973e80a7651ca55c6b53b4e390cbd05837
+    bytes: 315572
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0125
+      quat:
+      - 0.5
+      - 0.5
+      - -0.5
+      - 0.5
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  collision: []
+- name: leg_2
+  parent: upper_leg_right
+  transform:
+    xyz:
+    - -0.022
+    - 0.0357771
+    - -0.004
+    quat:
+    - 0.0
+    - 1.0
+    - -0.0
+    - -0.0
+  mass: 0.0215844
+  com:
+  - -0.0318937
+  - -1.52e-10
+  - -0.00953505
+  inertia:
+    ixx: 2.15507e-06
+    ixy: 1.0e-12
+    ixz: -7.65005e-07
+    iyy: 5.25056e-06
+    iyz: 0.0
+    izz: 4.33925e-06
+  visual:
+  - mesh: assets/microduck/xl330.glb
+    mesh_name: xl330
+    source_file: xl330.stl
+    origin:
+      xyz:
+      - -0.042
+      - 0.0
+      - -0.0115
+      quat:
+      - 0.707107
+      - -0.0
+      - -0.707107
+      - -0.0
+    material:
+    - 0.286275
+    - 0.286275
+    - 0.286275
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 00b0f91f578751b4b05318b01acc19387d078bb336e6f59006ab254f058e7067
+    bytes: 136032
+  - mesh: assets/microduck/leg.glb
+    mesh_name: leg
+    source_file: leg.stl
+    origin:
+      xyz:
+      - -0.0357771
+      - -0.022
+      - 0.0385
+      quat:
+      - 0.707107
+      - 0.0
+      - 0.707107
+      - -0.0
+    material:
+    - 0.811765
+    - 0.858824
+    - 0.898039
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 405c430bb92db8d3d506d6cec41d5bd9699f5edfcc24ef264a88ee476972f483
+    bytes: 414716
+  collision:
+  - mesh: assets/microduck/leg.glb
+    mesh_name: leg
+    source_file: leg.stl
+    origin:
+      xyz:
+      - -0.0357771
+      - -0.022
+      - 0.0385
+      quat:
+      - 0.707107
+      - 0.0
+      - 0.707107
+      - -0.0
+    material:
+    - 0.811765
+    - 0.858824
+    - 0.898039
+    - 1.0
+    class: self_collision_only
+    vendored: false
+    self_collision: true
+- name: ankle_right
+  parent: leg_2
+  transform:
+    xyz:
+    - -0.042
+    - 0.0
+    - -0.026
+    quat:
+    - 0.0
+    - -0.707107
+    - -0.707107
+    - 0.0
+  mass: 0.0300251
+  com:
+  - 0.00615539
+  - -0.0137482
+  - -0.0156566
+  inertia:
+    ixx: 5.91534e-06
+    ixy: 2.04877e-07
+    ixz: -8.247e-08
+    iyy: 1.11534e-05
+    iyz: 5.7017e-08
+    izz: 7.74016e-06
+  visual:
+  - mesh: assets/microduck/ankle_right.glb
+    mesh_name: ankle_right
+    source_file: ankle_right.stl
+    origin:
+      xyz:
+      - 0.022
+      - 0.00622291
+      - -0.0647
+      quat:
+      - 0.5
+      - -0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.980392
+    - 0.713725
+    - 0.00392157
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: b661e47f848d888bfef7a06d97cc92adc77023ee340655c452d3b4e545cf5539
+    bytes: 176196
+  - mesh: assets/microduck/sole_right.glb
+    mesh_name: sole_right
+    source_file: sole_right.stl
+    origin:
+      xyz:
+      - 0.022
+      - 0.00622291
+      - -0.0647
+      quat:
+      - 0.5
+      - -0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.537255
+    - 0.854902
+    - 0.827451
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 5a6e83a5db4c87bd6e29fdce19ee3fa30578224270b31b97e5247b9716b19cb4
+    bytes: 390400
+  - mesh: assets/microduck/seeed_bearing__configuration_default.glb
+    mesh_name: seeed_bearing__configuration_default
+    source_file: seeed_bearing__configuration_default.stl
+    origin:
+      xyz:
+      - -0.0
+      - 0.0
+      - -0.0292
+      quat:
+      - 0.0
+      - 1.0
+      - -0.0
+      - -0.0
+    material:
+    - 0.713725
+    - 0.760784
+    - 0.8
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 111f1cafdd793e59392ae79e20e4e5b045dc7d310a50dd827379eeeaf188cc16
+    bytes: 655780
+  - mesh: assets/microduck/foot_right.glb
+    mesh_name: foot_right
+    source_file: foot_right.stl
+    origin:
+      xyz:
+      - 0.022
+      - 0.00622291
+      - -0.0647
+      quat:
+      - 0.5
+      - -0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.980392
+    - 0.713725
+    - 0.00392157
+    - 1.0
+    class: visual
+    vendored: true
+    sha256: 4c85d1b44d5943f84adcac58a44e669732a57367c16293d7f3996ac6888134e5
+    bytes: 368460
+  collision:
+  - mesh: assets/microduck/sole_right.glb
+    mesh_name: sole_right
+    source_file: sole_right.stl
+    origin:
+      xyz:
+      - 0.022
+      - 0.00622291
+      - -0.0647
+      quat:
+      - 0.5
+      - -0.5
+      - 0.5
+      - 0.5
+    material:
+    - 0.537255
+    - 0.854902
+    - 0.827451
+    - 1.0
+    class: collision
+    vendored: false
+    self_collision: false
+joints:
+- name: left_hip_yaw
+  type: revolute
+  parent: trunk_base
+  child: yaw2roll
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -0.4363323129985824
+      upper: 0.5235987755982988
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: left_hip_yaw
+- name: left_hip_roll
+  type: revolute
+  parent: yaw2roll
+  child: hip_l
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -0.3839724354387525
+      upper: 0.3839724354387525
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: left_hip_roll
+- name: left_hip_pitch
+  type: revolute
+  parent: hip_l
+  child: upper_leg_left
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -1.570796326795005
+      upper: 1.5707963267947882
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: left_hip_pitch
+- name: left_knee
+  type: revolute
+  parent: upper_leg_left
+  child: leg
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -1.570796326795012
+      upper: 1.570796326794781
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: left_knee
+- name: left_ankle
+  type: revolute
+  parent: leg
+  child: ankle_left
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -1.5707963267949019
+      upper: 1.5707963267948912
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: left_ankle
+- name: neck_pitch
+  type: revolute
+  parent: trunk_base
+  child: neck
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -1.5707963267948966
+      upper: 1.0471975511965976
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: neck_pitch
+- name: head_pitch
+  type: revolute
+  parent: neck
+  child: neck_pitch
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -1.5707963267948974
+      upper: 1.5707963267948957
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: head_pitch
+- name: head_yaw
+  type: revolute
+  parent: neck_pitch
+  child: yaw_roll_motion
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -2.967059728390373
+      upper: 2.967059728390348
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: head_yaw
+- name: head_roll
+  type: revolute
+  parent: yaw_roll_motion
+  child: jaw_soft
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -0.43633231299859127
+      upper: 0.4363323129985735
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: head_roll
+- name: right_hip_yaw
+  type: revolute
+  parent: trunk_base
+  child: bearing_roll
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -0.5235987755982988
+      upper: 0.4363323129985824
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: right_hip_yaw
+- name: right_hip_roll
+  type: revolute
+  parent: bearing_roll
+  child: hip_l_2
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -0.3839724354387525
+      upper: 0.3839724354387525
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: right_hip_roll
+- name: right_hip_pitch
+  type: revolute
+  parent: hip_l_2
+  child: upper_leg_right
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -1.5707963267949268
+      upper: 1.5707963267948664
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: right_hip_pitch
+- name: right_knee
+  type: revolute
+  parent: upper_leg_right
+  child: leg_2
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -1.570796326794932
+      upper: 1.570796326794861
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: right_knee
+- name: right_ankle
+  type: revolute
+  parent: leg_2
+  child: ankle_right
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -1.5707963267949054
+      upper: 1.5707963267948877
+  actuated: true
+  class: chosen_actuator
+  props:
+    damping: 0.053
+    frictionloss: 0.0048
+    armature: 0.0018
+  actuator: right_ankle
+actuators:
+- name: left_hip_yaw
+  joint: left_hip_yaw
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+- name: left_hip_roll
+  joint: left_hip_roll
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+- name: left_hip_pitch
+  joint: left_hip_pitch
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+- name: left_knee
+  joint: left_knee
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+- name: left_ankle
+  joint: left_ankle
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+- name: neck_pitch
+  joint: neck_pitch
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+- name: head_pitch
+  joint: head_pitch
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+- name: head_yaw
+  joint: head_yaw
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+- name: head_roll
+  joint: head_roll
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+- name: right_hip_yaw
+  joint: right_hip_yaw
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+- name: right_hip_roll
+  joint: right_hip_roll
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+- name: right_hip_pitch
+  joint: right_hip_pitch
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+- name: right_knee
+  joint: right_knee
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+- name: right_ankle
+  joint: right_ankle
+  kind: position
+  model: unknown
+  kp: 0.55
+  kv: 0.0
+  forcerange:
+  - -0.96
+  - 0.96
+  ctrlrange:
+  - -10.0
+  - 10.0
+  damping: 0.053
+  frictionloss: 0.0048
+  armature: 0.0018
+  class: chosen_actuator
+  kt: 0.6237611235393989
+  resistance: 4.910191564179625
+  command_delay: 0.006005265953265889
+  params_ref: third_party/fanhao-microduck-replica/1910_m6.json
+mechanisms: []
+sensors:
+- name: imu
+  kind: site
+  body: trunk_base
+  pos:
+  - -0.021
+  - 6.64098e-05
+  - -0.0146984
+  quat:
+  - 1.0
+  - -0.0
+  - -0.0
+  - 0.0
+- name: left_foot
+  kind: site
+  body: ankle_left
+  pos:
+  - -0.0
+  - -0.0238146
+  - -0.0140852
+  quat:
+  - 0.0
+  - 0.0
+  - 0.707107
+  - 0.707107
+- name: head_camera
+  kind: site
+  body: jaw_soft
+  pos:
+  - 0.0155
+  - -9.13778e-05
+  - -0.0733
+  quat:
+  - 0.707107
+  - 0.0
+  - 0.707107
+  - -0.0
+- name: tof
+  kind: site
+  body: jaw_soft
+  pos:
+  - 0.0135
+  - 0.0224086
+  - -0.0733
+  quat:
+  - 0.707107
+  - 0.0
+  - 0.707107
+  - -0.0
+- name: head_imu
+  kind: site
+  body: jaw_soft
+  pos:
+  - 0.0152323
+  - 0.000111069
+  - -0.05106
+  quat:
+  - 1.0
+  - 0.0
+  - 0.0
+  - -0.0
+- name: mouth_tip
+  kind: site
+  body: jaw_soft
+  pos:
+  - -0.00809334
+  - -0.0
+  - -0.0777383
+  quat:
+  - 0.704015
+  - 0.0
+  - 0.710185
+  - -0.0
+- name: right_foot
+  kind: site
+  body: ankle_right
+  pos:
+  - 0.0
+  - -0.0238146
+  - -0.0140852
+  quat:
+  - 0.707107
+  - -0.707107
+  - 0.0
+  - 0.0
+- name: orientation
+  kind: framequat
+  site: null
+  body: null
+  noise: 0.001
+- name: angular-velocity
+  kind: gyro
+  site: imu
+  body: null
+  noise: 0.005
+- name: imu_ang_vel
+  kind: gyro
+  site: imu
+  body: null
+  noise: null
+- name: imu_lin_vel
+  kind: velocimeter
+  site: imu
+  body: null
+  noise: null
+- name: imu_accel
+  kind: accelerometer
+  site: imu
+  body: null
+  noise: null
+- name: root_angmom
+  kind: subtreeangmom
+  site: null
+  body: trunk_base
+  noise: null
+bus:
+  note: 未定：SDK 的统一 interface 还没拿到，字段等那份规范
+presets:
+  walk:
+    source_file: robot_walk.xml
+    collision: walk
+    rollers: false
+    backlash: false
+provenance:
+- path: links[trunk_base].mass
+  value: 0.199224
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[trunk_base].com
+  value:
+  - -0.0226332
+  - -2.70828e-05
+  - 0.00280064
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[trunk_base].inertia
+  value:
+    ixx: 0.000123975
+    ixy: 7.1651e-08
+    ixz: -2.06915e-05
+    iyy: 0.000145931
+    iyz: 1.32429e-07
+    izz: 0.000115351
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[yaw2roll].mass
+  value: 0.0230406
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[yaw2roll].com
+  value:
+  - -8.8e-11
+  - 0.00099414
+  - 0.0168917
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[yaw2roll].inertia
+  value:
+    ixx: 4.1964e-06
+    ixy: -0.0
+    ixz: -0.0
+    iyy: 3.41752e-06
+    iyz: -5.0881e-08
+    izz: 2.3265e-06
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[left_hip_yaw].limit.mech
+  value:
+    lower: -0.4363323129985824
+    upper: 0.5235987755982988
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[left_hip_yaw].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[hip_l].mass
+  value: 0.00618934
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[hip_l].com
+  value:
+  - 0.014815
+  - 1.6179e-08
+  - -0.00829992
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[hip_l].inertia
+  value:
+    ixx: 8.60626e-07
+    ixy: 1.0e-12
+    ixz: 3.89882e-07
+    iyy: 1.15753e-06
+    iyz: -1.0e-12
+    izz: 6.51588e-07
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[left_hip_roll].limit.mech
+  value:
+    lower: -0.3839724354387525
+    upper: 0.3839724354387525
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[left_hip_roll].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[upper_leg_left].mass
+  value: 0.0482067
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[upper_leg_left].com
+  value:
+  - 0.006766
+  - 0.0228838
+  - 0.0134531
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[upper_leg_left].inertia
+  value:
+    ixx: 1.68753e-05
+    ixy: -4.41852e-06
+    ixz: 2.27982e-07
+    iyy: 1.03691e-05
+    iyz: 3.89298e-07
+    izz: 1.98269e-05
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[left_hip_pitch].limit.mech
+  value:
+    lower: -1.570796326795005
+    upper: 1.5707963267947882
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[left_hip_pitch].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[leg].mass
+  value: 0.0215844
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[leg].com
+  value:
+  - -1.52e-10
+  - 0.0318937
+  - -0.00953505
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[leg].inertia
+  value:
+    ixx: 5.25056e-06
+    ixy: -1.0e-12
+    ixz: 0.0
+    iyy: 2.15507e-06
+    iyz: 7.65005e-07
+    izz: 4.33925e-06
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[left_knee].limit.mech
+  value:
+    lower: -1.570796326795012
+    upper: 1.570796326794781
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[left_knee].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[ankle_left].mass
+  value: 0.0300246
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[ankle_left].com
+  value:
+  - -0.00615738
+  - -0.0137483
+  - -0.0156586
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[ankle_left].inertia
+  value:
+    ixx: 5.91525e-06
+    ixy: -2.0535e-07
+    ixz: 8.2152e-08
+    iyy: 1.11534e-05
+    iyz: 5.6714e-08
+    izz: 7.74015e-06
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[left_ankle].limit.mech
+  value:
+    lower: -1.5707963267949019
+    upper: 1.5707963267948912
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[left_ankle].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[neck].mass
+  value: 0.0368414
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[neck].com
+  value:
+  - 0.0
+  - -0.025
+  - 0.0141665
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[neck].inertia
+  value:
+    ixx: 1.72925e-05
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 3.12694e-06
+    iyz: 0.0
+    izz: 1.63707e-05
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[neck_pitch].limit.mech
+  value:
+    lower: -1.5707963267948966
+    upper: 1.0471975511965976
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[neck_pitch].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[neck_pitch].mass
+  value: 0.00572
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[neck_pitch].com
+  value:
+  - -6.533e-09
+  - 0.0116641
+  - -0.0145
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[neck_pitch].inertia
+  value:
+    ixx: 1.09186e-06
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 9.66855e-07
+    iyz: 0.0
+    izz: 5.12111e-07
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[head_pitch].limit.mech
+  value:
+    lower: -1.5707963267948974
+    upper: 1.5707963267948957
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[head_pitch].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[yaw_roll_motion].mass
+  value: 0.0486
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[yaw_roll_motion].com
+  value:
+  - -0.000166657
+  - -0.00500964
+  - 0.0178065
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[yaw_roll_motion].inertia
+  value:
+    ixx: 6.97903e-06
+    ixy: 3.21657e-07
+    ixz: -3.4797e-08
+    iyy: 8.10293e-06
+    iyz: 3.4295e-07
+    izz: 9.57884e-06
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[head_yaw].limit.mech
+  value:
+    lower: -2.967059728390373
+    upper: 2.967059728390348
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[head_yaw].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[jaw_soft].mass
+  value: 0.188766
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[jaw_soft].com
+  value:
+  - 0.00460523
+  - 0.00120047
+  - -0.0324761
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[jaw_soft].inertia
+  value:
+    ixx: 0.000320812
+    ixy: -6.32292e-07
+    ixz: 6.57154e-06
+    iyy: 0.0002541
+    iyz: 4.18476e-06
+    izz: 0.000149882
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[head_roll].limit.mech
+  value:
+    lower: -0.43633231299859127
+    upper: 0.4363323129985735
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[head_roll].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[bearing_roll].mass
+  value: 0.0230406
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[bearing_roll].com
+  value:
+  - -8.8e-11
+  - 0.00099414
+  - 0.0168917
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[bearing_roll].inertia
+  value:
+    ixx: 4.1964e-06
+    ixy: -0.0
+    ixz: -0.0
+    iyy: 3.41752e-06
+    iyz: -5.0881e-08
+    izz: 2.3265e-06
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[right_hip_yaw].limit.mech
+  value:
+    lower: -0.5235987755982988
+    upper: 0.4363323129985824
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[right_hip_yaw].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[hip_l_2].mass
+  value: 0.00618934
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[hip_l_2].com
+  value:
+  - 0.014815
+  - 1.6212e-08
+  - -0.00829992
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[hip_l_2].inertia
+  value:
+    ixx: 8.60626e-07
+    ixy: 1.0e-12
+    ixz: 3.89882e-07
+    iyy: 1.15753e-06
+    iyz: -1.0e-12
+    izz: 6.51588e-07
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[right_hip_roll].limit.mech
+  value:
+    lower: -0.3839724354387525
+    upper: 0.3839724354387525
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[right_hip_roll].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[upper_leg_right].mass
+  value: 0.0482067
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[upper_leg_right].com
+  value:
+  - -0.006766
+  - 0.0228838
+  - 0.0134531
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[upper_leg_right].inertia
+  value:
+    ixx: 1.68753e-05
+    ixy: 4.41852e-06
+    ixz: -2.27982e-07
+    iyy: 1.03691e-05
+    iyz: 3.89298e-07
+    izz: 1.98269e-05
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[right_hip_pitch].limit.mech
+  value:
+    lower: -1.5707963267949268
+    upper: 1.5707963267948664
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[right_hip_pitch].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[leg_2].mass
+  value: 0.0215844
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[leg_2].com
+  value:
+  - -0.0318937
+  - -1.52e-10
+  - -0.00953505
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[leg_2].inertia
+  value:
+    ixx: 2.15507e-06
+    ixy: 1.0e-12
+    ixz: -7.65005e-07
+    iyy: 5.25056e-06
+    iyz: 0.0
+    izz: 4.33925e-06
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[right_knee].limit.mech
+  value:
+    lower: -1.570796326794932
+    upper: 1.570796326794861
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[right_knee].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[ankle_right].mass
+  value: 0.0300251
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[ankle_right].com
+  value:
+  - 0.00615539
+  - -0.0137482
+  - -0.0156566
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: links[ankle_right].inertia
+  value:
+    ixx: 5.91534e-06
+    ixy: 2.04877e-07
+    ixz: -8.247e-08
+    iyy: 1.11534e-05
+    iyz: 5.7017e-08
+    izz: 7.74016e-06
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[right_ankle].limit.mech
+  value:
+    lower: -1.5707963267949054
+    upper: 1.5707963267948877
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: joints[right_ankle].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[left_hip_yaw].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[left_hip_yaw].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[left_hip_roll].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[left_hip_roll].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[left_hip_pitch].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[left_hip_pitch].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[left_knee].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[left_knee].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[left_ankle].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[left_ankle].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[neck_pitch].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[neck_pitch].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[head_pitch].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[head_pitch].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[head_yaw].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[head_yaw].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[head_roll].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[head_roll].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[right_hip_yaw].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[right_hip_yaw].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[right_hip_roll].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[right_hip_roll].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[right_hip_pitch].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[right_hip_pitch].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[right_knee].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[right_knee].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[right_ankle].kp
+  value: 0.55
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[right_ankle].forcerange
+  value:
+  - -0.96
+  - 0.96
+  unit: N*m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: actuators[*].kt
+  value: 0.6237611235393989
+  unit: N*m
+  source: identified
+  date: '2026-11-09'
+  ref: third_party/fanhao-microduck-replica/1910_m6.json
+  note: BAM M6 对 sts3215 的辨识结果，不是本机实测
+- path: actuators[*].resistance
+  value: 4.910191564179625
+  unit: m
+  source: identified
+  date: '2026-11-09'
+  ref: third_party/fanhao-microduck-replica/1910_m6.json
+- path: sensors[orientation].noise
+  value: 0.001
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: sensors[angular-velocity].noise
+  value: 0.005
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: sensors[imu_ang_vel].noise
+  value: 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: sensors[imu_lin_vel].noise
+  value: 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: sensors[imu_accel].noise
+  value: 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: sensors[root_angmom].noise
+  value: 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+- path: summary.total_mass
+  value: 0.73724318
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: robot_walk.xml
+  note: 15 个刚体求和
+warnings:
+- code: W002
+  path: links[trunk_base]
+  message: 根 body 有 freejoint；实体里记在 frames.world_attachment=floating + frames.freejoint，不重复成一条 joint
+- code: W004
+  path: links[*].visual[*].mesh
+  message: 38 个 mesh 只有引用、没有入库；需要时可从上游按 sha256 拉一次
+  meshes:
+  - assets/microduck/ankle_left.glb
+  - assets/microduck/ankle_right.glb
+  - assets/microduck/banana_pcb_locker.glb
+  - assets/microduck/bearing_roll.glb
+  - assets/microduck/bottom_head_shell.glb
+  - assets/microduck/elec_rpi_robot_hat_pcb.glb
+  - assets/microduck/face_part.glb
+  - assets/microduck/foot_left.glb
+  more: 30
+- code: W005
+  path: presets
+  message: fanhao 仓库有 6 个 MJCF 变体（collision×rollers×backlash），本实体只按导入的那一份生成 preset；其余 5 个按需再加
+summary:
+  links: 15
+  joints: 14
+  actuated_joints: 14
+  actuators: 14
+  total_mass: 0.73724318
+  visual_meshes_vendored: 70

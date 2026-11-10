@@ -1,0 +1,1328 @@
+schema: ducksir/robot/v0
+robot:
+  id: ankle-rig-g1
+  name: g1_ankle
+  type: ankle-rig-g1
+  source_ref: refs/parallel-ankle/2_g1_ankle/urdf_23urdf311.xml (MIT)
+  license: MIT
+  generator:
+    name: importer_mjcf
+    version: 0.1.0
+    input: ../../refs/parallel-ankle/2_g1_ankle/urdf_23urdf311.xml
+    sha256: 0e7c4d595c363c3459b82ff507a5a60a4ba3cc984e1ab5be3dc787573d6ab928
+  created_at: '2026-11-09'
+  assets_dir: assets/rigs
+  mechanisms_spec: contract/robot/specs/ankle-rig-parallel.yaml
+frames:
+  root: base_link
+  world_attachment: floating
+  axes:
+    x: forward
+    y: left
+    z: up
+  units:
+    length: m
+    mass: kg
+    angle: rad
+    time: s
+    force: N
+    torque: N*m
+    inertia: kg*m^2
+    angular_velocity: rad/s
+    velocity: m/s
+    stiffness: N*m/rad
+    damping: N*m*s/rad
+  quat_order: wxyz
+  euler_order: rpy
+  angular_velocity_frame: body
+links:
+- name: base_link
+  parent: world
+  transform:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.15
+    quat:
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.11466
+  com:
+  - 0.0023576
+  - 1.9104e-06
+  - 0.060943
+  inertia:
+    ixx: 0.000109040384647
+    ixy: 1.008756e-09
+    ixz: -3.70501805e-07
+    iyy: 0.000102269999975
+    iyz: 3.651194e-09
+    izz: 2.4055015378e-05
+  visual:
+  - mesh: assets/rigs/base_link.glb
+    mesh_name: base_link
+    source_file: base_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material:
+    - 0.75
+    - 0.75
+    - 0.8
+    - 1.0
+    class: null
+    vendored: false
+  collision: []
+- name: pitch_link
+  parent: base_link
+  transform:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat:
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.010343
+  com:
+  - -0.0085578
+  - 0.0
+  - -0.012176
+  inertia:
+    ixx: 8.37139905e-07
+    ixy: -0.0
+    ixz: -2.91509719e-07
+    iyy: 2.1505e-06
+    iyz: -0.0
+    izz: 1.541698095e-06
+  visual:
+  - mesh: assets/rigs/pitch_link.glb
+    mesh_name: pitch_link
+    source_file: pitch_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material:
+    - 0.75
+    - 0.75
+    - 0.8
+    - 1.0
+    class: null
+    vendored: false
+  collision: []
+- name: roll_link
+  parent: pitch_link
+  transform:
+    xyz:
+    - 0.0
+    - 0.0
+    - -0.017558
+    quat:
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.30033
+  com:
+  - 0.035489
+  - 1.1701e-05
+  - -0.021531
+  inertia:
+    ixx: 0.000120089973937
+    ixy: -3.1648942e-08
+    ixz: 3.5570616889e-05
+    iyy: 0.000917119999555
+    iyz: 8.64248e-09
+    izz: 0.000979950026509
+  visual:
+  - mesh: assets/rigs/roll_link.glb
+    mesh_name: roll_link
+    source_file: roll_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material:
+    - 0.9
+    - 0.5
+    - 0.1
+    - 1.0
+    class: null
+    vendored: false
+  collision: []
+- name: right_u_link
+  parent: roll_link
+  transform:
+    xyz:
+    - 0.022
+    - -0.015
+    - 0.0079999
+    quat:
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.0025708
+  com:
+  - 0.0
+  - 0.0
+  - 0.0
+  inertia:
+    ixx: 7.7463043e-08
+    ixy: 0.0
+    ixz: 3.221828e-09
+    iyy: 7.7208e-08
+    iyz: 0.0
+    izz: 1.17859657e-07
+  visual:
+  - mesh: assets/rigs/right_u_link.glb
+    mesh_name: right_u_link
+    source_file: right_u_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material:
+    - 0.2
+    - 0.2
+    - 0.25
+    - 1.0
+    class: null
+    vendored: false
+  collision: []
+- name: right_connect_link
+  parent: right_u_link
+  transform:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat:
+    - 0.999214
+    - 0.0030657
+    - 0.039534
+    - -0.00011502
+  mass: 0.0151882
+  com:
+  - -6.63991e-06
+  - 0.000970747
+  - 0.109981
+  inertia:
+    ixx: 7.0791497959e-05
+    ixy: -1.03837e-10
+    ixz: 1.124889e-08
+    iyy: 7.0746498553e-05
+    iyz: -1.0932353e-08
+    izz: 2.18000488e-07
+  visual:
+  - mesh: assets/rigs/right_connect_link.glb
+    mesh_name: right_connect_link
+    source_file: right_connect_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material:
+    - 0.2
+    - 0.2
+    - 0.25
+    - 1.0
+    class: null
+    vendored: false
+  collision: []
+- name: left_u_link
+  parent: roll_link
+  transform:
+    xyz:
+    - 0.022
+    - 0.015
+    - 0.0079999
+    quat:
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.0025708
+  com:
+  - 0.0
+  - 0.0
+  - 0.0
+  inertia:
+    ixx: 7.7488028e-08
+    ixy: 0.0
+    ixz: 3.375778e-09
+    iyy: 7.7208e-08
+    iyz: 0.0
+    izz: 1.17830472e-07
+  visual:
+  - mesh: assets/rigs/left_u_link.glb
+    mesh_name: left_u_link
+    source_file: left_u_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material:
+    - 0.2
+    - 0.2
+    - 0.25
+    - 1.0
+    class: null
+    vendored: false
+  collision: []
+- name: left_connect_link
+  parent: left_u_link
+  transform:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat:
+    - 0.999141
+    - 0.000350633
+    - 0.0414391
+    - -8.26912e-06
+  mass: 0.0111282
+  com:
+  - -9.16684e-06
+  - -6.80773e-05
+  - 0.0781984
+  inertia:
+    ixx: 2.5626196926e-05
+    ixy: 1.79666e-10
+    ixz: 8.199035e-09
+    iyy: 2.5592193827e-05
+    iyz: -1.89086748e-07
+    izz: 1.75100247e-07
+  visual:
+  - mesh: assets/rigs/left_connect_link.glb
+    mesh_name: left_connect_link
+    source_file: left_connect_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material:
+    - 0.2
+    - 0.2
+    - 0.25
+    - 1.0
+    class: null
+    vendored: false
+  collision: []
+- name: left_motor_link
+  parent: base_link
+  transform:
+    xyz:
+    - 0.022
+    - 0.0
+    - 0.15087
+    quat:
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.0080401
+  com:
+  - 0.00362577
+  - 0.00424053
+  - -0.00101697
+  inertia:
+    ixx: 1.363367969e-06
+    ixy: -4.44469427e-07
+    ixz: 3.1429665e-08
+    iyy: 1.119784191e-06
+    iyz: 4.1200132e-08
+    izz: 1.04160384e-06
+  visual:
+  - mesh: assets/rigs/left_motor_link.glb
+    mesh_name: left_motor_link
+    source_file: left_motor_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material:
+    - 0.1
+    - 0.45
+    - 0.8
+    - 1.0
+    class: null
+    vendored: false
+  collision: []
+- name: right_motor_link
+  parent: base_link
+  transform:
+    xyz:
+    - 0.022
+    - 0.0
+    - 0.21587
+    quat:
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.0088576
+  com:
+  - 0.00448907
+  - -0.00493819
+  - -0.00139596
+  inertia:
+    ixx: 1.336457434e-06
+    ixy: 4.86611169e-07
+    ixz: 4.4682001e-08
+    iyy: 1.463679993e-06
+    iyz: -3.9221552e-08
+    izz: 1.217042572e-06
+  visual:
+  - mesh: assets/rigs/right_motor_link.glb
+    mesh_name: right_motor_link
+    source_file: right_motor_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material:
+    - 0.1
+    - 0.45
+    - 0.8
+    - 1.0
+    class: null
+    vendored: false
+  collision: []
+joints:
+- name: pitch_joint
+  type: revolute
+  parent: base_link
+  child: pitch_link
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.87267
+      upper: 0.5236
+  actuated: false
+  class: null
+  props:
+    damping: 0.0
+- name: roll_joint
+  type: revolute
+  parent: pitch_link
+  child: roll_link
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -15.0
+      upper: 22.5
+  actuated: false
+  class: null
+  props:
+    damping: 0.0
+- name: right_u_pitch_joint
+  type: revolute
+  parent: roll_link
+  child: right_u_link
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -15.0
+      upper: 22.5
+  actuated: false
+  class: null
+  props:
+    damping: 0.0
+- name: right_connect_joint
+  type: revolute
+  parent: right_u_link
+  child: right_connect_link
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -15.0
+      upper: 22.5
+  actuated: false
+  class: null
+  props:
+    damping: 0.0
+- name: left_u_pitch_joint
+  type: revolute
+  parent: roll_link
+  child: left_u_link
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -15.0
+      upper: 22.5
+  actuated: false
+  class: null
+  props:
+    damping: 0.0
+- name: left_connect_joint
+  type: revolute
+  parent: left_u_link
+  child: left_connect_link
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - -1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -15.0
+      upper: 22.5
+  actuated: false
+  class: null
+  props:
+    damping: 0.0
+- name: left_motor_joint
+  type: revolute
+  parent: base_link
+  child: left_motor_link
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -1.5
+      upper: 1.5
+  actuated: true
+  class: null
+  props:
+    damping: 0.0
+    armature: 0.001
+  actuator: left_motor_joint
+- name: right_motor_joint
+  type: revolute
+  parent: base_link
+  child: right_motor_link
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -1.5
+      upper: 1.5
+  actuated: true
+  class: null
+  props:
+    damping: 0.0
+    armature: 0.001
+  actuator: right_motor_joint
+actuators:
+- name: left_motor_joint
+  joint: left_motor_joint
+  kind: position
+  model: unknown
+  kp: 100.0
+  kv: 0.1
+  forcerange: null
+  ctrlrange:
+  - -1.1
+  - 1.1
+  damping: 0.0
+  frictionloss: null
+  armature: 0.001
+  class: null
+- name: right_motor_joint
+  joint: right_motor_joint
+  kind: position
+  model: unknown
+  kp: 100.0
+  kv: 0.1
+  forcerange: null
+  ctrlrange:
+  - -1.1
+  - 1.1
+  damping: 0.0
+  frictionloss: null
+  armature: 0.001
+  class: null
+mechanisms:
+- id: g1_ankle
+  kind: parallel_2dof
+  mount: base_link
+  platform: roll_link
+  charts:
+    pr:
+      joints:
+      - pitch_joint
+      - roll_joint
+      semantic:
+      - pitch
+      - roll
+    ab:
+      motors:
+      - ab: B
+        joint: right_motor_joint
+      - ab: A
+        joint: left_motor_joint
+  coupling:
+    kind: analytic
+    params:
+      frame: pitch_joint
+      units: m
+      mujoco_grid: mujoco-grid-g1.json
+      passive_pr: true
+      motor_joints:
+      - right_motor_joint
+      - left_motor_joint
+      chains:
+      - a:
+        - 0.022
+        - 0
+        - 0.21587
+        axis:
+        - 1
+        - 0
+        - 0
+        v:
+        - 0.0175
+        - -0.016359
+        - -0.004624
+        rod: 0.2215
+      - a:
+        - 0.022
+        - 0
+        - 0.15087
+        axis:
+        - 1
+        - 0
+        - 0
+        v:
+        - 0.013
+        - 0.016529
+        - -0.003975
+        rod: 0.157
+      platform:
+        pitch_axis:
+        - 0
+        - 1
+        - 0
+        pitch_pivot:
+        - 0
+        - 0
+        - 0
+        roll_axis:
+        - 1
+        - 0
+        - 0
+        roll_pivot:
+        - 0
+        - 0
+        - -0.017558
+        c0:
+        - - 0.022
+          - -0.015
+          - -0.009558
+        - - 0.022
+          - 0.015
+          - -0.009558
+    source: rig 自己的 XML（MIT, feidedao/Parallel_Ankle_Joint）
+    assumed:
+    - 'ab_mapping: rig 的 right/left_motor 与 SDK 的 A/B 未核实'
+    - 'geometry_from_rig: 这是他手搓装配的模型，不是官方 TC10-00 / G1'
+    anchor_zero:
+      A: 0
+      B: 0
+      roll: 0
+      pitch: 0
+    todo: 接到真机前需换官方几何并核实 A/B 对应
+loops:
+- id: c1
+  kind: connect
+  body1: right_motor_link
+  body2: right_connect_link
+  source: urdf_23urdf311.xml
+  anchor:
+  - 0.0175
+  - -0.016359
+  - -0.0046245
+- id: c2
+  kind: connect
+  body1: left_motor_link
+  body2: left_connect_link
+  source: urdf_23urdf311.xml
+  anchor:
+  - 0.013
+  - 0.016529
+  - -0.0039746
+sensors: []
+bus:
+  note: 未定：SDK 的统一 interface 还没拿到，字段等那份规范
+presets:
+  urdf_23urdf311:
+    source_file: urdf_23urdf311.xml
+    collision: walk
+    rollers: false
+    backlash: false
+provenance:
+- path: links[base_link].inertia.principal
+  value:
+  - 0.000109042
+  - 0.00010227
+  - 2.40534e-05
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+  note: 源是 diaginertia + quat，已转到 link 系
+- path: links[base_link].mass
+  value: 0.11466
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[base_link].com
+  value:
+  - 0.0023576
+  - 1.9104e-06
+  - 0.060943
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[base_link].inertia
+  value:
+    ixx: 0.000109040384647
+    ixy: 1.008756e-09
+    ixz: -3.70501805e-07
+    iyy: 0.000102269999975
+    iyz: 3.651194e-09
+    izz: 2.4055015378e-05
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[pitch_link].inertia.principal
+  value:
+  - 2.1505e-06
+  - 1.64667e-06
+  - 7.32168e-07
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+  note: 源是 diaginertia + quat，已转到 link 系
+- path: links[pitch_link].mass
+  value: 0.010343
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[pitch_link].com
+  value:
+  - -0.0085578
+  - 0.0
+  - -0.012176
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[pitch_link].inertia
+  value:
+    ixx: 8.37139905e-07
+    ixy: -0.0
+    ixz: -2.91509719e-07
+    iyy: 2.1505e-06
+    iyz: -0.0
+    izz: 1.541698095e-06
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[pitch_joint].limit.mech
+  value:
+    lower: -0.87267
+    upper: 0.5236
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[pitch_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[roll_link].inertia.principal
+  value:
+  - 0.000981419
+  - 0.00091712
+  - 0.000118621
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+  note: 源是 diaginertia + quat，已转到 link 系
+- path: links[roll_link].mass
+  value: 0.30033
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[roll_link].com
+  value:
+  - 0.035489
+  - 1.1701e-05
+  - -0.021531
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[roll_link].inertia
+  value:
+    ixx: 0.000120089973937
+    ixy: -3.1648942e-08
+    ixz: 3.5570616889e-05
+    iyy: 0.000917119999555
+    iyz: 8.64248e-09
+    izz: 0.000979950026509
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[roll_joint].limit.mech
+  value:
+    lower: -15.0
+    upper: 22.5
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[roll_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[right_u_link].inertia.principal
+  value:
+  - 1.18115e-07
+  - 7.72077e-08
+  - 7.7208e-08
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+  note: 源是 diaginertia + quat，已转到 link 系
+- path: links[right_u_link].mass
+  value: 0.0025708
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[right_u_link].com
+  value:
+  - 0.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[right_u_link].inertia
+  value:
+    ixx: 7.7463043e-08
+    ixy: 0.0
+    ixz: 3.221828e-09
+    iyy: 7.7208e-08
+    iyz: 0.0
+    izz: 1.17859657e-07
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[right_u_pitch_joint].limit.mech
+  value:
+    lower: -15.0
+    upper: 22.5
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[right_u_pitch_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[right_connect_link].inertia.principal
+  value:
+  - 7.07915e-05
+  - 7.07465e-05
+  - 2.17997e-07
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+  note: 源是 diaginertia + quat，已转到 link 系
+- path: links[right_connect_link].mass
+  value: 0.0151882
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[right_connect_link].com
+  value:
+  - -6.63991e-06
+  - 0.000970747
+  - 0.109981
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[right_connect_link].inertia
+  value:
+    ixx: 7.0791497959e-05
+    ixy: -1.03837e-10
+    ixz: 1.124889e-08
+    iyy: 7.0746498553e-05
+    iyz: -1.0932353e-08
+    izz: 2.18000488e-07
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[right_connect_joint].limit.mech
+  value:
+    lower: -15.0
+    upper: 22.5
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[right_connect_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[left_u_link].inertia.principal
+  value:
+  - 1.18111e-07
+  - 7.72075e-08
+  - 7.7208e-08
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+  note: 源是 diaginertia + quat，已转到 link 系
+- path: links[left_u_link].mass
+  value: 0.0025708
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[left_u_link].com
+  value:
+  - 0.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[left_u_link].inertia
+  value:
+    ixx: 7.7488028e-08
+    ixy: 0.0
+    ixz: 3.375778e-09
+    iyy: 7.7208e-08
+    iyz: 0.0
+    izz: 1.17830472e-07
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[left_u_pitch_joint].limit.mech
+  value:
+    lower: -15.0
+    upper: 22.5
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[left_u_pitch_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[left_connect_link].inertia.principal
+  value:
+  - 2.56262e-05
+  - 2.55936e-05
+  - 1.73691e-07
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+  note: 源是 diaginertia + quat，已转到 link 系
+- path: links[left_connect_link].mass
+  value: 0.0111282
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[left_connect_link].com
+  value:
+  - -9.16684e-06
+  - -6.80773e-05
+  - 0.0781984
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[left_connect_link].inertia
+  value:
+    ixx: 2.5626196926e-05
+    ixy: 1.79666e-10
+    ixz: 8.199035e-09
+    iyy: 2.5592193827e-05
+    iyz: -1.89086748e-07
+    izz: 1.75100247e-07
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[left_connect_joint].limit.mech
+  value:
+    lower: -15.0
+    upper: 22.5
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[left_connect_joint].axis.dir
+  value:
+  - -1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[left_motor_link].inertia.principal
+  value:
+  - 1.70243e-06
+  - 1.05152e-06
+  - 7.70806e-07
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+  note: 源是 diaginertia + quat，已转到 link 系
+- path: links[left_motor_link].mass
+  value: 0.0080401
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[left_motor_link].com
+  value:
+  - 0.00362577
+  - 0.00424053
+  - -0.00101697
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[left_motor_link].inertia
+  value:
+    ixx: 1.363367969e-06
+    ixy: -4.44469427e-07
+    ixz: 3.1429665e-08
+    iyy: 1.119784191e-06
+    iyz: 4.1200132e-08
+    izz: 1.04160384e-06
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[left_motor_joint].limit.mech
+  value:
+    lower: -1.5
+    upper: 1.5
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[left_motor_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[right_motor_link].inertia.principal
+  value:
+  - 1.89082e-06
+  - 1.22813e-06
+  - 8.9823e-07
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+  note: 源是 diaginertia + quat，已转到 link 系
+- path: links[right_motor_link].mass
+  value: 0.0088576
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[right_motor_link].com
+  value:
+  - 0.00448907
+  - -0.00493819
+  - -0.00139596
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: links[right_motor_link].inertia
+  value:
+    ixx: 1.336457434e-06
+    ixy: 4.86611169e-07
+    ixz: 4.4682001e-08
+    iyy: 1.463679993e-06
+    iyz: -3.9221552e-08
+    izz: 1.217042572e-06
+  unit: kg*m^2
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[right_motor_joint].limit.mech
+  value:
+    lower: -1.5
+    upper: 1.5
+  unit: rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: joints[right_motor_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: actuators[left_motor_joint].kp
+  value: 100.0
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: actuators[right_motor_joint].kp
+  value: 100.0
+  unit: N*m/rad
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+- path: loops[c1].anchor
+  value:
+  - 0.0175
+  - -0.016359
+  - -0.0046245
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+  note: 闭环约束的锚点；MuJoCo 里按软约束求解
+- path: loops[c2].anchor
+  value:
+  - 0.013
+  - 0.016529
+  - -0.0039746
+  unit: m
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+  note: 闭环约束的锚点；MuJoCo 里按软约束求解
+- path: summary.total_mass
+  value: 0.4736887
+  unit: kg
+  source: mjcf
+  date: '2026-11-09'
+  ref: urdf_23urdf311.xml
+  note: 15 个刚体求和
+warnings:
+- code: W004
+  path: links[*].visual[*].mesh
+  message: 9 个 mesh 只有引用、没有入库；需要时可从上游按 sha256 拉一次
+  meshes:
+  - assets/rigs/base_link.glb
+  - assets/rigs/left_connect_link.glb
+  - assets/rigs/left_motor_link.glb
+  - assets/rigs/left_u_link.glb
+  - assets/rigs/pitch_link.glb
+  - assets/rigs/right_connect_link.glb
+  - assets/rigs/right_motor_link.glb
+  - assets/rigs/right_u_link.glb
+  more: 1
+- code: W009
+  path: joints[roll_joint].limit
+  message: 限位最大 22.5 超出 ±π，而 compiler angle=radian —— 疑似把度写进了弧度字段；原值保留不修正
+- code: W009
+  path: joints[right_u_pitch_joint].limit
+  message: 限位最大 22.5 超出 ±π，而 compiler angle=radian —— 疑似把度写进了弧度字段；原值保留不修正
+- code: W009
+  path: joints[right_connect_joint].limit
+  message: 限位最大 22.5 超出 ±π，而 compiler angle=radian —— 疑似把度写进了弧度字段；原值保留不修正
+- code: W009
+  path: joints[left_u_pitch_joint].limit
+  message: 限位最大 22.5 超出 ±π，而 compiler angle=radian —— 疑似把度写进了弧度字段；原值保留不修正
+- code: W009
+  path: joints[left_connect_joint].limit
+  message: 限位最大 22.5 超出 ±π，而 compiler angle=radian —— 疑似把度写进了弧度字段；原值保留不修正
+- code: W010
+  path: defaults
+  message: 默认类 ['cassie'] 来自其它机型（原模型由 cassie 改出来），质量/惯量/增益跟着一起搬过来了
+- code: W005
+  path: presets
+  message: fanhao 仓库有 6 个 MJCF 变体（collision×rollers×backlash），本实体只按导入的那一份生成 preset；其余 5 个按需再加
+- code: W007
+  path: mechanisms[]
+  message: 并联机构的坐标与耦合来自手写 spec（contract/robot/specs/ankle-rig-parallel.yaml），不是导入产物
+- code: W008
+  path: dynamics
+  message: 源文件自述动力学参数不可信（手工装配的试验模型），只可用于运动学/结构参考
+summary:
+  links: 9
+  joints: 8
+  actuated_joints: 2
+  actuators: 2
+  total_mass: 0.4736887

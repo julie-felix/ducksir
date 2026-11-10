@@ -1,0 +1,3349 @@
+schema: ducksir/robot/v0
+robot:
+  id: tienkung-lite
+  name: TienKung Lite
+  type: tienkung-lite
+  source_ref: x
+  license: OpenAtom-OHL-1.0
+  generator:
+    name: importer_urdf
+    version: 0.1.0
+    input: third_party/x-humanoid-tienkung-lite/urdf/humanoid_publish.urdf
+    sha256: a979b8ad3052f1b6f1af35c8d9a42396411c857737c07a1dade65aa81dddec84
+  created_at: '2026-11-10'
+  assets_dir: assets/tienkung
+  mesh_manifest: assets/tienkung/manifest.json
+  mechanisms_spec: contract/robot/specs/tienkung-lite-parallel.yaml
+  display_name: 天工 Lite
+frames:
+  root: pelvis
+  world_attachment: floating
+  axes:
+    x: forward
+    y: left
+    z: up
+  units:
+    length: m
+    mass: kg
+    angle: rad
+    time: s
+    force: N
+    torque: N*m
+    inertia: kg*m^2
+    angular_velocity: rad/s
+    velocity: m/s
+    stiffness: N*m/rad
+    damping: N*m*s/rad
+  quat_order: wxyz
+  euler_order: rpy
+  angular_velocity_frame: body
+links:
+- name: pelvis
+  parent: null
+  transform:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat:
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 5.587228
+  com:
+  - -0.047395
+  - 0.0
+  - -0.046657
+  inertia:
+    ixx: 0.080339
+    ixy: -8.0e-06
+    ixz: 0.006666
+    iyy: 0.029082
+    iyz: -4.0e-06
+    izz: 0.09157
+  visual:
+  - mesh: assets/tienkung/pelvis.glb
+    mesh_name: pelvis
+    source_file: pelvis.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: 2731e3f9cb0bbed7f04f62afe4338f61f6ac8572b230db5722d0b9475245c4d4
+    bytes: 13634568
+  collision:
+  - mesh: assets/tienkung/pelvis.glb
+    mesh_name: pelvis
+    source_file: pelvis.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: hip_roll_l_link
+  parent: pelvis
+  transform:
+    xyz: &id001
+    - 0.0
+    - 0.13
+    - -0.079
+    quat: &id002
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 1.12809
+  com:
+  - -0.00048
+  - 0.00336
+  - -0.00372
+  inertia:
+    ixx: 0.00058
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 0.00093
+    iyz: -0.00011
+    izz: 0.00108
+  visual:
+  - mesh: assets/tienkung/hip_roll_l_link.glb
+    mesh_name: hip_roll_l_link
+    source_file: hip_roll_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: d89a71833e91d0c017f2eb53db15c5ee72f646bd5a11e53e6c25e5289932fc5b
+    bytes: 1669800
+  collision:
+  - mesh: assets/tienkung/hip_roll_l_link.glb
+    mesh_name: hip_roll_l_link
+    source_file: hip_roll_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: hip_yaw_l_link
+  parent: hip_roll_l_link
+  transform:
+    xyz: &id003
+    - 0.0
+    - 0.0
+    - -0.116
+    quat: &id004
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 1.91605
+  com:
+  - 0.00104
+  - 0.00351
+  - 0.00968
+  inertia:
+    ixx: 0.00237
+    ixy: -5.0e-05
+    ixz: -1.0e-05
+    iyy: 0.00271
+    iyz: -5.0e-05
+    izz: 0.00152
+  visual:
+  - mesh: assets/tienkung/hip_yaw_l_link.glb
+    mesh_name: hip_yaw_l_link
+    source_file: hip_yaw_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: 79a65b2b5dfa30a2e14be39bd33d09689e2a6d2da295cb2191e0fd8f290e95d8
+    bytes: 2539920
+  collision:
+  - mesh: assets/tienkung/hip_yaw_l_link.glb
+    mesh_name: hip_yaw_l_link
+    source_file: hip_yaw_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: hip_pitch_l_link
+  parent: hip_yaw_l_link
+  transform:
+    xyz: &id005
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: &id006
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 3.37311
+  com:
+  - 0.00823
+  - -0.00853
+  - -0.13551
+  inertia:
+    ixx: 0.02261
+    ixy: 0.00036
+    ixz: -0.0002
+    iyy: 0.02274
+    iyz: -0.00132
+    izz: 0.00637
+  visual:
+  - mesh: assets/tienkung/hip_pitch_l_link.glb
+    mesh_name: hip_pitch_l_link
+    source_file: hip_pitch_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: 4a1d49bffc3503d9b300c549d0d185c222d931e91598781d6c3b3d77c563abe6
+    bytes: 2696140
+  collision:
+  - mesh: assets/tienkung/hip_pitch_l_link.glb
+    mesh_name: hip_pitch_l_link
+    source_file: hip_pitch_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: knee_pitch_l_link
+  parent: hip_pitch_l_link
+  transform:
+    xyz: &id007
+    - 0.0
+    - 0.0
+    - -0.3
+    quat: &id008
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 2.28832
+  com:
+  - 0.00228
+  - 0.00293
+  - -0.12066
+  inertia:
+    ixx: 0.02033
+    ixy: 4.0e-05
+    ixz: 0.00049
+    iyy: 0.02013
+    iyz: 0.00089
+    izz: 0.0009
+  visual:
+  - mesh: assets/tienkung/knee_pitch_l_link.glb
+    mesh_name: knee_pitch_l_link
+    source_file: knee_pitch_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: 6527b6835aa5fb2f0a1efb00ae0141d24eec3fc220c3218532fcc968760ad6f4
+    bytes: 2755204
+  collision:
+  - mesh: assets/tienkung/knee_pitch_l_link.glb
+    mesh_name: knee_pitch_l_link
+    source_file: knee_pitch_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: ankle_pitch_l_link
+  parent: knee_pitch_l_link
+  transform:
+    xyz: &id009
+    - 0.0
+    - 0.0
+    - -0.3
+    quat: &id010
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.15163
+  com:
+  - 0.00027
+  - 0.0
+  - 0.0
+  inertia:
+    ixx: 3.0e-05
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 3.0e-05
+    iyz: 0.0
+    izz: 6.0e-05
+  visual:
+  - mesh: assets/tienkung/ankle_pitch_l_link.glb
+    mesh_name: ankle_pitch_l_link
+    source_file: ankle_pitch_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: ca326209a5c314bd4c39dc5ffb138ec079d03ade870a2fdabbae98a262a69b0c
+    bytes: 279912
+  collision:
+  - mesh: assets/tienkung/ankle_pitch_l_link.glb
+    mesh_name: ankle_pitch_l_link
+    source_file: ankle_pitch_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: ankle_roll_l_link
+  parent: ankle_pitch_l_link
+  transform:
+    xyz: &id011
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: &id012
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.658333536719
+  com:
+  - 0.004998345968
+  - 3.85657e-07
+  - -0.026936300768
+  inertia:
+    ixx: 0.000513570989980863
+    ixy: -4.87505487499137e-09
+    ixz: 0.000203238044973804
+    iyy: 0.00217612928759338
+    iyz: 7.25924990022402e-10
+    izz: 0.00236715733639348
+  visual:
+  - mesh: assets/tienkung/ankle_roll_l_link.glb
+    mesh_name: ankle_roll_l_link
+    source_file: ankle_roll_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: e189591092f8f89ec16fccded0dd8fc95f496cefcc4868f4b7dcd48af4eeab6f
+    bytes: 417432
+  collision:
+  - mesh: assets/tienkung/ankle_roll_l_link.glb
+    mesh_name: ankle_roll_l_link
+    source_file: ankle_roll_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: hip_roll_r_link
+  parent: pelvis
+  transform:
+    xyz: &id013
+    - 0.0
+    - -0.13
+    - -0.079
+    quat: &id014
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 1.12809
+  com:
+  - -0.00048
+  - -0.00336
+  - -0.00372
+  inertia:
+    ixx: 0.00058
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 0.00093
+    iyz: 0.00011
+    izz: 0.00108
+  visual:
+  - mesh: assets/tienkung/hip_roll_r_link.glb
+    mesh_name: hip_roll_r_link
+    source_file: hip_roll_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: 59e7f2d7a34ba3351425a514c9b28a1a70b04fdc9727e1ba4f8775b6ee6a76ea
+    bytes: 1645680
+  collision:
+  - mesh: assets/tienkung/hip_roll_r_link.glb
+    mesh_name: hip_roll_r_link
+    source_file: hip_roll_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: hip_yaw_r_link
+  parent: hip_roll_r_link
+  transform:
+    xyz: &id015
+    - 0.0
+    - 0.0
+    - -0.116
+    quat: &id016
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 1.91605
+  com:
+  - 0.00104
+  - -0.00351
+  - 0.00968
+  inertia:
+    ixx: 0.00237
+    ixy: 5.0e-05
+    ixz: -1.0e-05
+    iyy: 0.00271
+    iyz: 5.0e-05
+    izz: 0.00152
+  visual:
+  - mesh: assets/tienkung/hip_yaw_r_link.glb
+    mesh_name: hip_yaw_r_link
+    source_file: hip_yaw_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: 82e56ed32ba6582e97d5d97e35e5c38016bf46122e52c42f81de152ec38d10e2
+    bytes: 2534300
+  collision:
+  - mesh: assets/tienkung/hip_yaw_r_link.glb
+    mesh_name: hip_yaw_r_link
+    source_file: hip_yaw_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: hip_pitch_r_link
+  parent: hip_yaw_r_link
+  transform:
+    xyz: &id017
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: &id018
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 3.37311
+  com:
+  - 0.00823
+  - 0.00853
+  - -0.13551
+  inertia:
+    ixx: 0.02261
+    ixy: -0.00036
+    ixz: -0.0002
+    iyy: 0.02274
+    iyz: 0.00132
+    izz: 0.00637
+  visual:
+  - mesh: assets/tienkung/hip_pitch_r_link.glb
+    mesh_name: hip_pitch_r_link
+    source_file: hip_pitch_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: 9a4a6abbd1e2a29cb0ea2931c05b919826478117b002b33dffc5dbdb760c15fe
+    bytes: 2695588
+  collision:
+  - mesh: assets/tienkung/hip_pitch_r_link.glb
+    mesh_name: hip_pitch_r_link
+    source_file: hip_pitch_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: knee_pitch_r_link
+  parent: hip_pitch_r_link
+  transform:
+    xyz: &id019
+    - 0.0
+    - 0.0
+    - -0.3
+    quat: &id020
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 2.28832
+  com:
+  - 0.00228
+  - -0.00293
+  - -0.12066
+  inertia:
+    ixx: 0.02033
+    ixy: -4.0e-05
+    ixz: 0.00049
+    iyy: 0.02013
+    iyz: -0.00089
+    izz: 0.0009
+  visual:
+  - mesh: assets/tienkung/knee_pitch_r_link.glb
+    mesh_name: knee_pitch_r_link
+    source_file: knee_pitch_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: 1fbfbb558a701682550e5d6aefcfbc690943e193898694742a76ecb88e8e5e2e
+    bytes: 2758828
+  collision:
+  - mesh: assets/tienkung/knee_pitch_r_link.glb
+    mesh_name: knee_pitch_r_link
+    source_file: knee_pitch_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: ankle_pitch_r_link
+  parent: knee_pitch_r_link
+  transform:
+    xyz: &id021
+    - 0.0
+    - 0.0
+    - -0.3
+    quat: &id022
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.15163
+  com:
+  - 0.00027
+  - 0.0
+  - 0.0
+  inertia:
+    ixx: 3.0e-05
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 3.0e-05
+    iyz: 0.0
+    izz: 6.0e-05
+  visual:
+  - mesh: assets/tienkung/ankle_pitch_r_link.glb
+    mesh_name: ankle_pitch_r_link
+    source_file: ankle_pitch_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: f04490dc6ae0546a665e9189bb23846a418c935722e039481a82dcd12d8e4279
+    bytes: 279912
+  collision:
+  - mesh: assets/tienkung/ankle_pitch_r_link.glb
+    mesh_name: ankle_pitch_r_link
+    source_file: ankle_pitch_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: ankle_roll_r_link
+  parent: ankle_pitch_r_link
+  transform:
+    xyz: &id023
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: &id024
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.658333536719
+  com:
+  - 0.004998345968
+  - 3.85657e-07
+  - -0.026936300768
+  inertia:
+    ixx: 0.000513570989980871
+    ixy: -4.8750548686116e-09
+    ixz: 0.000203238044973807
+    iyy: 0.00217612928759339
+    iyz: 7.25924989997628e-10
+    izz: 0.00236715733639349
+  visual:
+  - mesh: assets/tienkung/ankle_roll_r_link.glb
+    mesh_name: ankle_roll_r_link
+    source_file: ankle_roll_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: 7d412b44c88e4d3a0c27665ff627a2610624943acee460fc6dab41dcf0a1f134
+    bytes: 417432
+  collision:
+  - mesh: assets/tienkung/ankle_roll_r_link.glb
+    mesh_name: ankle_roll_r_link
+    source_file: ankle_roll_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: waist_link
+  parent: pelvis
+  transform:
+    xyz: &id025
+    - 0.0
+    - 0.0
+    - 0.006
+    quat: &id026
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 13.8
+  com:
+  - -0.005467
+  - -1.6e-05
+  - 0.302017
+  inertia:
+    ixx: 0.527626
+    ixy: 9.5e-05
+    ixz: -0.001701
+    iyy: 0.471407
+    iyz: -0.000322
+    izz: 0.111941
+  visual:
+  - mesh: assets/tienkung/waist_link.glb
+    mesh_name: waist_link
+    source_file: waist_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: ccd508fcbd7ec0d016fcd5b73c4982477c164355da255b7cecc6649090dac12b
+    bytes: 21705716
+  collision:
+  - mesh: assets/tienkung/waist_link.glb
+    mesh_name: waist_link
+    source_file: waist_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: shoulder_pitch_l_link
+  parent: waist_link
+  transform:
+    xyz: &id027
+    - 0.0
+    - 0.17581
+    - 0.43652
+    quat: &id028
+    - 0.99144482142
+    - 0.130526495702
+    - 0.0
+    - 0.0
+  mass: 0.163757
+  com:
+  - 0.000988
+  - 0.030202
+  - 0.000417
+  inertia:
+    ixx: 0.000156
+    ixy: 5.0e-06
+    ixz: 0.0
+    iyy: 0.000183
+    iyz: 0.0
+    izz: 0.000224
+  visual:
+  - mesh: assets/tienkung/shoulder_pitch_l_link.glb
+    mesh_name: shoulder_pitch_l_link
+    source_file: shoulder_pitch_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: e898c029d796d9255710e653ccbb556a75a3fc1708cd22d0f6fc3d7cc4cd2009
+    bytes: 297340
+  collision:
+  - mesh: assets/tienkung/shoulder_pitch_l_link.glb
+    mesh_name: shoulder_pitch_l_link
+    source_file: shoulder_pitch_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: shoulder_roll_l_link
+  parent: shoulder_pitch_l_link
+  transform:
+    xyz: &id029
+    - -0.0025
+    - 0.062
+    - 0.0
+    quat: &id030
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.933844
+  com:
+  - 0.004522
+  - -1.1e-05
+  - -0.042682
+  inertia:
+    ixx: 0.001705
+    ixy: 0.0
+    ixz: 0.00017
+    iyy: 0.00172
+    iyz: 1.0e-06
+    izz: 0.000234
+  visual:
+  - mesh: assets/tienkung/shoulder_roll_l_link.glb
+    mesh_name: shoulder_roll_l_link
+    source_file: shoulder_roll_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: 7d503acb5906477677b15d7b2bbc86652b9f5ab44000e1c784e7ab91c2154cf5
+    bytes: 2219652
+  collision:
+  - mesh: assets/tienkung/shoulder_roll_l_link.glb
+    mesh_name: shoulder_roll_l_link
+    source_file: shoulder_roll_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: shoulder_yaw_l_link
+  parent: shoulder_roll_l_link
+  transform:
+    xyz: &id031
+    - 0.0
+    - 0.0
+    - -0.107
+    quat: &id032
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.610091
+  com:
+  - -4.4e-05
+  - -0.002833
+  - -0.092643
+  inertia:
+    ixx: 0.000943
+    ixy: 1.0e-06
+    ixz: 1.0e-06
+    iyy: 0.000918
+    iyz: 3.0e-05
+    izz: 0.00022
+  visual:
+  - mesh: assets/tienkung/shoulder_yaw_l_link.glb
+    mesh_name: shoulder_yaw_l_link
+    source_file: shoulder_yaw_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: 9f36c873068ee50f0a9676d934b0c66a787e9415b6aa786629a20ec546a51e78
+    bytes: 1406648
+  collision:
+  - mesh: assets/tienkung/shoulder_yaw_l_link.glb
+    mesh_name: shoulder_yaw_l_link
+    source_file: shoulder_yaw_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: elbow_l_link
+  parent: shoulder_yaw_l_link
+  transform:
+    xyz: &id033
+    - -0.0
+    - 0.0
+    - -0.11
+    quat: &id034
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.341159
+  com:
+  - -0.000267
+  - -0.001013
+  - -0.14593
+  inertia:
+    ixx: 0.005196
+    ixy: 0.0
+    ixz: 4.0e-06
+    iyy: 0.005151
+    iyz: -5.2e-05
+    izz: 0.00022
+  visual:
+  - mesh: assets/tienkung/elbow_l_link.glb
+    mesh_name: elbow_l_link
+    source_file: elbow_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: f6c22cecb528bf5db9b9111e7356e5c1016e670892267f72c92d7a8effdbbe43
+    bytes: 358692
+  collision:
+  - mesh: assets/tienkung/elbow_l_link.glb
+    mesh_name: elbow_l_link
+    source_file: elbow_l_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: shoulder_pitch_r_link
+  parent: waist_link
+  transform:
+    xyz: &id035
+    - 0.0
+    - -0.17577
+    - 0.43652
+    quat: &id036
+    - 0.99144482142
+    - -0.130526495702
+    - 0.0
+    - 0.0
+  mass: 0.163757
+  com:
+  - 0.000988
+  - -0.030202
+  - 0.000417
+  inertia:
+    ixx: 0.000156
+    ixy: -5.0e-06
+    ixz: 0.0
+    iyy: 0.000183
+    iyz: -0.0
+    izz: 0.000224
+  visual:
+  - mesh: assets/tienkung/shoulder_pitch_r_link.glb
+    mesh_name: shoulder_pitch_r_link
+    source_file: shoulder_pitch_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: d60092521a097750a4b13828126f38bff8ac88ffcd575897c6e9ef531020d8ef
+    bytes: 297316
+  collision:
+  - mesh: assets/tienkung/shoulder_pitch_r_link.glb
+    mesh_name: shoulder_pitch_r_link
+    source_file: shoulder_pitch_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: shoulder_roll_r_link
+  parent: shoulder_pitch_r_link
+  transform:
+    xyz: &id037
+    - -0.0025
+    - -0.062
+    - 0.0
+    quat: &id038
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.933844
+  com:
+  - 0.004522
+  - 1.1e-05
+  - -0.042682
+  inertia:
+    ixx: 0.001705
+    ixy: -0.0
+    ixz: 0.00017
+    iyy: 0.00172
+    iyz: -1.0e-06
+    izz: 0.000234
+  visual:
+  - mesh: assets/tienkung/shoulder_roll_r_link.glb
+    mesh_name: shoulder_roll_r_link
+    source_file: shoulder_roll_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: 5ab21b197dd77aacfe6f89dfc40f9e41e93ac5773790579c3f7a420342d01004
+    bytes: 2219052
+  collision:
+  - mesh: assets/tienkung/shoulder_roll_r_link.glb
+    mesh_name: shoulder_roll_r_link
+    source_file: shoulder_roll_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: shoulder_yaw_r_link
+  parent: shoulder_roll_r_link
+  transform:
+    xyz: &id039
+    - 0.0
+    - 0.0
+    - -0.107
+    quat: &id040
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.610091
+  com:
+  - -4.4e-05
+  - 0.002833
+  - -0.092643
+  inertia:
+    ixx: 0.000943
+    ixy: -1.0e-06
+    ixz: 1.0e-06
+    iyy: 0.000918
+    iyz: -3.0e-05
+    izz: 0.00022
+  visual:
+  - mesh: assets/tienkung/shoulder_yaw_r_link.glb
+    mesh_name: shoulder_yaw_r_link
+    source_file: shoulder_yaw_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: 55666c78629db8964de79e8f8400764d02c617bbcf88827eae3545880c85a7f3
+    bytes: 1406672
+  collision:
+  - mesh: assets/tienkung/shoulder_yaw_r_link.glb
+    mesh_name: shoulder_yaw_r_link
+    source_file: shoulder_yaw_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+- name: elbow_r_link
+  parent: shoulder_yaw_r_link
+  transform:
+    xyz: &id041
+    - -0.0
+    - -0.0
+    - -0.11
+    quat: &id042
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  mass: 0.341159
+  com:
+  - -0.000267
+  - 0.001013
+  - -0.14593
+  inertia:
+    ixx: 0.005196
+    ixy: 0.0
+    ixz: 4.0e-06
+    iyy: 0.005151
+    iyz: 5.2e-05
+    izz: 0.00022
+  visual:
+  - mesh: assets/tienkung/elbow_r_link.glb
+    mesh_name: elbow_r_link
+    source_file: elbow_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: true
+    sha256: b26438a2373d2d36d4d003aa62c221bac9c090e1089d088bdec75ddf7f9b5f2c
+    bytes: 358524
+  collision:
+  - mesh: assets/tienkung/elbow_r_link.glb
+    mesh_name: elbow_r_link
+    source_file: elbow_r_link.STL
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      quat:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    material: []
+    vendored: false
+joints:
+- name: hip_roll_l_joint
+  type: revolute
+  parent: pelvis
+  child: hip_roll_l_link
+  origin:
+    xyz: *id001
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id002
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.97
+      upper: 0.97
+    effort: 150.0
+    velocity: 12.0
+  actuated: true
+- name: hip_yaw_l_joint
+  type: revolute
+  parent: hip_roll_l_link
+  child: hip_yaw_l_link
+  origin:
+    xyz: *id003
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id004
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -1.0472
+      upper: 1.0472
+    effort: 90.0
+    velocity: 14.0
+  actuated: true
+- name: hip_pitch_l_joint
+  type: revolute
+  parent: hip_yaw_l_link
+  child: hip_pitch_l_link
+  origin:
+    xyz: *id005
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id006
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -1.57
+      upper: 0.5236
+    effort: 150.0
+    velocity: 12.0
+  actuated: true
+- name: knee_pitch_l_joint
+  type: revolute
+  parent: hip_pitch_l_link
+  child: knee_pitch_l_link
+  origin:
+    xyz: *id007
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id008
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: 0.1745
+      upper: 2.443
+    effort: 150.0
+    velocity: 12.0
+  actuated: true
+- name: ankle_pitch_l_joint
+  type: revolute
+  parent: knee_pitch_l_link
+  child: ankle_pitch_l_link
+  origin:
+    xyz: *id009
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id010
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -1.22
+      upper: 0.5236
+    effort: 60.0
+    velocity: 7.8
+  actuated: true
+- name: ankle_roll_l_joint
+  type: revolute
+  parent: ankle_pitch_l_link
+  child: ankle_roll_l_link
+  origin:
+    xyz: *id011
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id012
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.4363
+      upper: 0.4363
+    effort: 30.0
+    velocity: 7.8
+  actuated: true
+- name: hip_roll_r_joint
+  type: revolute
+  parent: pelvis
+  child: hip_roll_r_link
+  origin:
+    xyz: *id013
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id014
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.97
+      upper: 0.97
+    effort: 150.0
+    velocity: 12.0
+  actuated: true
+- name: hip_yaw_r_joint
+  type: revolute
+  parent: hip_roll_r_link
+  child: hip_yaw_r_link
+  origin:
+    xyz: *id015
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id016
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -1.0472
+      upper: 1.0472
+    effort: 90.0
+    velocity: 14.0
+  actuated: true
+- name: hip_pitch_r_joint
+  type: revolute
+  parent: hip_yaw_r_link
+  child: hip_pitch_r_link
+  origin:
+    xyz: *id017
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id018
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -1.57
+      upper: 0.5236
+    effort: 150.0
+    velocity: 12.0
+  actuated: true
+- name: knee_pitch_r_joint
+  type: revolute
+  parent: hip_pitch_r_link
+  child: knee_pitch_r_link
+  origin:
+    xyz: *id019
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id020
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: 0.1745
+      upper: 2.443
+    effort: 150.0
+    velocity: 12.0
+  actuated: true
+- name: ankle_pitch_r_joint
+  type: revolute
+  parent: knee_pitch_r_link
+  child: ankle_pitch_r_link
+  origin:
+    xyz: *id021
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id022
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -1.22
+      upper: 0.5236
+    effort: 60.0
+    velocity: 7.8
+  actuated: true
+- name: ankle_roll_r_joint
+  type: revolute
+  parent: ankle_pitch_r_link
+  child: ankle_roll_r_link
+  origin:
+    xyz: *id023
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id024
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.4363
+      upper: 0.4363
+    effort: 30.0
+    velocity: 7.8
+  actuated: true
+- name: waist_joint
+  type: fixed
+  parent: pelvis
+  child: waist_link
+  origin:
+    xyz: *id025
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id026
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -3.14
+      upper: 3.14
+    effort: 1000.0
+    velocity: 100.0
+  actuated: false
+- name: shoulder_pitch_l_joint
+  type: revolute
+  parent: waist_link
+  child: shoulder_pitch_l_link
+  origin:
+    xyz: *id027
+    rpy:
+    - 0.2618
+    - 0.0
+    - 0.0
+    quat: *id028
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -3.14
+      upper: 0.97
+    effort: 36.0
+    velocity: 7.8
+  actuated: true
+- name: shoulder_roll_l_joint
+  type: revolute
+  parent: shoulder_pitch_l_link
+  child: shoulder_roll_l_link
+  origin:
+    xyz: *id029
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id030
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -0.08
+      upper: 3.49
+    effort: 36.0
+    velocity: 7.8
+  actuated: true
+- name: shoulder_yaw_l_joint
+  type: revolute
+  parent: shoulder_roll_l_link
+  child: shoulder_yaw_l_link
+  origin:
+    xyz: *id031
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id032
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -2.96
+      upper: 2.96
+    effort: 36.0
+    velocity: 7.8
+  actuated: true
+- name: elbow_l_joint
+  type: revolute
+  parent: shoulder_yaw_l_link
+  child: elbow_l_link
+  origin:
+    xyz: *id033
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id034
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -2.1
+      upper: 0.0
+    effort: 36.0
+    velocity: 7.8
+  actuated: true
+- name: shoulder_pitch_r_joint
+  type: revolute
+  parent: waist_link
+  child: shoulder_pitch_r_link
+  origin:
+    xyz: *id035
+    rpy:
+    - -0.2618
+    - 0.0
+    - 0.0
+    quat: *id036
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -3.14
+      upper: 0.97
+    effort: 36.0
+    velocity: 7.8
+  actuated: true
+- name: shoulder_roll_r_joint
+  type: revolute
+  parent: shoulder_pitch_r_link
+  child: shoulder_roll_r_link
+  origin:
+    xyz: *id037
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id038
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 1.0
+    - 0.0
+    - 0.0
+  limit:
+    mech:
+      lower: -3.49
+      upper: 0.08
+    effort: 36.0
+    velocity: 7.8
+  actuated: true
+- name: shoulder_yaw_r_joint
+  type: revolute
+  parent: shoulder_roll_r_link
+  child: shoulder_yaw_r_link
+  origin:
+    xyz: *id039
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id040
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    mech:
+      lower: -2.96
+      upper: 2.96
+    effort: 36.0
+    velocity: 7.8
+  actuated: true
+- name: elbow_r_joint
+  type: revolute
+  parent: shoulder_yaw_r_link
+  child: elbow_r_link
+  origin:
+    xyz: *id041
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    quat: *id042
+  axis:
+    origin:
+    - 0.0
+    - 0.0
+    - 0.0
+    dir:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    mech:
+      lower: -2.1
+      upper: 0.0
+    effort: 36.0
+    velocity: 7.8
+  actuated: true
+actuators: []
+mechanisms:
+- id: ankle_left
+  kind: parallel_2dof
+  mount: ankle_pitch_l_link
+  platform: ankle_roll_l_link
+  charts:
+    pr:
+      joints:
+      - ankle_pitch_l_joint
+      - ankle_roll_l_joint
+      semantic:
+      - pitch
+      - roll
+    ab:
+      motors: []
+  coupling:
+    kind: analytic
+    params:
+      frame: ankle_pitch
+      units: m
+      passive_pr: true
+      mujoco_grid: mujoco-grid-tg10.json
+      ab_unresolved: true
+      chains:
+      - a:
+        - 0
+        - -0.043247
+        - 0.14
+        axis:
+        - 0
+        - 1
+        - 0
+        v:
+        - -0.055821
+        - 0
+        - 0.022
+        rod: 0.14
+      - a:
+        - 0
+        - 0.043252
+        - 0.215
+        axis:
+        - 0
+        - 1
+        - 0
+        v:
+        - -0.055821
+        - 0
+        - 0.022
+        rod: 0.215
+      platform:
+        pitch_axis:
+        - 0
+        - 1
+        - 0
+        pitch_pivot:
+        - 0
+        - 0
+        - 0
+        roll_axis:
+        - 1
+        - 0
+        - 0
+        roll_pivot:
+        - 0
+        - 0
+        - 0
+        c0:
+        - - -0.055821
+          - -0.04325
+          - 0.022
+        - - -0.055821
+          - 0.04325
+          - 0.022
+    source: ankle-rig-tg10（讲者的 TC10-00 装配，MIT）；踝坐标系与 TienKung Lite 的 ankle_roll origin (0,0,0) 一致
+    assumed:
+    - 'geometry_from_rig: 连杆几何取自讲者的装配 rig，不是官方 Lite 几何'
+    - 'ab_mapping: AB 电机与关节的对应未定，Lite URDF 里没有电机关节'
+    anchor_zero:
+      A: 0
+      B: 0
+      roll: 0
+      pitch: 0
+    todo: 拿到官方装配图后替换连杆几何；补齐 AB 槽位
+- id: ankle_right
+  kind: parallel_2dof
+  mount: ankle_pitch_r_link
+  platform: ankle_roll_r_link
+  charts:
+    pr:
+      joints:
+      - ankle_pitch_r_joint
+      - ankle_roll_r_joint
+      semantic:
+      - pitch
+      - roll
+    ab:
+      motors: []
+  coupling:
+    kind: analytic
+    params:
+      frame: ankle_pitch
+      units: m
+      passive_pr: true
+      mujoco_grid: mujoco-grid-tg10.json
+      ab_unresolved: true
+      chains:
+      - a:
+        - 0
+        - -0.043247
+        - 0.14
+        axis:
+        - 0
+        - 1
+        - 0
+        v:
+        - -0.055821
+        - 0
+        - 0.022
+        rod: 0.14
+      - a:
+        - 0
+        - 0.043252
+        - 0.215
+        axis:
+        - 0
+        - 1
+        - 0
+        v:
+        - -0.055821
+        - 0
+        - 0.022
+        rod: 0.215
+      platform:
+        pitch_axis:
+        - 0
+        - 1
+        - 0
+        pitch_pivot:
+        - 0
+        - 0
+        - 0
+        roll_axis:
+        - 1
+        - 0
+        - 0
+        roll_pivot:
+        - 0
+        - 0
+        - 0
+        c0:
+        - - -0.055821
+          - -0.04325
+          - 0.022
+        - - -0.055821
+          - 0.04325
+          - 0.022
+    source: ankle_left 关于矢状面的镜像（几何镜像，未在实物上确认）
+    assumed:
+    - 'joint_axes_same: 按 URDF，左右踝 roll/pitch 轴同向，不镜像（几何仍可另说）'
+    anchor_zero:
+      A: 0
+      B: 0
+      roll: 0
+      pitch: 0
+    todo: 确认右侧是否真为镜像
+loops: []
+sensors: []
+bus:
+  note: 未定：SDK 的统一 interface 还没拿到，字段等那份规范
+presets: {}
+provenance:
+- path: links[pelvis].mass
+  value: 5.587228
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[pelvis].com
+  value:
+  - -0.047395
+  - 0.0
+  - -0.046657
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[pelvis].inertia
+  value:
+    ixx: 0.080339
+    ixy: -8.0e-06
+    ixz: 0.006666
+    iyy: 0.029082
+    iyz: -4.0e-06
+    izz: 0.09157
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_roll_l_link].mass
+  value: 1.12809
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_roll_l_link].com
+  value:
+  - -0.00048
+  - 0.00336
+  - -0.00372
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_roll_l_link].inertia
+  value:
+    ixx: 0.00058
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 0.00093
+    iyz: -0.00011
+    izz: 0.00108
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_yaw_l_link].mass
+  value: 1.91605
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_yaw_l_link].com
+  value:
+  - 0.00104
+  - 0.00351
+  - 0.00968
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_yaw_l_link].inertia
+  value:
+    ixx: 0.00237
+    ixy: -5.0e-05
+    ixz: -1.0e-05
+    iyy: 0.00271
+    iyz: -5.0e-05
+    izz: 0.00152
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_pitch_l_link].mass
+  value: 3.37311
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_pitch_l_link].com
+  value:
+  - 0.00823
+  - -0.00853
+  - -0.13551
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_pitch_l_link].inertia
+  value:
+    ixx: 0.02261
+    ixy: 0.00036
+    ixz: -0.0002
+    iyy: 0.02274
+    iyz: -0.00132
+    izz: 0.00637
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[knee_pitch_l_link].mass
+  value: 2.28832
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[knee_pitch_l_link].com
+  value:
+  - 0.00228
+  - 0.00293
+  - -0.12066
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[knee_pitch_l_link].inertia
+  value:
+    ixx: 0.02033
+    ixy: 4.0e-05
+    ixz: 0.00049
+    iyy: 0.02013
+    iyz: 0.00089
+    izz: 0.0009
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[ankle_pitch_l_link].mass
+  value: 0.15163
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[ankle_pitch_l_link].com
+  value:
+  - 0.00027
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[ankle_pitch_l_link].inertia
+  value:
+    ixx: 3.0e-05
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 3.0e-05
+    iyz: 0.0
+    izz: 6.0e-05
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[ankle_roll_l_link].mass
+  value: 0.658333536719
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[ankle_roll_l_link].com
+  value:
+  - 0.004998345968
+  - 3.85657e-07
+  - -0.026936300768
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[ankle_roll_l_link].inertia
+  value:
+    ixx: 0.000513570989980863
+    ixy: -4.87505487499137e-09
+    ixz: 0.000203238044973804
+    iyy: 0.00217612928759338
+    iyz: 7.25924990022402e-10
+    izz: 0.00236715733639348
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_roll_r_link].mass
+  value: 1.12809
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_roll_r_link].com
+  value:
+  - -0.00048
+  - -0.00336
+  - -0.00372
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_roll_r_link].inertia
+  value:
+    ixx: 0.00058
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 0.00093
+    iyz: 0.00011
+    izz: 0.00108
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_yaw_r_link].mass
+  value: 1.91605
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_yaw_r_link].com
+  value:
+  - 0.00104
+  - -0.00351
+  - 0.00968
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_yaw_r_link].inertia
+  value:
+    ixx: 0.00237
+    ixy: 5.0e-05
+    ixz: -1.0e-05
+    iyy: 0.00271
+    iyz: 5.0e-05
+    izz: 0.00152
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_pitch_r_link].mass
+  value: 3.37311
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_pitch_r_link].com
+  value:
+  - 0.00823
+  - 0.00853
+  - -0.13551
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[hip_pitch_r_link].inertia
+  value:
+    ixx: 0.02261
+    ixy: -0.00036
+    ixz: -0.0002
+    iyy: 0.02274
+    iyz: 0.00132
+    izz: 0.00637
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[knee_pitch_r_link].mass
+  value: 2.28832
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[knee_pitch_r_link].com
+  value:
+  - 0.00228
+  - -0.00293
+  - -0.12066
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[knee_pitch_r_link].inertia
+  value:
+    ixx: 0.02033
+    ixy: -4.0e-05
+    ixz: 0.00049
+    iyy: 0.02013
+    iyz: -0.00089
+    izz: 0.0009
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[ankle_pitch_r_link].mass
+  value: 0.15163
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[ankle_pitch_r_link].com
+  value:
+  - 0.00027
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[ankle_pitch_r_link].inertia
+  value:
+    ixx: 3.0e-05
+    ixy: 0.0
+    ixz: 0.0
+    iyy: 3.0e-05
+    iyz: 0.0
+    izz: 6.0e-05
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[ankle_roll_r_link].mass
+  value: 0.658333536719
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[ankle_roll_r_link].com
+  value:
+  - 0.004998345968
+  - 3.85657e-07
+  - -0.026936300768
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[ankle_roll_r_link].inertia
+  value:
+    ixx: 0.000513570989980871
+    ixy: -4.8750548686116e-09
+    ixz: 0.000203238044973807
+    iyy: 0.00217612928759339
+    iyz: 7.25924989997628e-10
+    izz: 0.00236715733639349
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[waist_link].mass
+  value: 13.8
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[waist_link].com
+  value:
+  - -0.005467
+  - -1.6e-05
+  - 0.302017
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[waist_link].inertia
+  value:
+    ixx: 0.527626
+    ixy: 9.5e-05
+    ixz: -0.001701
+    iyy: 0.471407
+    iyz: -0.000322
+    izz: 0.111941
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_pitch_l_link].mass
+  value: 0.163757
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_pitch_l_link].com
+  value:
+  - 0.000988
+  - 0.030202
+  - 0.000417
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_pitch_l_link].inertia
+  value:
+    ixx: 0.000156
+    ixy: 5.0e-06
+    ixz: 0.0
+    iyy: 0.000183
+    iyz: 0.0
+    izz: 0.000224
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_roll_l_link].mass
+  value: 0.933844
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_roll_l_link].com
+  value:
+  - 0.004522
+  - -1.1e-05
+  - -0.042682
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_roll_l_link].inertia
+  value:
+    ixx: 0.001705
+    ixy: 0.0
+    ixz: 0.00017
+    iyy: 0.00172
+    iyz: 1.0e-06
+    izz: 0.000234
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_yaw_l_link].mass
+  value: 0.610091
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_yaw_l_link].com
+  value:
+  - -4.4e-05
+  - -0.002833
+  - -0.092643
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_yaw_l_link].inertia
+  value:
+    ixx: 0.000943
+    ixy: 1.0e-06
+    ixz: 1.0e-06
+    iyy: 0.000918
+    iyz: 3.0e-05
+    izz: 0.00022
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[elbow_l_link].mass
+  value: 0.341159
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[elbow_l_link].com
+  value:
+  - -0.000267
+  - -0.001013
+  - -0.14593
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[elbow_l_link].inertia
+  value:
+    ixx: 0.005196
+    ixy: 0.0
+    ixz: 4.0e-06
+    iyy: 0.005151
+    iyz: -5.2e-05
+    izz: 0.00022
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_pitch_r_link].mass
+  value: 0.163757
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_pitch_r_link].com
+  value:
+  - 0.000988
+  - -0.030202
+  - 0.000417
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_pitch_r_link].inertia
+  value:
+    ixx: 0.000156
+    ixy: -5.0e-06
+    ixz: 0.0
+    iyy: 0.000183
+    iyz: -0.0
+    izz: 0.000224
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_roll_r_link].mass
+  value: 0.933844
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_roll_r_link].com
+  value:
+  - 0.004522
+  - 1.1e-05
+  - -0.042682
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_roll_r_link].inertia
+  value:
+    ixx: 0.001705
+    ixy: -0.0
+    ixz: 0.00017
+    iyy: 0.00172
+    iyz: -1.0e-06
+    izz: 0.000234
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_yaw_r_link].mass
+  value: 0.610091
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_yaw_r_link].com
+  value:
+  - -4.4e-05
+  - 0.002833
+  - -0.092643
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[shoulder_yaw_r_link].inertia
+  value:
+    ixx: 0.000943
+    ixy: -1.0e-06
+    ixz: 1.0e-06
+    iyy: 0.000918
+    iyz: -3.0e-05
+    izz: 0.00022
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[elbow_r_link].mass
+  value: 0.341159
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[elbow_r_link].com
+  value:
+  - -0.000267
+  - 0.001013
+  - -0.14593
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: links[elbow_r_link].inertia
+  value:
+    ixx: 0.005196
+    ixy: 0.0
+    ixz: 4.0e-06
+    iyy: 0.005151
+    iyz: 5.2e-05
+    izz: 0.00022
+  unit: kg*m^2
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_roll_l_joint].limit.mech
+  value:
+    lower: -0.97
+    upper: 0.97
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_roll_l_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_roll_l_joint].limit.effort
+  value: 150.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_yaw_l_joint].limit.mech
+  value:
+    lower: -1.0472
+    upper: 1.0472
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_yaw_l_joint].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_yaw_l_joint].limit.effort
+  value: 90.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_pitch_l_joint].limit.mech
+  value:
+    lower: -1.57
+    upper: 0.5236
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_pitch_l_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_pitch_l_joint].limit.effort
+  value: 150.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[knee_pitch_l_joint].limit.mech
+  value:
+    lower: 0.1745
+    upper: 2.443
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[knee_pitch_l_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[knee_pitch_l_joint].limit.effort
+  value: 150.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[ankle_pitch_l_joint].limit.mech
+  value:
+    lower: -1.22
+    upper: 0.5236
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[ankle_pitch_l_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[ankle_pitch_l_joint].limit.effort
+  value: 60.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[ankle_roll_l_joint].limit.mech
+  value:
+    lower: -0.4363
+    upper: 0.4363
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[ankle_roll_l_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[ankle_roll_l_joint].limit.effort
+  value: 30.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_roll_r_joint].limit.mech
+  value:
+    lower: -0.97
+    upper: 0.97
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_roll_r_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_roll_r_joint].limit.effort
+  value: 150.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_yaw_r_joint].limit.mech
+  value:
+    lower: -1.0472
+    upper: 1.0472
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_yaw_r_joint].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_yaw_r_joint].limit.effort
+  value: 90.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_pitch_r_joint].limit.mech
+  value:
+    lower: -1.57
+    upper: 0.5236
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_pitch_r_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[hip_pitch_r_joint].limit.effort
+  value: 150.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[knee_pitch_r_joint].limit.mech
+  value:
+    lower: 0.1745
+    upper: 2.443
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[knee_pitch_r_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[knee_pitch_r_joint].limit.effort
+  value: 150.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[ankle_pitch_r_joint].limit.mech
+  value:
+    lower: -1.22
+    upper: 0.5236
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[ankle_pitch_r_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[ankle_pitch_r_joint].limit.effort
+  value: 60.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[ankle_roll_r_joint].limit.mech
+  value:
+    lower: -0.4363
+    upper: 0.4363
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[ankle_roll_r_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[ankle_roll_r_joint].limit.effort
+  value: 30.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[waist_joint].limit.mech
+  value:
+    lower: -3.14
+    upper: 3.14
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[waist_joint].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[waist_joint].limit.effort
+  value: 1000.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_pitch_l_joint].limit.mech
+  value:
+    lower: -3.14
+    upper: 0.97
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_pitch_l_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_pitch_l_joint].limit.effort
+  value: 36.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_roll_l_joint].limit.mech
+  value:
+    lower: -0.08
+    upper: 3.49
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_roll_l_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_roll_l_joint].limit.effort
+  value: 36.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_yaw_l_joint].limit.mech
+  value:
+    lower: -2.96
+    upper: 2.96
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_yaw_l_joint].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_yaw_l_joint].limit.effort
+  value: 36.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[elbow_l_joint].limit.mech
+  value:
+    lower: -2.1
+    upper: 0.0
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[elbow_l_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[elbow_l_joint].limit.effort
+  value: 36.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_pitch_r_joint].limit.mech
+  value:
+    lower: -3.14
+    upper: 0.97
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_pitch_r_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_pitch_r_joint].limit.effort
+  value: 36.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_roll_r_joint].limit.mech
+  value:
+    lower: -3.49
+    upper: 0.08
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_roll_r_joint].axis.dir
+  value:
+  - 1.0
+  - 0.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_roll_r_joint].limit.effort
+  value: 36.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_yaw_r_joint].limit.mech
+  value:
+    lower: -2.96
+    upper: 2.96
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_yaw_r_joint].axis.dir
+  value:
+  - 0.0
+  - 0.0
+  - 1.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[shoulder_yaw_r_joint].limit.effort
+  value: 36.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[elbow_r_joint].limit.mech
+  value:
+    lower: -2.1
+    upper: 0.0
+  unit: rad
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[elbow_r_joint].axis.dir
+  value:
+  - 0.0
+  - 1.0
+  - 0.0
+  unit: m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: joints[elbow_r_joint].limit.effort
+  value: 36.0
+  unit: N*m
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+- path: summary.total_mass
+  value: 42.515997073
+  unit: kg
+  source: urdf
+  date: '2026-11-10'
+  ref: humanoid_publish.urdf
+  note: 22 个 link 求和
+warnings:
+- code: W002
+  path: actuators[]
+  message: URDF 不含执行器参数（减速比/Kt/力矩常数）；G1 的减速比在 README 表、effort/velocity 在 <limit> 与 motor_info.md
+- code: W002
+  path: frames.world_attachment
+  message: 源 URDF 的 world+floating_base_joint 是注释掉的（原文 uncomment when convert to mujoco）；这里记 floating，导出 MJCF 时补 world
+- code: W006
+  path: joints[*]
+  message: 1 个 fixed joint 保留成关节（拓扑是真的）；导出 MJCF 时会被焊成同一个 body
+- code: W004
+  path: links[*].visual[*].mesh
+  message: 22 个 mesh 只有引用、没有入库
+  meshes:
+  - assets/tienkung/ankle_pitch_l_link.glb
+  - assets/tienkung/ankle_pitch_r_link.glb
+  - assets/tienkung/ankle_roll_l_link.glb
+  - assets/tienkung/ankle_roll_r_link.glb
+  - assets/tienkung/elbow_l_link.glb
+  - assets/tienkung/elbow_r_link.glb
+  - assets/tienkung/hip_pitch_l_link.glb
+  - assets/tienkung/hip_pitch_r_link.glb
+- code: W007
+  path: mechanisms[]
+  message: 并联机构的坐标与耦合来自手写 spec（contract/robot/specs/tienkung-lite-parallel.yaml），不是 URDF 导入产物；URDF 只有 PR 串联等效，实物是并联
+summary:
+  links: 22
+  joints: 21
+  actuated_joints: 20
+  actuators: 0
+  total_mass: 42.515997073
+  visual_meshes_vendored: 22

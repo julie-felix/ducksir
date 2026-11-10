@@ -1,0 +1,282 @@
+{
+ "head_link": {
+  "bytes": 494092,
+  "glb": "assets/g1/head_link.glb",
+  "sha256": "8a902385996157a9d80f4632a6c52712ea610b3e8b39cae913e963f19518f1d4",
+  "source_bytes": 932784,
+  "triangles": 18446,
+  "vertices": 11328
+ },
+ "left_ankle_pitch_link": {
+  "bytes": 52732,
+  "glb": "assets/g1/left_ankle_pitch_link.glb",
+  "sha256": "18b9a0434fbced4726089269616037d7f3821144ed956d73e0b1b3f38dbef0bf",
+  "source_bytes": 71184,
+  "triangles": 1422,
+  "vertices": 1449
+ },
+ "left_ankle_roll_link": {
+  "bytes": 360152,
+  "glb": "assets/g1/left_ankle_roll_link.glb",
+  "sha256": "b7f473f177d9895f8cef8ee4fac730e1b2a2923058097254538f8d68aaa9939c",
+  "source_bytes": 653384,
+  "triangles": 12526,
+  "vertices": 8706
+ },
+ "left_elbow_link": {
+  "bytes": 58236,
+  "glb": "assets/g1/left_elbow_link.glb",
+  "sha256": "9c1923db2133b65faf3ccdb9d8d0552a2325bd08e14fe600cf14205e92074e19",
+  "source_bytes": 88784,
+  "triangles": 1772,
+  "vertices": 1504
+ },
+ "left_hip_pitch_link": {
+  "bytes": 101952,
+  "glb": "assets/g1/left_hip_pitch_link.glb",
+  "sha256": "f1907d13d57adaca71a2ed117c098721cde0dc5753fe04da8e1939538a5f92b0",
+  "source_bytes": 181684,
+  "triangles": 3626,
+  "vertices": 2398
+ },
+ "left_hip_roll_link": {
+  "bytes": 120288,
+  "glb": "assets/g1/left_hip_roll_link.glb",
+  "sha256": "fa351bb9f01e61190c3c8b0b614214a07376a2008030eb0b292a26419127696d",
+  "source_bytes": 192184,
+  "triangles": 3774,
+  "vertices": 3088
+ },
+ "left_hip_yaw_link": {
+  "bytes": 168284,
+  "glb": "assets/g1/left_hip_yaw_link.glb",
+  "sha256": "9a0affb78ea5b6c20211c2865e51ca8d471c62c86875ad8495c10ac19515d4a7",
+  "source_bytes": 296284,
+  "triangles": 5858,
+  "vertices": 4046
+ },
+ "left_knee_link": {
+  "bytes": 512128,
+  "glb": "assets/g1/left_knee_link.glb",
+  "sha256": "ab8ffb58e960be47bbf13a66ab7acda02488448f5f8de48e09e6b7155a8dc28f",
+  "source_bytes": 854884,
+  "triangles": 16596,
+  "vertices": 13004
+ },
+ "left_rubber_hand": {
+  "bytes": 1066228,
+  "glb": "assets/g1/left_rubber_hand.glb",
+  "sha256": "904148b6f4a28338f861f306deee0ef5bd173ef31bdfd9679558f40211c25d53",
+  "source_bytes": 2287484,
+  "triangles": 43384,
+  "vertices": 22697
+ },
+ "left_shoulder_pitch_link": {
+  "bytes": 90684,
+  "glb": "assets/g1/left_shoulder_pitch_link.glb",
+  "sha256": "80ca45dc5c3ffcb6401888b1778f4a1c13f19b2f42439bb93c33273b24f19132",
+  "source_bytes": 176784,
+  "triangles": 3514,
+  "vertices": 1984
+ },
+ "left_shoulder_roll_link": {
+  "bytes": 223160,
+  "glb": "assets/g1/left_shoulder_roll_link.glb",
+  "sha256": "8c40b4cdb77a0b67488dfd4394d965df855ff762abc58e284f6de06174fdc858",
+  "source_bytes": 400284,
+  "triangles": 7892,
+  "vertices": 5315
+ },
+ "left_shoulder_yaw_link": {
+  "bytes": 138536,
+  "glb": "assets/g1/left_shoulder_yaw_link.glb",
+  "sha256": "98b1c94ddab9aac9f74af83923f618800942f8a6d8b044e3f517df203dac4763",
+  "source_bytes": 249184,
+  "triangles": 4918,
+  "vertices": 3276
+ },
+ "left_wrist_pitch_link": {
+  "bytes": 60916,
+  "glb": "assets/g1/left_wrist_pitch_link.glb",
+  "sha256": "6bfc4f6579448039389aebc8819eb4eeb42c90412bd0a5c080b2dedb3ad0349a",
+  "source_bytes": 85984,
+  "triangles": 1702,
+  "vertices": 1650
+ },
+ "left_wrist_roll_link": {
+  "bytes": 198412,
+  "glb": "assets/g1/left_wrist_roll_link.glb",
+  "sha256": "30ab9e84eae4344cf31ab0c158706972671f9bbfa709664e4924e26a189ffc15",
+  "source_bytes": 356184,
+  "triangles": 6952,
+  "vertices": 4754
+ },
+ "left_wrist_yaw_link": {
+  "bytes": 180816,
+  "glb": "assets/g1/left_wrist_yaw_link.glb",
+  "sha256": "2da4ec06d7a3cdec3e74cbda8e4d04ff39fe0a91584a3e780b1573d3a7f9fc8f",
+  "source_bytes": 318684,
+  "triangles": 6276,
+  "vertices": 4359
+ },
+ "logo_link": {
+  "bytes": 162600,
+  "glb": "assets/g1/logo_link.glb",
+  "sha256": "e7aa5f52176b583d4ebcaf7327c6d16df3f88843ea6c640a46d8a11bc0ae1127",
+  "source_bytes": 243384,
+  "triangles": 4452,
+  "vertices": 4513
+ },
+ "pelvis": {
+  "bytes": 555988,
+  "glb": "assets/g1/pelvis.glb",
+  "sha256": "c5acc2190436d5bc4256ccbd021100a5d1dfc9e981d9d7291033fe8ea0e1beba",
+  "source_bytes": 1060884,
+  "triangles": 20832,
+  "vertices": 12714
+ },
+ "pelvis_contour_link": {
+  "bytes": 738128,
+  "glb": "assets/g1/pelvis_contour_link.glb",
+  "sha256": "3ec89bf0fa599e68422b69882c25ac0807ca954fe55ae8963924adaed85dc42a",
+  "source_bytes": 1805184,
+  "triangles": 27822,
+  "vertices": 16807
+ },
+ "right_ankle_pitch_link": {
+  "bytes": 52732,
+  "glb": "assets/g1/right_ankle_pitch_link.glb",
+  "sha256": "88c5cb78a26a212fb2200af1738bb5ae697e004bfa37e3dc1a0f71ec9aa0c91b",
+  "source_bytes": 71184,
+  "triangles": 1422,
+  "vertices": 1449
+ },
+ "right_ankle_roll_link": {
+  "bytes": 359624,
+  "glb": "assets/g1/right_ankle_roll_link.glb",
+  "sha256": "5eb8b7e68f73f43f5cc8fac755e146bf20fbb52e62c84df5def4fa7812579cdd",
+  "source_bytes": 653784,
+  "triangles": 12516,
+  "vertices": 8689
+ },
+ "right_elbow_link": {
+  "bytes": 58240,
+  "glb": "assets/g1/right_elbow_link.glb",
+  "sha256": "69cd0d8c3f2b648339c3d03ccbdae3cde2cbe55a4498a2b5493b3c37eb6230e9",
+  "source_bytes": 88784,
+  "triangles": 1772,
+  "vertices": 1504
+ },
+ "right_hip_pitch_link": {
+  "bytes": 101356,
+  "glb": "assets/g1/right_hip_pitch_link.glb",
+  "sha256": "ec10798543abc89c2cfc3efc61c3c14d329f477f0dc8618700e01c4cafd15d2a",
+  "source_bytes": 181284,
+  "triangles": 3612,
+  "vertices": 2380
+ },
+ "right_hip_roll_link": {
+  "bytes": 120672,
+  "glb": "assets/g1/right_hip_roll_link.glb",
+  "sha256": "3994919ff4fbcf853d46f100210aa85d4a7fad33f0ba3250d489c283523eb560",
+  "source_bytes": 192684,
+  "triangles": 3782,
+  "vertices": 3100
+ },
+ "right_hip_yaw_link": {
+  "bytes": 168212,
+  "glb": "assets/g1/right_hip_yaw_link.glb",
+  "sha256": "e3ad2bb39ac75bc3503cb3b7ad4f998bb073c383d949229cf8e95ceb5b632a51",
+  "source_bytes": 296284,
+  "triangles": 5858,
+  "vertices": 4043
+ },
+ "right_knee_link": {
+  "bytes": 511604,
+  "glb": "assets/g1/right_knee_link.glb",
+  "sha256": "f796d9190175a8fe29a7284b33fbbb8371daa4ab22fa877c31a47611e997fcc0",
+  "source_bytes": 852284,
+  "triangles": 16540,
+  "vertices": 13010
+ },
+ "right_rubber_hand": {
+  "bytes": 1045040,
+  "glb": "assets/g1/right_rubber_hand.glb",
+  "sha256": "1955645ef4d5ace21ea89f768a625aabf6137c49ccf41c09d25c503f28086346",
+  "source_bytes": 2192684,
+  "triangles": 42512,
+  "vertices": 22250
+ },
+ "right_shoulder_pitch_link": {
+  "bytes": 90708,
+  "glb": "assets/g1/right_shoulder_pitch_link.glb",
+  "sha256": "7c3f0e55a5f11570217a693d6bff12be2eb9e7aa825184629adb1215331856b5",
+  "source_bytes": 176784,
+  "triangles": 3514,
+  "vertices": 1985
+ },
+ "right_shoulder_roll_link": {
+  "bytes": 223280,
+  "glb": "assets/g1/right_shoulder_roll_link.glb",
+  "sha256": "ebc4af7104a2d94f0fbf84bfd049ed742368bf427150788fd506830d53cb9909",
+  "source_bytes": 401884,
+  "triangles": 7900,
+  "vertices": 5316
+ },
+ "right_shoulder_yaw_link": {
+  "bytes": 138776,
+  "glb": "assets/g1/right_shoulder_yaw_link.glb",
+  "sha256": "23127f25f986320d1a376214dc60ff4de43db62810395a1c424636b0216a83dc",
+  "source_bytes": 249984,
+  "triangles": 4932,
+  "vertices": 3279
+ },
+ "right_wrist_pitch_link": {
+  "bytes": 57580,
+  "glb": "assets/g1/right_wrist_pitch_link.glb",
+  "sha256": "abfb27eb51fa3724a1471f800a13580d656374940be85093eddd1b0e9b830076",
+  "source_bytes": 79584,
+  "triangles": 1586,
+  "vertices": 1569
+ },
+ "right_wrist_roll_link": {
+  "bytes": 198128,
+  "glb": "assets/g1/right_wrist_roll_link.glb",
+  "sha256": "fe4468b483cc4093d41b05bd78a50a5f3a7cb0fbf0749ea4221a3698bd479c94",
+  "source_bytes": 356084,
+  "triangles": 6936,
+  "vertices": 4750
+ },
+ "right_wrist_yaw_link": {
+  "bytes": 191284,
+  "glb": "assets/g1/right_wrist_yaw_link.glb",
+  "sha256": "5e0a174800319db556623153cc5f1ccd6e548862ab844baba910659340a40051",
+  "source_bytes": 341484,
+  "triangles": 6704,
+  "vertices": 4581
+ },
+ "torso_link_rev_1_0": {
+  "bytes": 1440592,
+  "glb": "assets/g1/torso_link_rev_1_0.glb",
+  "sha256": "ca99797a976b72800cf286c78843c08c4725d44ed0fd5146f552819b8c845dad",
+  "source_bytes": 2570584,
+  "triangles": 48845,
+  "vertices": 35565
+ },
+ "waist_roll_link_rev_1_0": {
+  "bytes": 48436,
+  "glb": "assets/g1/waist_roll_link_rev_1_0.glb",
+  "sha256": "aae4de339f30e31266c032169d3ce4a18055faba0735afbc7d497889754c78f2",
+  "source_bytes": 85884,
+  "triangles": 1716,
+  "vertices": 1123
+ },
+ "waist_yaw_link_rev_1_0": {
+  "bytes": 400384,
+  "glb": "assets/g1/waist_yaw_link_rev_1_0.glb",
+  "sha256": "df3462d7b215c768166572d18fe2e1340e1d8b19dd6c089ad165ae52c5749297",
+  "source_bytes": 619984,
+  "triangles": 12348,
+  "vertices": 10471
+ }
+}

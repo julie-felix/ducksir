@@ -1,0 +1,178 @@
+{
+ "ankle_pitch_l_link": {
+  "bytes": 279912,
+  "glb": "assets/tienkung/ankle_pitch_l_link.glb",
+  "sha256": "ca326209a5c314bd4c39dc5ffb138ec079d03ade870a2fdabbae98a262a69b0c",
+  "source_bytes": 434284,
+  "triangles": 8200,
+  "vertices": 7526
+ },
+ "ankle_pitch_r_link": {
+  "bytes": 279912,
+  "glb": "assets/tienkung/ankle_pitch_r_link.glb",
+  "sha256": "f04490dc6ae0546a665e9189bb23846a418c935722e039481a82dcd12d8e4279",
+  "source_bytes": 434284,
+  "triangles": 8200,
+  "vertices": 7526
+ },
+ "ankle_roll_l_link": {
+  "bytes": 417432,
+  "glb": "assets/tienkung/ankle_roll_l_link.glb",
+  "sha256": "e189591092f8f89ec16fccded0dd8fc95f496cefcc4868f4b7dcd48af4eeab6f",
+  "source_bytes": 695784,
+  "triangles": 13830,
+  "vertices": 10441
+ },
+ "ankle_roll_r_link": {
+  "bytes": 417432,
+  "glb": "assets/tienkung/ankle_roll_r_link.glb",
+  "sha256": "7d412b44c88e4d3a0c27665ff627a2610624943acee460fc6dab41dcf0a1f134",
+  "source_bytes": 695784,
+  "triangles": 13830,
+  "vertices": 10441
+ },
+ "elbow_l_link": {
+  "bytes": 358692,
+  "glb": "assets/tienkung/elbow_l_link.glb",
+  "sha256": "f6c22cecb528bf5db9b9111e7356e5c1016e670892267f72c92d7a8effdbbe43",
+  "source_bytes": 645784,
+  "triangles": 12884,
+  "vertices": 8467
+ },
+ "elbow_r_link": {
+  "bytes": 358524,
+  "glb": "assets/tienkung/elbow_r_link.glb",
+  "sha256": "b26438a2373d2d36d4d003aa62c221bac9c090e1089d088bdec75ddf7f9b5f2c",
+  "source_bytes": 645784,
+  "triangles": 12884,
+  "vertices": 8460
+ },
+ "hip_pitch_l_link": {
+  "bytes": 2696140,
+  "glb": "assets/tienkung/hip_pitch_l_link.glb",
+  "sha256": "4a1d49bffc3503d9b300c549d0d185c222d931e91598781d6c3b3d77c563abe6",
+  "source_bytes": 4545284,
+  "triangles": 83750,
+  "vertices": 70427
+ },
+ "hip_pitch_r_link": {
+  "bytes": 2695588,
+  "glb": "assets/tienkung/hip_pitch_r_link.glb",
+  "sha256": "9a4a6abbd1e2a29cb0ea2931c05b919826478117b002b33dffc5dbdb760c15fe",
+  "source_bytes": 4543784,
+  "triangles": 83730,
+  "vertices": 70414
+ },
+ "hip_roll_l_link": {
+  "bytes": 1669800,
+  "glb": "assets/tienkung/hip_roll_l_link.glb",
+  "sha256": "d89a71833e91d0c017f2eb53db15c5ee72f646bd5a11e53e6c25e5289932fc5b",
+  "source_bytes": 2754784,
+  "triangles": 52642,
+  "vertices": 43217
+ },
+ "hip_roll_r_link": {
+  "bytes": 1645680,
+  "glb": "assets/tienkung/hip_roll_r_link.glb",
+  "sha256": "59e7f2d7a34ba3351425a514c9b28a1a70b04fdc9727e1ba4f8775b6ee6a76ea",
+  "source_bytes": 2721484,
+  "triangles": 51976,
+  "vertices": 42545
+ },
+ "hip_yaw_l_link": {
+  "bytes": 2539920,
+  "glb": "assets/tienkung/hip_yaw_l_link.glb",
+  "sha256": "79a65b2b5dfa30a2e14be39bd33d09689e2a6d2da295cb2191e0fd8f290e95d8",
+  "source_bytes": 4293884,
+  "triangles": 78720,
+  "vertices": 66433
+ },
+ "hip_yaw_r_link": {
+  "bytes": 2534300,
+  "glb": "assets/tienkung/hip_yaw_r_link.glb",
+  "sha256": "82e56ed32ba6582e97d5d97e35e5c38016bf46122e52c42f81de152ec38d10e2",
+  "source_bytes": 4283684,
+  "triangles": 78520,
+  "vertices": 66299
+ },
+ "knee_pitch_l_link": {
+  "bytes": 2755204,
+  "glb": "assets/tienkung/knee_pitch_l_link.glb",
+  "sha256": "6527b6835aa5fb2f0a1efb00ae0141d24eec3fc220c3218532fcc968760ad6f4",
+  "source_bytes": 4707984,
+  "triangles": 89118,
+  "vertices": 70204
+ },
+ "knee_pitch_r_link": {
+  "bytes": 2758828,
+  "glb": "assets/tienkung/knee_pitch_r_link.glb",
+  "sha256": "1fbfbb558a701682550e5d6aefcfbc690943e193898694742a76ecb88e8e5e2e",
+  "source_bytes": 4715684,
+  "triangles": 89174,
+  "vertices": 70327
+ },
+ "pelvis": {
+  "bytes": 13634568,
+  "glb": "assets/tienkung/pelvis.glb",
+  "sha256": "2731e3f9cb0bbed7f04f62afe4338f61f6ac8572b230db5722d0b9475245c4d4",
+  "source_bytes": 63417934,
+  "triangles": 392185,
+  "vertices": 371978
+ },
+ "shoulder_pitch_l_link": {
+  "bytes": 297340,
+  "glb": "assets/tienkung/shoulder_pitch_l_link.glb",
+  "sha256": "e898c029d796d9255710e653ccbb556a75a3fc1708cd22d0f6fc3d7cc4cd2009",
+  "source_bytes": 530384,
+  "triangles": 10548,
+  "vertices": 7078
+ },
+ "shoulder_pitch_r_link": {
+  "bytes": 297316,
+  "glb": "assets/tienkung/shoulder_pitch_r_link.glb",
+  "sha256": "d60092521a097750a4b13828126f38bff8ac88ffcd575897c6e9ef531020d8ef",
+  "source_bytes": 529784,
+  "triangles": 10538,
+  "vertices": 7082
+ },
+ "shoulder_roll_l_link": {
+  "bytes": 2219652,
+  "glb": "assets/tienkung/shoulder_roll_l_link.glb",
+  "sha256": "7d503acb5906477677b15d7b2bbc86652b9f5ab44000e1c784e7ab91c2154cf5",
+  "source_bytes": 3821384,
+  "triangles": 71390,
+  "vertices": 56753
+ },
+ "shoulder_roll_r_link": {
+  "bytes": 2219052,
+  "glb": "assets/tienkung/shoulder_roll_r_link.glb",
+  "sha256": "5ab21b197dd77aacfe6f89dfc40f9e41e93ac5773790579c3f7a420342d01004",
+  "source_bytes": 3821484,
+  "triangles": 71452,
+  "vertices": 56697
+ },
+ "shoulder_yaw_l_link": {
+  "bytes": 1406648,
+  "glb": "assets/tienkung/shoulder_yaw_l_link.glb",
+  "sha256": "9f36c873068ee50f0a9676d934b0c66a787e9415b6aa786629a20ec546a51e78",
+  "source_bytes": 2391184,
+  "triangles": 45170,
+  "vertices": 35988
+ },
+ "shoulder_yaw_r_link": {
+  "bytes": 1406672,
+  "glb": "assets/tienkung/shoulder_yaw_r_link.glb",
+  "sha256": "55666c78629db8964de79e8f8400764d02c617bbcf88827eae3545880c85a7f3",
+  "source_bytes": 2391184,
+  "triangles": 45174,
+  "vertices": 35987
+ },
+ "waist_link": {
+  "bytes": 21705716,
+  "glb": "assets/tienkung/waist_link.glb",
+  "sha256": "ccd508fcbd7ec0d016fcd5b73c4982477c164355da255b7cecc6649090dac12b",
+  "source_bytes": 38394184,
+  "triangles": 668490,
+  "vertices": 570123
+ }
+}
