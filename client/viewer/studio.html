@@ -12,6 +12,13 @@
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; }
+  /* 网格子项默认 min-width:auto：长代码行会把中列顶宽，导致整页出现横向滚动条 */
+  #app > *, #mid > *, #bottom > *, .tabpane { min-width: 0; min-height: 0; }
+  /* 细滚动条，别在深色页面上戳一条亮灰 */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #2b3a4b; border-radius: 6px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a4d63; }
+  ::-webkit-scrollbar-track { background: transparent; }
   html, body { margin:0; height:100dvh; overflow:hidden; background:var(--bg); color:var(--ink);
                font:13px/1.5 system-ui,-apple-system,"Noto Sans CJK SC",sans-serif; }
   #app { display:grid; grid-template-columns: 220px 1fr 52px; grid-template-rows: 40px 1fr;
@@ -25,7 +32,8 @@
   #top .pill { color:var(--dim); font-size:12px; border:1px solid var(--line); border-radius:999px;
                padding:2px 9px; }
   /* ── 左：文件树 ── */
-  #files { border-right:1px solid var(--line); background:var(--panel); overflow:auto; padding:8px 6px; }
+  #files { border-right:1px solid var(--line); background:var(--panel); overflow:auto;
+           overscroll-behavior: contain; min-height:0; padding:8px 6px; }
   #files .h { color:var(--dim); font-size:11.5px; padding:4px 8px; }
   #files button { display:block; width:100%; text-align:left; background:none; border:0; color:var(--ink);
                   font:inherit; padding:5px 8px; border-radius:6px; cursor:pointer; white-space:nowrap;
@@ -34,11 +42,14 @@
   #files button.on { background:#1b2b3d; color:#cfe3ff; }
   #files .ext { color:var(--dim); font-size:11px; margin-left:4px; }
   /* ── 中：3D + 文件内容 ── */
-  #mid { display:grid; grid-template-rows: 1fr; position:relative; min-width:0; }
+  #mid { display:grid; grid-template-rows: 1fr; grid-template-columns: minmax(0, 1fr);
+         position:relative; min-width:0; overflow:hidden; }
   #view { position:relative; min-height:0; }
   #c { display:block; width:100%; height:100%; touch-action:none; }
-  #code { display:none; overflow:auto; background:var(--panel2); padding:12px 14px; font-family:var(--mono);
-          font-size:12px; line-height:1.6; white-space:pre; }
+  #code { display:none; margin:0; overflow:auto; min-width:0; min-height:0;
+          background:var(--panel2); padding:12px 14px; font-family:var(--mono);
+          font-size:12px; line-height:1.6; white-space:pre; tab-size:4;
+          overscroll-behavior: contain; }
   #code.on { display:block; }
   #view.off { display:none; }
   #keys { position:absolute; left:50%; transform:translateX(-50%); bottom:10px; display:flex; gap:6px;
