@@ -12,8 +12,8 @@
 ## 流程与边界
 
 - [`docs/flow.md`](flow.md) — 从硬件到真机的完整流水线，每步的产物与通过判据。
-- [`docs/plans/2026-11-09-robot-entity.md`](plans/2026-11-09-robot-entity.md) — **当前阶段**：数字描述 + 可视化 + 改值 + 导入；D1–D20 决策、三个实测发现、怎么跑。
-- [`docs/plans/2026-11-10-botlab-replica.md`](plans/2026-11-10-botlab-replica.md) — **待确认**：把 BotLab 的编排能力复刻进本仓（`sim/` + `engine/`），D1–D19 + 8 周里程碑 + W3 止损点。
+- [`docs/plans/2026-11-09-robot-entity.md`](plans/2026-11-09-robot-entity.md) — **上一阶段**（已完成）：数字描述 + 可视化 + 改值 + 导入；D1–D20 决策、三个实测发现、怎么跑。
+- [`docs/plans/2026-11-10-botlab-replica.md`](plans/2026-11-10-botlab-replica.md) — **当前阶段**：复刻 BotLab 的编排能力（`sim/` + `engine/`），D1–D20 + 9 周里程碑（到 2027-01-11）+ W3 止损点；浏览器端要可交互。
 - [`docs/node-parity.md`](node-parity.md) — botlab 56 个节点与本仓集成情况的对照表（✅25 / ⇄2 / ⏳2 / ❌27）。
 - [`docs/plans/2026-11-09-parallel-mechanism.md`](plans/2026-11-09-parallel-mechanism.md) — 并联机构：G1 踝/腰实物并联、模型串联；PR/AB 两套坐标 + coupling；官方 CAD 7 实体判读表。
 - [`docs/plans/2026-11-08-digital-description.md`](plans/2026-11-08-digital-description.md) — 长期路线（M1–M4）：鸭子只有 MJCF 没有 URDF，canonical 自定 schema。前一段已被 11-09 取代。
@@ -22,8 +22,8 @@
 ## 未定（别当结论）
 
 - 并联：AB↔PR 的 `coupling` 全是 `unresolved`；CAD 7 个实体的零件身份待确认；左右踝是否镜像、腰部映射形状未定。
-- 数字描述：JSON Schema 还没落（现在只有 `check_entity.py` 六条检查）；G1 的「焊接」口径（URDF 39 link vs MJCF 30 body）怎么在实体里表达；mesh 未入库；`bus` 块空着等 SDK 规范。
-- 客户端：3D 面板还没写；读取通道先只读，写回走同源 API 是第二步。
+- 数字描述：JSON Schema 还没落（现在只有 `check_entity.py` 的 C1–C7 七条检查，W2 加 C8）；G1 的「焊接」口径（URDF 39 link vs MJCF 30 body）怎么在实体里表达；`bus` 块空着等 SDK 规范。
+- 客户端：3D 查看器已进面板；读取通道只读，写回走同源 API 是第二步。
 
 - 硬件路线：kissqy 还是 fanhao375。
 - 舵机线：原厂 XL330 还是飞特 HD1910。
