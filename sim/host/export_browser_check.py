@@ -149,6 +149,19 @@ def main() -> int:
     with open(os.path.join(out, "actions.json"), "w", encoding="utf-8") as f:
         json.dump(act_list, f)
     shutil.copyfile(model_path, os.path.join(out, "model.onnx"))
+
+    # 七个策略全拷一份：浏览器里下拉切换（对应 botlab 的 policy_bank）
+    policies = []
+    for key, _, fname in (("walk", 0, "walking.onnx"), ("sitstand", 1, "sitstand.onnx"),
+                          ("kick_left", 2, "kick-left.onnx"), ("kick_right", 3, "kick-right.onnx"),
+                          ("roll", 4, "roll.onnx"), ("ground_pick", 5, "ground-pick.onnx"),
+                          ("stand", 6, "stand.onnx")):
+        src = os.path.join(ROOT, "build/models", fname)
+        if os.path.exists(src):
+            shutil.copyfile(src, os.path.join(out, fname))
+            policies.append({"key": key, "mode": _, "file": fname})
+    with open(os.path.join(out, "policies.json"), "w", encoding="utf-8") as f:
+        json.dump({"policies": policies}, f, ensure_ascii=False, indent=2)
     with open(os.path.join(out, "meta.json"), "w", encoding="utf-8") as f:
         json.dump({"policy_id": man["policy_id"], "steps": args.steps, "vx": args.vx,
                    "pre_digest": ir.sha256_of_blob(pre_blob),

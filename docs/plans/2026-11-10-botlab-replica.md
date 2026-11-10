@@ -571,3 +571,30 @@ PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 sim/host/export_browser_che
    STL 只喂物理），浏览器要下的 STL 从 **38 个 / 21 MB 降到 9 个 / 7.1 MB**——手机上是决定性的。
 
 物理没变：`node sim/test/test_play_core.mjs` 仍是 16 body / 14 actuator / 5 sensor，200 步 PASS。
+
+### W8（2026-11-10）浏览器交互：策略切换 + 前进指令
+
+**做的**（都在 `client/viewer/play.html`，手机也能用）：
+
+| 交互 | 宿主侧对应 | 实现 |
+|---|---|---|
+| `+ 快 / − 慢`、`W/S` | `commands` 的 forward_velocity | 直接改观测第 49 维 |
+| 下拉 + 数字键 `1..7` | botlab 的 `policy_bank(mode)` | 7 份 ONNX 各自一个 ORT Web 会话，切换时清 `last_action` |
+| `R` / 「复位」 | 工程 reset | 位形回 `initialQpos`、速度清零、指令归零 |
+
+**验收**（`node sim/test/test_browser_policies.mjs`）
+
+```
+  walk         5 步 · 6 ms · 有限=true · 动作跨度 3.305
+  sitstand     5 步 · 1 ms · 有限=true · 动作跨度 1.830
+  kick_left    5 步 · 1 ms · 有限=true · 动作跨度 3.452
+  kick_right   5 步 · 0 ms · 有限=true · 动作跨度 2.679
+  roll         5 步 · 1 ms · 有限=true · 动作跨度 3.159
+  ground_pick  5 步 · 1 ms · 有限=true · 动作跨度 1.985
+  stand        5 步 · 0 ms · 有限=true · 动作跨度 2.630
+7 个策略全部可加载并出有限动作 PASS
+```
+
+**还没做**：**自动状态机切换**（tipped/upright 条件、计时转移）仍只在宿主侧（`run_fsm.py`）。
+浏览器里现在是「手动切策略」——和 botlab 的键盘行为一致（它也是按键发 `policy_command`），
+差别在于它把状态机也跑在图里，我们这一步把 FSM 留在宿主。

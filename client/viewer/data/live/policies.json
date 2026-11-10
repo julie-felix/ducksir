@@ -1,0 +1,39 @@
+{
+  "policies": [
+    {
+      "key": "walk",
+      "mode": 0,
+      "file": "walking.onnx"
+    },
+    {
+      "key": "sitstand",
+      "mode": 1,
+      "file": "sitstand.onnx"
+    },
+    {
+      "key": "kick_left",
+      "mode": 2,
+      "file": "kick-left.onnx"
+    },
+    {
+      "key": "kick_right",
+      "mode": 3,
+      "file": "kick-right.onnx"
+    },
+    {
+      "key": "roll",
+      "mode": 4,
+      "file": "roll.onnx"
+    },
+    {
+      "key": "ground_pick",
+      "mode": 5,
+      "file": "ground-pick.onnx"
+    },
+    {
+      "key": "stand",
+      "mode": 6,
+      "file": "stand.onnx"
+    }
+  ]
+}
