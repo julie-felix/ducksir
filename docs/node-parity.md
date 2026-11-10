@@ -6,7 +6,7 @@
 
 图例：✅ 已集成 ｜ ⇄ 我们的等价节点替代 ｜ ⏳ 排进 v0.1 ｜ ❌ 不集成
 
-统计（v2，多了 4 个编排节点）：✅ 29 ｜ ⇄ 2 ｜ ⏳ 0 ｜ ❌ 25 —— 我们的 27 个节点对齐到它 25 个（`affine` 并进 `proc-math`、`moving_average` 并进 `proc-signal-filter`、`take` 用 `proc-demux` 的等价形态）。
+统计（v3，14 个节点类型）：✅ 31 ｜ ⇄ 2 ｜ ⏳ 0 ｜ ❌ 23 —— 我们的 27 个节点对齐到它 25 个（`affine` 并进 `proc-math`、`moving_average` 并进 `proc-signal-filter`、`take` 用 `proc-demux` 的等价形态）。
 
 ## 观测（15）
 
@@ -49,10 +49,10 @@
 | `proc-delay` | ✅ | `delay` |
 | `proc-rule-index` | ❌ | 规则表选索引，v0 用 `state_machine` + `mode_select` |
 | `proc-one-hot` | ✅ | `constant` + `select` 可等价写出 |
-| `proc-compare` | ⏳ | 仍缺：`state_machine` 的 `when` 要真值输入，`where` 的 cond 目前只能从外部给 |
+| `proc-compare` | ✅ | `compare`（gt/gte/lt/lte/eq） |
 | `proc-logic` | ⏳ | 仍缺：同上（`& | ~`） |
 | `proc-where` | ❌ | 两边都求值（不短路），用起来全是坑 |
-| `proc-state-machine` | ✅ | `state_machine` |
+| `proc-state-machine` | ✅ | `state_machine`（输出 [state, steps]，三类转移） |
 | `proc-phase-clock` | ✅ | `phase_clock`（喂 `state_machine.steps`） |
 | `proc-clock` | ❌ | `phase_clock` 够用 |
 | `proc-spatial-math` | ❌ | v0 无 3D 场景 |

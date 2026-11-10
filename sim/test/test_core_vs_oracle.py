@@ -94,6 +94,29 @@ def plan_orchestration() -> dict:
     return p.to_json()
 
 
+def plan_state_machine() -> dict:
+    """状态机：命令脉冲 / 计时 / 条件三种转移都走一遍。"""
+    p = ir.Plan(input_dim=4, output_dim=4, name="fsm")
+    cmd = p.obs(0, 1)
+    cond = p.obs(1, 1)
+    x = p.obs(2, 2)
+    sm = p.state_machine(
+        cmd, initial=0,
+        transitions=[
+            {"from": 0, "command": 1.0, "to": 1},
+            {"from": 1, "after_steps": 3, "to": 2},
+            {"from": 2, "when": 0, "to": 0},
+            {"from": 2, "after_steps": 5, "to": 3, "reset_steps": False},
+        ],
+        conditions=[cond],
+    )
+    state = p.reorder(sm, [0])
+    steps = p.reorder(sm, [1])
+    out = p.concat(x, state, steps)
+    p.out_action(out)
+    return p.to_json()
+
+
 def run_c(lib, doc, obs_seq):
     blob = ir.compile_blob(doc)
     err = ctypes.create_string_buffer(256)
@@ -132,6 +155,9 @@ def compare(name, lib, doc, steps=40, seed=0):
     obs_seq = []
     for k in range(steps):
         v = rng.uniform(-2, 2, doc["input_dim"]).astype(np.float32)
+        if doc["name"] == "fsm":
+            v[0] = float(1.0 if k in (2, 9) else 0.0)   # 第 2/9 步按下命令脉冲
+            v[1] = float(1.0 if 5 <= k < 8 else 0.0)    # 第 5..7 步条件为真
         if doc["name"] == "orch":
             v[4] = float(k % 3)          # mode 走 0/1/2，让 select 的两个分支都命中
             v[5] = float(k % 2)          # cond 走 0/1
@@ -174,6 +200,7 @@ def main() -> int:
     oks.append(compare("simple", lib, plan_simple())[0])
     oks.append(compare("rich", lib, plan_rich())[0])
     oks.append(compare("orch", lib, plan_orchestration())[0])
+    oks.append(compare("fsm", lib, plan_state_machine())[0])
 
     print("\n拒绝路径：")
     rich = plan_rich()

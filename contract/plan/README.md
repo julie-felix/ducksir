@@ -80,6 +80,8 @@ required 表：required_count × 4B  { u16 type, u16 min_version }
 | 11 | `where` | `cond ? a : b`（两边都算，不短路） | — |
 | 12 | `phase_clock` | `fmod(steps, period)/period`，落在 [0,1) | `[period_steps]` |
 | 13 | `add` | 逐元素相加（≤4 路），分块 select 后用它消零 | — |
+| 14 | `state_machine` | 状态机，输出 2 维 `[state, steps]`；转移按「command 脉冲 / after_steps / when」三类，同类按声明顺序取首个命中 | 表长、初始态、条件数 + 每条转移 6 个数 |
+| 15 | `compare` | 两路 1 维比较，输出 0/1（`gt/gte/lt/lte/eq`） | `[op]` |
 
 两条容易踩的：
 

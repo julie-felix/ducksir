@@ -64,6 +64,16 @@ struct ds_plan {
     };
     HistState* hists = nullptr;
     uint32_t hist_count = 0;
+
+    // 状态机：每个节点一份 {state, steps}，在 ds_reset 里回到 initial
+    struct SmState {
+        uint16_t node_index;
+        int32_t state;
+        int32_t steps;
+        int32_t initial;
+    };
+    SmState* sms = nullptr;
+    uint32_t sm_count = 0;
     uint16_t step_count = 0;
 };
 
@@ -88,7 +98,7 @@ uint64_t fnv1a64(const uint8_t* data, size_t len) {
     return h;
 }
 
-bool known_type(uint16_t t) { return t >= DS_NODE_OBS && t <= DS_NODE_ADD; }
+bool known_type(uint16_t t) { return t >= DS_NODE_OBS && t <= DS_NODE_COMPARE; }
 
 void set_err(char* err, size_t err_len, const char* msg) {
     if (!err || err_len == 0) return;
@@ -245,6 +255,11 @@ ds_plan* ds_load(const void* blob, size_t len, char* err, size_t err_len) {
             }
             p->sink_index[0] = i;
         }
+        if (n.type == DS_NODE_STATE_MACHINE && n.out_len != 2) {
+            ds_free(p);
+            set_err(err, err_len, "state_machine 输出必须是 2 维 [state, steps]");
+            return nullptr;
+        }
         if (n.type == DS_NODE_MODEL && !(n.flags & DS_FLAG_PASS_THROUGH) && n.param_len < 1) {
             ds_free(p);
             set_err(err, err_len, "model 节点缺 model_id");
@@ -306,6 +321,37 @@ ds_plan* ds_load(const void* blob, size_t len, char* err, size_t err_len) {
             ++k;
         }
     }
+    // 状态机状态
+    uint32_t ns = 0;
+    for (uint16_t i = 0; i < node_count; ++i) {
+        if (p->nodes[i].type == DS_NODE_STATE_MACHINE) ++ns;
+    }
+    p->sm_count = ns;
+    if (ns) {
+        p->sms = new (std::nothrow) ds_plan::SmState[ns]();
+        if (!p->sms) {
+            ds_free(p);
+            set_err(err, err_len, "分配状态机失败");
+            return nullptr;
+        }
+        uint32_t k = 0;
+        for (uint16_t i = 0; i < node_count; ++i) {
+            const Node& n = p->nodes[i];
+            if (n.type != DS_NODE_STATE_MACHINE) continue;
+            if (n.param_len < 3) {
+                ds_free(p);
+                set_err(err, err_len, "state_machine 参数不足");
+                return nullptr;
+            }
+            const int initial = static_cast<int>(p->params[n.param_off + 1]);
+            p->sms[k].node_index = i;
+            p->sms[k].initial = initial;
+            p->sms[k].state = initial;
+            p->sms[k].steps = 0;
+            ++k;
+        }
+    }
+
     return p;
 }
 
@@ -315,6 +361,7 @@ void ds_free(ds_plan* p) {
         for (uint32_t i = 0; i < p->hist_count; ++i) delete[] p->hists[i].buf;
         delete[] p->hists;
     }
+    delete[] p->sms;
     delete[] p->nodes;
     delete[] p->params;
     delete[] p->arena;
@@ -340,6 +387,10 @@ int ds_reset(ds_plan* p) {
         const size_t n = static_cast<size_t>(p->hists[i].frames) * p->hists[i].frame_len;
         std::memset(p->hists[i].buf, 0, n * sizeof(float));
         p->hists[i].head = 0;
+    }
+    for (uint32_t i = 0; i < p->sm_count; ++i) {
+        p->sms[i].state = p->sms[i].initial;
+        p->sms[i].steps = 0;
     }
     p->step_count = 0;
     return DS_OK;
@@ -372,6 +423,7 @@ int ds_step(ds_plan* p, const float* obs, float* action, const ds_backend* backe
     std::memset(p->arena, 0, sizeof(float) * (p->arena_len ? p->arena_len : 1));
 
     uint32_t hist_cursor = 0;
+    uint32_t sm_cursor = 0;
     for (uint16_t i = 0; i < p->node_count; ++i) {
         const Node& n = p->nodes[i];
         float* out = p->arena + n.out_off;
@@ -498,6 +550,65 @@ int ds_step(ds_plan* p, const float* obs, float* action, const ds_backend* backe
                 float phase = std::fmod(steps, period);
                 if (phase < 0.0f) phase += period;
                 out[0] = phase / period;
+                break;
+            }
+            case DS_NODE_COMPARE: {
+                if (n.n_in != 2 || n.param_len < 1) return DS_ERR_GRAPH;
+                const float a = in0[0];
+                const float b = p->arena[n.in[1].off];
+                const int op = static_cast<int>(prm[0]);
+                bool res = false;
+                switch (op) {
+                    case 0: res = a > b; break;
+                    case 1: res = a >= b; break;
+                    case 2: res = a < b; break;
+                    case 3: res = a <= b; break;
+                    case 4: res = a == b; break;
+                    default: return DS_ERR_BAD_BLOB;
+                }
+                out[0] = res ? 1.0f : 0.0f;
+                break;
+            }
+            case DS_NODE_STATE_MACHINE: {
+                if (sm_cursor >= p->sm_count) return DS_ERR_GRAPH;
+                ds_plan::SmState& sm = p->sms[sm_cursor++];
+                if (n.param_len < 3) return DS_ERR_BAD_BLOB;
+                const int n_tr = static_cast<int>(prm[0]);
+                const int n_cond = static_cast<int>(prm[2]);
+                if (n.param_len < 3 + n_tr * 6) return DS_ERR_BAD_BLOB;
+                if (static_cast<int>(n.n_in) != 1 + n_cond) return DS_ERR_GRAPH;
+                const float cmd = in0[0];
+                bool switched = false;
+                for (int want_kind = 0; want_kind < 3 && !switched; ++want_kind) {
+                    for (int t = 0; t < n_tr; ++t) {
+                        const float* tr = prm + 3 + t * 6;
+                        const int frm = static_cast<int>(tr[0]);
+                        const int kind = static_cast<int>(tr[2]);
+                        const float val = tr[3];
+                        const int ci = static_cast<int>(tr[4]);
+                        const bool reset = tr[5] != 0.0f;
+                        if (kind != want_kind) continue;
+                        if (frm >= 0 && frm != sm.state) continue;
+                        bool hit = false;
+                        if (kind == 0) {
+                            hit = cmd != 0.0f && cmd == val;
+                        } else if (kind == 1) {
+                            hit = sm.steps >= static_cast<int>(val);
+                        } else {
+                            if (ci < 0 || ci >= n_cond) continue;
+                            const float* cond = p->arena + n.in[1 + ci].off;
+                            hit = cond[0] != 0.0f;
+                        }
+                        if (!hit) continue;
+                        sm.state = static_cast<int>(tr[1]);
+                        sm.steps = reset ? 0 : sm.steps + 1;
+                        switched = true;
+                        break;
+                    }
+                }
+                if (!switched) sm.steps += 1;
+                out[0] = static_cast<float>(sm.state);
+                out[1] = static_cast<float>(sm.steps);
                 break;
             }
             case DS_NODE_ADD: {

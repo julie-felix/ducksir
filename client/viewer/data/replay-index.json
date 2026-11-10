@@ -1,7 +1,12 @@
 {
   "clips": [
     {
-      "label": "多策略 mode=0 walk（botlab 7 个 ONNX 编排）",
+      "label": "状态机：walk → 按指令坐下（botlab 14 状态 / 7 策略）",
+      "file": "replay-duck-fsm.json",
+      "robot": "duck-hd1910"
+    },
+    {
+      "label": "多策略 mode=0 walk（7 个 ONNX 编排）",
       "file": "replay-duck-walk.json",
       "robot": "duck-hd1910"
     },
