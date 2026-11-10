@@ -273,3 +273,39 @@ body 与 joint 名单一致、actuator 顺序一致、关节轴与限位全部�
 - 观测语义还内联在 `pd_hold.py`（8 个槽里的 5 个 + `base_height`），W6 迁到 `contract/policy/manifest` 后才算有契约。
 - G1 / 天工仍是 `BLOCKED`（没有执行器参数），W3 只在鸭子上验收。
 - 站立/行走：等策略。
+
+### W4（2026-11-10）blob 定版 + C++ 核骨架 + 八个节点 + oracle 对拍
+
+**交付**
+
+- `contract/plan/README.md`：**blob 格式定版**。48 字节头、32 字节节点记录、参数表、`required`（节点类型 + 最低版本）协商、digest（FNV-1a 64，非加密）。加载策略是**整份拒绝**，不是跑一半。
+- `sim/plan/ir.py`（新）：Python 声明 → plan JSON（源码）→ blob（产物），编译期做同一套结构校验（拓扑序、唯一 sink、边界、perm 合法性）。
+- `sim/plan/oracle.py`（新）：同一张图的 numpy 参考实现——**把 8 个节点的语义写成可执行规格**（D18）。
+- `engine/`（新，本仓第一份 C++）：`include/ducksim.h`（C ABI）+ `src/core.cpp`（462 行）+ `Makefile`（没有 cmake，本机只有 g++ 与 make）。
+- `sim/test/test_core_vs_oracle.py`：ctypes 加载 `.so`，同一份图跑 40 步逐点比。
+- `sim/test/test_blob_roundtrip.py`：纯标准库的 blob 自检，进 CI（CI 不装 numpy）。
+- CI 加一步「执行核编译 + blob 自检」，没有 g++ 就只跑自检。
+
+**验收**
+
+```
+引擎 ABI 1
+  simple   nodes=4   arena=24   step=40  最大偏差 0.000e+00  PASS
+  rich     nodes=9   arena=144  step=40  最大偏差 0.000e+00  PASS
+拒绝路径：digest 被改 / 缺 out_action / 未知节点类型 全部拒绝
+```
+
+**0.000e+00 不是「差不多」**：float32 逐位一致。靠三件事：arena 每步清零、节点按声明顺序执行、编译时 `-ffp-contract=off`。
+
+**四个决定**（写进 `contract/plan/README.md`，以后改要三端重编）
+
+1. **头和记录的布局按偏移写死**，不用 struct 格式串拼。踩过一次：Python 侧 `struct.pack` 的字段数与格式串差一个，编译期才发现；改成 `pack_into` 按偏移写，和 C 侧注释一一对应。
+2. **`obs` 只有一个通用搬运节点**（`src_off, len`），不做 `joint_pos` / `projected_gravity` 这种语义节点——语义归 manifest（D12），核只管偏移。加一个观测不用改核。
+3. **`model` 节点不推理**，只调 `ds_backend.onnx_run` 回调；`pass-through` flag 仅测试用（出产物前必须清）。
+4. **`history` 首步是「前面全零」**，这条两端必须一致，否则策略看到的历史会差一截。
+
+**遗留**
+
+- ORT 绑定（`ds_backend.onnx_run` 接 onnxruntime）是 W5；现在是 pass-through。
+- 逃生口 `native-only` flag 已在头文件里留位，编译期打标与拒绝在 W6 的 DSL 编译器里做。
+- `sim/plan/` 与 `contract/plan/` 的 JSON schema 还没有机器可读版本（现在靠 `ir.validate` + 文档），要不要落 JSON Schema 待定。

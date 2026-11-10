@@ -8,6 +8,8 @@
 - [AGENTS.md](../AGENTS.md) — 给 agent 的仓库地图与工作约定。
 - [GLOSSARY.md](../GLOSSARY.md) — 术语表，含「别用这个词」和已解决的歧义。
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — 分支、提交、PR 规则。
+- [`contract/plan/README.md`](../contract/plan/README.md) — 计算图契约：blob 布局、8 个节点语义、版本与 digest、加载时拒绝什么。
+- [`engine/README.md`](../engine/README.md) — C++ 执行核：单文件 / arena / 零全局态，只做 obs→action，构建与对拍怎么跑。
 - [`sim/README.md`](../sim/README.md) — 宿主仿真与报告：物理在宿主、执行核只做 obs→action；PD 跟踪/物理链路两条跑法。
 - [`docs/env.md`](env.md) — 本机 Python 依赖（`PYTHONPATH` 目录）、mesh 格式（MuJoCo 不认 glb）、冒烟/preset/结构对比三条命令与产物位置。
 
