@@ -69,3 +69,14 @@ if (sMissing.length) {
   process.exit(1);
 }
 console.log(`studio 页：${sRefs.size} 处引用全部命中`);
+
+// 面板里加载的页面**不能有绝对 /static/ 引用**：import 失败会让整个 module 不执行，
+// 页面就只剩静态 HTML（2026-11-11 连踩两次）。
+for (const [label, file] of [['studio.js', sJs], ['play.js', js], ['inspect.js', inspectJs]]) {
+  const bad = [...file.matchAll(/(?:from|import|src)\s*[=(]?\s*['"]\/static\//g)];
+  if (bad.length) {
+    console.log(`${label} 里有绝对 /static/ 引用 ${bad.length} 处：面板里会 404 并让整页不执行`);
+    process.exit(1);
+  }
+}
+console.log('绝对 /static/ 引用检查：studio.js / play.js / inspect.js 都没有');
