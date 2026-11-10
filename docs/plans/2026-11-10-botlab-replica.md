@@ -503,3 +503,25 @@ native 30 步｜wasm 30 步｜节点 14｜10 → 26
 
 - 浏览器里的真推理（ORT Web 的 npm 包 + 页面接线）；现在是 node 里的等价验证。
 - `viewer` 接 wasm：现在回放还是「宿主算好轨迹 → 浏览器放」，不是「浏览器里算」。
+
+### W7b（2026-11-10）浏览器里真跑推理
+
+**做的**：把 onnxruntime-web 的运行时 vendor 进 `client/viewer/vendor/ort/`（只取 wasm-only 那套：入口 + 胶水 + 14 MB .wasm），
+新增 `client/viewer/live.{html,js}` 与 `live-core.mjs`：浏览器里加载 wasm 核 + ORT Web，喂宿主采的 61 维观测，
+和宿主算出的 action 逐点比。素材由 `sim/host/export_browser_check.py` 生成。
+
+**一个必须做的设计妥协**：ORT Web 的 `session.run` 是**异步**的，而 C 核是同步的。
+所以在**推理边界**把图切成两段：`pre.blob`（原始 obs → 策略输入）、`post.blob`（原始 action → ctrl），
+浏览器负责中间的 await。核本身一行没改。
+
+**判据分两层**（别混成一句「一致」）：
+
+| 层 | 判据 | 实测 |
+|---|---|---|
+| 图运算 native vs wasm | 逐位相同（0） | **0.000e+00** |
+| 推理 native vs ORT Web | ≤1e-5（kernel 不同） | **1.192e-6** |
+
+botlab 自己的 torch↔onnxruntime 奇偶校验阈值是 1e-4；我们这条更严。
+
+**踩的坑**：`ort.min.mjs` 是含 WebGPU/WebNN 的默认构建，会去加载 `jsep` 那套胶水（29 MB）——缺文件直接报
+「no available backend found」。要用 `ort.wasm.min.mjs` + `ort-wasm-simd-threaded.{mjs,wasm}` 那一套。
