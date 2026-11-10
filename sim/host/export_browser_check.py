@@ -162,6 +162,19 @@ def main() -> int:
             policies.append({"key": key, "mode": _, "file": fname})
     with open(os.path.join(out, "policies.json"), "w", encoding="utf-8") as f:
         json.dump({"policies": policies}, f, ensure_ascii=False, indent=2)
+    # 浏览器自己组 obs 要用的元数据（关节序、站姿、指令范围）——**每次导出都重写**，
+    # 之前这份是手搓的，preset 更新后没跟着变，结果浏览器从「全零位形」起步，一上去就打滚。
+    with open(os.path.join(out, "duck.json"), "w", encoding="utf-8") as f:
+        json.dump({
+            "robot": doc["robot"]["id"],
+            "joints": driven,
+            "defaultQ": preset["defaultJointPositions"],
+            "initialQpos": preset["initialQpos"],
+            "actionScale": preset["actionScale"],
+            "ctrlrange": [[float(a["ctrlrange"][0]), float(a["ctrlrange"][1])] for a in actuators],
+            "control_hz": 50, "physics_hz": 200,
+        }, f, ensure_ascii=False, indent=2)
+
     with open(os.path.join(out, "meta.json"), "w", encoding="utf-8") as f:
         json.dump({"policy_id": man["policy_id"], "steps": args.steps, "vx": args.vx,
                    "pre_digest": ir.sha256_of_blob(pre_blob),

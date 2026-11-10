@@ -655,3 +655,22 @@ PASS：脉冲触发状态机切策略，动作进了物理
 
 **浏览器键位**（照 botlab `config/io.yaml`）：`W/S` 前进、`X` 坐/站、`Z` 左踢、`C` 右踢、`V` 翻滚、`B` 地面拾取、`R` 起身/复位。
 下拉/数字键仍可手动指定策略，按任一策略键即回到状态机。
+
+### W8c（2026-11-10）「一上去就打滚」的三层真因
+
+现象：面板「浏览器跑」一打开，鸭子翻着滚。查下来是**三层叠加**，都不是渲染问题：
+
+1. **`data/live/duck.json` 是手搓的**，preset 更新后没跟着变，仍是**全零位形**（`initialQpos` 连基座高度都是 0）——
+   浏览器从「躺平的位形」起步，必然打滚。现在 `export_browser_check.py` 每次导出都重写这份元数据。
+2. **preset 丢了站姿**：`mjcf_smoke.py` 重新生成 preset 时没带 `--default-pose`，
+   `defaultJointPositions` 退回全零、`initialQpos` 的基座也变 0。位形文件还顺手改名成
+   `contract/robot/postures/<robot-id>.yaml`（原来叫 `microduck-stand.yaml`，smoke 按 id 找不到它）。
+3. **MuJoCo 版本没对齐**：浏览器 vendor 的是 `@mujoco/mujoco` 4.0.0，宿主 Python 是 3.17.0。
+   同一串 ctrl 重放，200 步后基座差 **85 mm**（接触密集的步态直接失稳）。
+   vendor 脚本固定成 **3.17.0** 后，同条件单步 qpos 差 **0.00e+00**、200 步差 **0.00000 m**——**逐位相同**。
+
+**回归守卫**：`node sim/test/test_play_stance.mjs` —— 用浏览器那套（物理 + fsm + pre/post + ORT Web）跑 5 s walk，
+初始 z 必须 > 0.1、末态直立度 > 0.9。它同时钉住「初始位形是否过期」和「策略能不能撑住」。
+
+**顺手改的**：浏览器主循环从「每帧推 4 步物理、到点才推理」改成**严格 4:1**（一个控制步 = 1 次推理 + 恰好 4 步物理），
+因为帧率一掉，原来那套会让每个控制步覆盖 8/12 步物理，策略看到的是被拉快的动力学。

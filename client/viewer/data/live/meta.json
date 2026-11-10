@@ -3,7 +3,7 @@
   "steps": 60,
   "vx": 0.5,
   "pre_digest": "5f491eb963fd1e99ec8d1d7d71860004ecc7af2b2e0c0977672418ce45fbc775",
-  "post_digest": "d7259ca9742a8e129eb4e7b19e4c815f12cb2ba8cfd17d26d1cdbadd660e0d1f",
+  "post_digest": "7d4d3d987e09526e0b0e4991e038e2bda322b3ef351598f34bfadccdf8608cb9",
   "input_dim": 61,
   "output_dim": 14,
   "nodes": 13,

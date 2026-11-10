@@ -33,7 +33,8 @@ TAKE = ("package/mujoco.js", "package/mujoco.wasm")
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--version", default="4.0.0")
+    ap.add_argument("--version", default="3.17.0",
+                    help="必须与宿主 Python 的 mujoco 版本一致——物理版本是配方的一部分（4.0.0 会让软 PD 步态失稳）")
     ap.add_argument("--proxy", help="例如 http://127.0.0.1:7890；缺省直连")
     args = ap.parse_args()
 
