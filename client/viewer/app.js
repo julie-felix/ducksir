@@ -448,15 +448,20 @@ function setView(kind) {
   const q = new THREE.Quaternion();
   robotGroup.getWorldQuaternion(q);
 
-  const bodyDir = kind === 'alongX' ? new THREE.Vector3(1, 0, 0)   // 机床轴（机身 x）
+  const bodyDir = kind === 'alongX' ? new THREE.Vector3(1, 0, 0)   // 机身 x（前）
     : kind === 'alongY' ? new THREE.Vector3(0, 1, 0)               // 机身 y（左）
       : new THREE.Vector3(0, 0, 1);                                // 机身 z（上）
-  const bodyUp = kind === 'top' ? new THREE.Vector3(1, 0, 0)       // 俯视时用机身前方向当「上」
-    : new THREE.Vector3(0, 0, 1);                                  // 其余用机身 z
 
-  const dir = bodyDir.clone().applyQuaternion(q).normalize();
+  // up 固定用世界 +Y（= 机身 +z）。俯视时相机若正好落在 up 轴上，OrbitControls 的极角会退化
+  // （万向锁：拖动时画面乱翻），所以俯视故意偏 6°。
+  camera.up.set(0, 1, 0);
+  let dir = bodyDir.clone().applyQuaternion(q).normalize();
+  if (kind === 'top') {
+    const tiltAxis = new THREE.Vector3(1, 0, 0).applyQuaternion(q).normalize();
+    const a = 6 * Math.PI / 180;
+    dir.multiplyScalar(Math.cos(a)).addScaledVector(tiltAxis, Math.sin(a)).normalize();
+  }
   camera.position.copy(c).addScaledVector(dir, dist);
-  camera.up.copy(bodyUp.clone().applyQuaternion(q).normalize());
   camera.lookAt(c);
   controls.target.copy(c);
   controls.update();
