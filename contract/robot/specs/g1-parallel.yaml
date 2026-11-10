@@ -1,19 +1,3 @@
-# G1 的并联机构（手写，不是导入产物）
-#
-# 这份文件描述的是**同一台机器的另一套坐标**，不是另一台机器：
-#   官方 URDF/MJCF 只有 PR（串联等效）：pitch → roll 两个关节。
-#   实物是并联：两个电机（A/B）经连杆驱动一块平台，平台有 2 个自由度。
-#   SDK 的 mode_pr 在 PR/AB 之间切换「这两个电机怎么被解释」。
-#
-# 索引取自 unitree_mujoco 的 g1_joint_index_dds.md（29DOF 表，mode 0 = PR，mode 1 = AB）：
-#   4 = L_LEG_ANKLE_PITCH / L_LEG_ANKLE_B      5 = L_LEG_ANKLE_ROLL / L_LEG_ANKLE_A
-#  10 = R_LEG_ANKLE_PITCH / R_LEG_ANKLE_B     11 = R_LEG_ANKLE_ROLL / R_LEG_ANKLE_A
-#  13 = WAIST_ROLL / WAIST_A                  14 = WAIST_PITCH / WAIST_B
-# 规律：A ↔ roll，B ↔ pitch。
-#
-# coupling 一律 unresolved：官方文档明说 AB 模式「需自行计算并联机构运动学」，
-# 也就是说宇树没有公开这条映射。这里把「欠一条映射」写进实体，而不是假装知道。
-
 type: g1-29dof
 source: https://support.unitree.com/home/zh/G1_developer/basic_motion_routine
 source_index: https://github.com/unitreerobotics/unitree_mujoco/blob/main/unitree_robots/g1/g1_joint_index_dds.md
@@ -24,113 +8,223 @@ cad:
   units: mm
   note: 7 个实体、无装配树、无零件名；按包围盒判读见 docs/plans/2026-11-09-parallel-mechanism.md
   redistributable: unknown
-
-# 拓扑（2026-11-09 从官方 CAD 的几何量出：共轴判据 + 孔心距）
-# 数据来源：tools/cad/mechanism.py（跨零件共轴的销只有三根）
-#   P7  = 连杆 1 + 销 3            → 连杆下端
-#   P8  = 连杆 1 + 销 2 + 电机座 6 → 连杆上端（在电机座上）
-#   P12 = 平台 4 + 小腿 7          → 踝的转轴
-# 由此：连杆两销中心距 156.9 mm；两个电机轴(P17/P21)间距 65.0 mm；平台-小腿共用 P12。
-# 仍未知：哪个电机驱动哪根曲柄、曲柄半径。这两项需要实物或官方装配图，几何反推会变成编。
 mechanisms:
-  - id: ankle_left
-    kind: parallel_2dof
-    mount: left_knee_link
-    platform: left_ankle_roll_link
-    charts:
-      pr:
-        joints: [left_ankle_pitch_joint, left_ankle_roll_joint]
-        semantic: [pitch, roll]
-      ab:
-        motors:
-          - {ab: B, index: 4, note: 同一槽位在 PR 模式下叫 L_LEG_ANKLE_PITCH}
-          - {ab: A, index: 5, note: 同一槽位在 PR 模式下叫 L_LEG_ANKLE_ROLL}
-    topology:
-      chain: motor -> link -> platform
-      pins: {lower: P7, upper: P8, platform_pivot: P12}
-      link_center_distance_mm: 156.9
-      measured_from: "tools/cad/mechanism.py（STEP 共轴判据，2026-11-09）"
-      unknown: [which_motor_drives_which_crank, crank_radius_mm]
-    coupling:
-      kind: analytic
-      params:
-        frame: ankle_pitch          # 原点=踝 pitch 关节中心，轴对齐 G1 ankle_pitch_link
-        units: m
-        mujoco_grid: mujoco-grid-g1.json      # MuJoCo 动力学轨迹（rig 几何相同）
-        # chains 的顺序 = [index 4, index 5]；rig 里对应的关节名见下（与 A/B 的对应未核实）
-        motor_joints: [right_motor_joint, left_motor_joint]
-        chains:
-          - {a: [0.022, 0, 0.21587], axis: [1, 0, 0], v: [0.0175, -0.016359, -0.004624], rod: 0.2215}
-          - {a: [0.022, 0, 0.15087], axis: [1, 0, 0], v: [0.013, 0.016529, -0.003975], rod: 0.157}
-        platform:
-          pitch_axis: [0, 1, 0]
-          pitch_pivot: [0, 0, 0]
-          roll_axis: [1, 0, 0]
-          roll_pivot: [0, 0, -0.017558]
-          c0: [[0.022, -0.015, -0.009558], [0.022, 0.015, -0.009558]]
-      source: "ankle-rig-g1（讲者按 G1 踝坐标系装配的 rig，MIT）；其 roll_link 位移 (0,0,-0.017558) 与 G1 URDF 的 left_ankle_roll_joint 完全一致"
-      assumed:
-        - "crank_radius_from_rig: 曲柄半径与电机轴位置取自 rig，真机未核"
-        - "roll_sign: 左侧 roll 与 URDF 的 left_ankle_roll_joint 同向（未在实物上验）"
-        - "ab_mapping: rig 的 right/left_motor 与 SDK 的 A/B 谁对谁，未核实；暂按 chains 顺序 = [index 4, index 5]"
-      anchor_zero: {A: 0, B: 0, roll: 0, pitch: 0}
-      todo: "曲柄半径 / 电机轴位置需实物或官方装配图确认后替换 assumed"
-
-  - id: ankle_right
-    kind: parallel_2dof
-    mount: right_knee_link
-    platform: right_ankle_roll_link
-    charts:
-      pr:
-        joints: [right_ankle_pitch_joint, right_ankle_roll_joint]
-        semantic: [pitch, roll]
-      ab:
-        motors:
-          - {ab: B, index: 10}
-          - {ab: A, index: 11}
-    coupling:
-      kind: analytic
-      params:
-        frame: ankle_pitch          # 原点=踝 pitch 关节中心，轴对齐 G1 ankle_pitch_link
-        units: m
-        mirror: true
-        mujoco_grid: mujoco-grid-g1.json
-        # chains 的顺序 = [index 4, index 5]；rig 里对应的关节名见下（与 A/B 的对应未核实）
-        motor_joints: [right_motor_joint, left_motor_joint]
-        chains:
-          - {a: [0.022, 0, 0.21587], axis: [1, 0, 0], v: [0.0175, 0.016359, -0.004624], rod: 0.2215}
-          - {a: [0.022, 0, 0.15087], axis: [1, 0, 0], v: [0.013, -0.016529, -0.003975], rod: 0.157}
-        platform:
-          pitch_axis: [0, 1, 0]
-          pitch_pivot: [0, 0, 0]
-          roll_axis: [1, 0, 0]
-          roll_pivot: [0, 0, -0.017558]
-          c0: [[0.022, 0.015, -0.009558], [0.022, -0.015, -0.009558]]
-      source: "ankle_left 关于矢状面 y=0 的镜像（几何镜像，未在实物上确认）"
-      assumed:
-        - "left_right_mirror: 右侧按左侧关于 y=0 镜像"
-        - "roll_sign: 右侧写关节时 roll 取反，需实物确认"
-        - "ab_mapping: 同 ankle_left，未核实"
-      anchor_zero: {A: 0, B: 0, roll: 0, pitch: 0}
-      todo: "确认右侧是否真为镜像；确认 roll 符号"
-
-  - id: waist_pitch_roll
-    kind: parallel_2dof
-    mount: pelvis
-    platform: torso_link
-    charts:
-      pr:
-        joints: [waist_pitch_joint, waist_roll_joint]
-        semantic: [pitch, roll]
-      ab:
-        motors:
-          - {ab: A, index: 13}
-          - {ab: B, index: 14}
-    coupling:
-      kind: unresolved
-      anchor_zero: {A: 0, B: 0, roll: 0, pitch: 0}
-      todo: 腰部连杆与踝不同构，且没有腰部 CAD；映射不能照抄踝
-
+- id: ankle_left
+  kind: parallel_2dof
+  mount: left_knee_link
+  platform: left_ankle_roll_link
+  charts:
+    pr:
+      joints:
+      - left_ankle_pitch_joint
+      - left_ankle_roll_joint
+      semantic:
+      - pitch
+      - roll
+    ab:
+      motors:
+      - ab: B
+        index: 4
+        note: 同一槽位在 PR 模式下叫 L_LEG_ANKLE_PITCH
+      - ab: A
+        index: 5
+        note: 同一槽位在 PR 模式下叫 L_LEG_ANKLE_ROLL
+  topology:
+    chain: motor -> link -> platform
+    pins:
+      lower: P7
+      upper: P8
+      platform_pivot: P12
+    link_center_distance_mm: 156.9
+    measured_from: tools/cad/mechanism.py（STEP 共轴判据，2026-11-09）
+    unknown:
+    - which_motor_drives_which_crank
+    - crank_radius_mm
+  coupling:
+    kind: analytic
+    params:
+      frame: ankle_pitch
+      units: m
+      mujoco_grid: mujoco-grid-g1.json
+      motor_joints:
+      - right_motor_joint
+      - left_motor_joint
+      chains:
+      - a:
+        - 0.022
+        - 0
+        - 0.21587
+        axis:
+        - 1
+        - 0
+        - 0
+        v:
+        - 0.0175
+        - -0.016359
+        - -0.004624
+        rod: 0.2215
+      - a:
+        - 0.022
+        - 0
+        - 0.15087
+        axis:
+        - 1
+        - 0
+        - 0
+        v:
+        - 0.013
+        - 0.016529
+        - -0.003975
+        rod: 0.157
+      platform:
+        pitch_axis:
+        - 0
+        - 1
+        - 0
+        pitch_pivot:
+        - 0
+        - 0
+        - 0
+        roll_axis:
+        - 1
+        - 0
+        - 0
+        roll_pivot:
+        - 0
+        - 0
+        - -0.017558
+        c0:
+        - - 0.022
+          - -0.015
+          - -0.009558
+        - - 0.022
+          - 0.015
+          - -0.009558
+    source: ankle-rig-g1（讲者按 G1 踝坐标系装配的 rig，MIT）；其 roll_link 位移 (0,0,-0.017558) 与 G1 URDF 的 left_ankle_roll_joint 完全一致
+    assumed:
+    - 'crank_radius_from_rig: 曲柄半径与电机轴位置取自 rig，真机未核'
+    - 'roll_sign: 左侧 roll 与 URDF 的 left_ankle_roll_joint 同向（未在实物上验）'
+    - 'ab_mapping: rig 的 right/left_motor 与 SDK 的 A/B 谁对谁，未核实；暂按 chains 顺序 = [index 4, index 5]'
+    anchor_zero:
+      A: 0
+      B: 0
+      roll: 0
+      pitch: 0
+    todo: 曲柄半径 / 电机轴位置需实物或官方装配图确认后替换 assumed
+- id: ankle_right
+  kind: parallel_2dof
+  mount: right_knee_link
+  platform: right_ankle_roll_link
+  charts:
+    pr:
+      joints:
+      - right_ankle_pitch_joint
+      - right_ankle_roll_joint
+      semantic:
+      - pitch
+      - roll
+    ab:
+      motors:
+      - ab: B
+        index: 10
+      - ab: A
+        index: 11
+  coupling:
+    kind: analytic
+    params:
+      frame: ankle_pitch
+      units: m
+      mujoco_grid: mujoco-grid-g1.json
+      motor_joints:
+      - right_motor_joint
+      - left_motor_joint
+      chains:
+      - a:
+        - 0.022
+        - 0
+        - 0.21587
+        axis:
+        - 1
+        - 0
+        - 0
+        v:
+        - 0.0175
+        - -0.016359
+        - -0.004624
+        rod: 0.2215
+      - a:
+        - 0.022
+        - 0
+        - 0.15087
+        axis:
+        - 1
+        - 0
+        - 0
+        v:
+        - 0.013
+        - 0.016529
+        - -0.003975
+        rod: 0.157
+      platform:
+        pitch_axis:
+        - 0
+        - 1
+        - 0
+        pitch_pivot:
+        - 0
+        - 0
+        - 0
+        roll_axis:
+        - 1
+        - 0
+        - 0
+        roll_pivot:
+        - 0
+        - 0
+        - -0.017558
+        c0:
+        - - 0.022
+          - -0.015
+          - -0.009558
+        - - 0.022
+          - 0.015
+          - -0.009558
+    source: ankle_left 关于矢状面 y=0 的镜像（几何镜像，未在实物上确认）
+    assumed:
+    - 'joint_axes_same: 按 URDF，左右踝 roll/pitch 轴同向，不镜像（几何仍可另说）'
+    - 'ab_mapping: 同 ankle_left，未核实'
+    anchor_zero:
+      A: 0
+      B: 0
+      roll: 0
+      pitch: 0
+    todo: 确认右侧是否真为镜像；确认 roll 符号
+- id: waist_pitch_roll
+  kind: parallel_2dof
+  mount: pelvis
+  platform: torso_link
+  charts:
+    pr:
+      joints:
+      - waist_pitch_joint
+      - waist_roll_joint
+      semantic:
+      - pitch
+      - roll
+    ab:
+      motors:
+      - ab: A
+        index: 13
+      - ab: B
+        index: 14
+  coupling:
+    kind: unresolved
+    anchor_zero:
+      A: 0
+      B: 0
+      roll: 0
+      pitch: 0
+    todo: 腰部连杆与踝不同构，且没有腰部 CAD；映射不能照抄踝
 presets:
   ab:
     chart: ab

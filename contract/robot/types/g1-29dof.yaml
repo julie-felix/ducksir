@@ -3,14 +3,14 @@ robot:
   id: g1-29dof
   name: g1_29dof_rev_1_0
   type: g1-29dof
-  source_ref: https://github.com/unitreerobotics/unitree_ros/blob/master/robots/g1_description/g1_29dof_rev_1_0.urdf
+  source_ref: x
   license: BSD-3-Clause
   generator:
     name: importer_urdf
     version: 0.1.0
     input: third_party/unitree-g1/g1_29dof_rev_1_0.urdf
     sha256: c0ae739c640c3e2c00d1bdd8810b5d6e59601487bd1a3995859f9543269ee5c8
-  created_at: '2026-11-09'
+  created_at: '2026-11-10'
   assets_dir: assets/g1
   mesh_manifest: assets/g1/manifest.json
   mechanisms_spec: contract/robot/specs/g1-parallel.yaml
@@ -3579,7 +3579,6 @@ mechanisms:
     params:
       frame: ankle_pitch
       units: m
-      mirror: true
       mujoco_grid: mujoco-grid-g1.json
       motor_joints:
       - right_motor_joint
@@ -3595,7 +3594,7 @@ mechanisms:
         - 0
         v:
         - 0.0175
-        - 0.016359
+        - -0.016359
         - -0.004624
         rod: 0.2215
       - a:
@@ -3608,7 +3607,7 @@ mechanisms:
         - 0
         v:
         - 0.013
-        - -0.016529
+        - 0.016529
         - -0.003975
         rod: 0.157
       platform:
@@ -3630,15 +3629,14 @@ mechanisms:
         - -0.017558
         c0:
         - - 0.022
-          - 0.015
+          - -0.015
           - -0.009558
         - - 0.022
-          - -0.015
+          - 0.015
           - -0.009558
     source: ankle_left 关于矢状面 y=0 的镜像（几何镜像，未在实物上确认）
     assumed:
-    - 'left_right_mirror: 右侧按左侧关于 y=0 镜像'
-    - 'roll_sign: 右侧写关节时 roll 取反，需实物确认'
+    - 'joint_axes_same: 按 URDF，左右踝 roll/pitch 轴同向，不镜像（几何仍可另说）'
     - 'ab_mapping: 同 ankle_left，未核实'
     anchor_zero:
       A: 0
@@ -3685,7 +3683,7 @@ provenance:
   value: 3.813
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[pelvis].com
   value:
@@ -3694,7 +3692,7 @@ provenance:
   - -0.07605
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[pelvis].inertia
   value:
@@ -3706,13 +3704,13 @@ provenance:
     izz: 0.0079184
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[pelvis_contour_link].mass
   value: 0.001
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[pelvis_contour_link].com
   value:
@@ -3721,7 +3719,7 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[pelvis_contour_link].inertia
   value:
@@ -3733,13 +3731,13 @@ provenance:
     izz: 1.0e-07
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_hip_pitch_link].mass
   value: 1.35
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_hip_pitch_link].com
   value:
@@ -3748,7 +3746,7 @@ provenance:
   - -0.02606
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_hip_pitch_link].inertia
   value:
@@ -3760,13 +3758,13 @@ provenance:
     izz: 0.0012812
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_hip_roll_link].mass
   value: 1.52
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_hip_roll_link].com
   value:
@@ -3775,7 +3773,7 @@ provenance:
   - -0.087934
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_hip_roll_link].inertia
   value:
@@ -3787,13 +3785,13 @@ provenance:
     izz: 0.0016595
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_hip_yaw_link].mass
   value: 1.702
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_hip_yaw_link].com
   value:
@@ -3802,7 +3800,7 @@ provenance:
   - -0.15078
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_hip_yaw_link].inertia
   value:
@@ -3814,13 +3812,13 @@ provenance:
     izz: 0.003149
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_knee_link].mass
   value: 1.932
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_knee_link].com
   value:
@@ -3829,7 +3827,7 @@ provenance:
   - -0.12074
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_knee_link].inertia
   value:
@@ -3841,13 +3839,13 @@ provenance:
     izz: 0.0015168
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_ankle_pitch_link].mass
   value: 0.074
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_ankle_pitch_link].com
   value:
@@ -3856,7 +3854,7 @@ provenance:
   - 0.011137
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_ankle_pitch_link].inertia
   value:
@@ -3868,13 +3866,13 @@ provenance:
     izz: 1.26e-05
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_ankle_roll_link].mass
   value: 0.608
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_ankle_roll_link].com
   value:
@@ -3883,7 +3881,7 @@ provenance:
   - -0.016425
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_ankle_roll_link].inertia
   value:
@@ -3895,13 +3893,13 @@ provenance:
     izz: 0.0016667
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_hip_pitch_link].mass
   value: 1.35
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_hip_pitch_link].com
   value:
@@ -3910,7 +3908,7 @@ provenance:
   - -0.02606
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_hip_pitch_link].inertia
   value:
@@ -3922,13 +3920,13 @@ provenance:
     izz: 0.0012812
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_hip_roll_link].mass
   value: 1.52
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_hip_roll_link].com
   value:
@@ -3937,7 +3935,7 @@ provenance:
   - -0.087934
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_hip_roll_link].inertia
   value:
@@ -3949,13 +3947,13 @@ provenance:
     izz: 0.0016595
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_hip_yaw_link].mass
   value: 1.702
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_hip_yaw_link].com
   value:
@@ -3964,7 +3962,7 @@ provenance:
   - -0.15078
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_hip_yaw_link].inertia
   value:
@@ -3976,13 +3974,13 @@ provenance:
     izz: 0.003149
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_knee_link].mass
   value: 1.932
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_knee_link].com
   value:
@@ -3991,7 +3989,7 @@ provenance:
   - -0.12074
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_knee_link].inertia
   value:
@@ -4003,13 +4001,13 @@ provenance:
     izz: 0.0015168
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_ankle_pitch_link].mass
   value: 0.074
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_ankle_pitch_link].com
   value:
@@ -4018,7 +4016,7 @@ provenance:
   - 0.011137
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_ankle_pitch_link].inertia
   value:
@@ -4030,13 +4028,13 @@ provenance:
     izz: 1.26e-05
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_ankle_roll_link].mass
   value: 0.608
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_ankle_roll_link].com
   value:
@@ -4045,7 +4043,7 @@ provenance:
   - -0.016425
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_ankle_roll_link].inertia
   value:
@@ -4057,13 +4055,13 @@ provenance:
     izz: 0.0016667
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[waist_yaw_link].mass
   value: 0.214
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[waist_yaw_link].com
   value:
@@ -4072,7 +4070,7 @@ provenance:
   - 0.018034
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[waist_yaw_link].inertia
   value:
@@ -4084,13 +4082,13 @@ provenance:
     izz: 0.0001625
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[waist_roll_link].mass
   value: 0.086
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[waist_roll_link].com
   value:
@@ -4099,7 +4097,7 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[waist_roll_link].inertia
   value:
@@ -4111,13 +4109,13 @@ provenance:
     izz: 8.245e-06
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[torso_link].mass
   value: 6.78
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[torso_link].com
   value:
@@ -4126,7 +4124,7 @@ provenance:
   - 0.15082
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[torso_link].inertia
   value:
@@ -4138,13 +4136,13 @@ provenance:
     izz: 0.025652
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[logo_link].mass
   value: 0.001
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[logo_link].com
   value:
@@ -4153,7 +4151,7 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[logo_link].inertia
   value:
@@ -4165,13 +4163,13 @@ provenance:
     izz: 1.0e-07
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[head_link].mass
   value: 1.036
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[head_link].com
   value:
@@ -4180,7 +4178,7 @@ provenance:
   - 0.449869
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[head_link].inertia
   value:
@@ -4192,13 +4190,13 @@ provenance:
     izz: 0.001807911
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_shoulder_pitch_link].mass
   value: 0.718
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_shoulder_pitch_link].com
   value:
@@ -4207,7 +4205,7 @@ provenance:
   - -0.011628
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_shoulder_pitch_link].inertia
   value:
@@ -4219,13 +4217,13 @@ provenance:
     izz: 0.000423
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_shoulder_roll_link].mass
   value: 0.643
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_shoulder_roll_link].com
   value:
@@ -4234,7 +4232,7 @@ provenance:
   - -0.063243
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_shoulder_roll_link].inertia
   value:
@@ -4246,13 +4244,13 @@ provenance:
     izz: 0.0003894
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_shoulder_yaw_link].mass
   value: 0.734
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_shoulder_yaw_link].com
   value:
@@ -4261,7 +4259,7 @@ provenance:
   - -0.072009
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_shoulder_yaw_link].inertia
   value:
@@ -4273,13 +4271,13 @@ provenance:
     izz: 0.0004354
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_elbow_link].mass
   value: 0.6
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_elbow_link].com
   value:
@@ -4288,7 +4286,7 @@ provenance:
   - -0.010062
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_elbow_link].inertia
   value:
@@ -4300,13 +4298,13 @@ provenance:
     izz: 0.0004197
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_wrist_roll_link].mass
   value: 0.08544498
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_wrist_roll_link].com
   value:
@@ -4315,7 +4313,7 @@ provenance:
   - 4.8864e-07
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_wrist_roll_link].inertia
   value:
@@ -4327,13 +4325,13 @@ provenance:
     izz: 5.482106541e-05
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_wrist_pitch_link].mass
   value: 0.48404956
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_wrist_pitch_link].com
   value:
@@ -4342,7 +4340,7 @@ provenance:
   - -0.00111658096
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_wrist_pitch_link].inertia
   value:
@@ -4354,13 +4352,13 @@ provenance:
     izz: 0.00042953697654
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_wrist_yaw_link].mass
   value: 0.08457647
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_wrist_yaw_link].com
   value:
@@ -4369,7 +4367,7 @@ provenance:
   - 0.00053861123
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_wrist_yaw_link].inertia
   value:
@@ -4381,13 +4379,13 @@ provenance:
     izz: 3.928083826e-05
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_rubber_hand].mass
   value: 0.17
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_rubber_hand].com
   value:
@@ -4396,7 +4394,7 @@ provenance:
   - 0.00215413091
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[left_rubber_hand].inertia
   value:
@@ -4408,13 +4406,13 @@ provenance:
     izz: 0.00021894770413514
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_shoulder_pitch_link].mass
   value: 0.718
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_shoulder_pitch_link].com
   value:
@@ -4423,7 +4421,7 @@ provenance:
   - -0.011628
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_shoulder_pitch_link].inertia
   value:
@@ -4435,13 +4433,13 @@ provenance:
     izz: 0.000423
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_shoulder_roll_link].mass
   value: 0.643
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_shoulder_roll_link].com
   value:
@@ -4450,7 +4448,7 @@ provenance:
   - -0.063243
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_shoulder_roll_link].inertia
   value:
@@ -4462,13 +4460,13 @@ provenance:
     izz: 0.0003894
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_shoulder_yaw_link].mass
   value: 0.734
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_shoulder_yaw_link].com
   value:
@@ -4477,7 +4475,7 @@ provenance:
   - -0.072009
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_shoulder_yaw_link].inertia
   value:
@@ -4489,13 +4487,13 @@ provenance:
     izz: 0.0004354
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_elbow_link].mass
   value: 0.6
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_elbow_link].com
   value:
@@ -4504,7 +4502,7 @@ provenance:
   - -0.010062
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_elbow_link].inertia
   value:
@@ -4516,13 +4514,13 @@ provenance:
     izz: 0.0004197
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_wrist_roll_link].mass
   value: 0.08544498
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_wrist_roll_link].com
   value:
@@ -4531,7 +4529,7 @@ provenance:
   - 4.8864e-07
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_wrist_roll_link].inertia
   value:
@@ -4543,13 +4541,13 @@ provenance:
     izz: 5.482106541e-05
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_wrist_pitch_link].mass
   value: 0.48404956
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_wrist_pitch_link].com
   value:
@@ -4558,7 +4556,7 @@ provenance:
   - -0.00111658096
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_wrist_pitch_link].inertia
   value:
@@ -4570,13 +4568,13 @@ provenance:
     izz: 0.00042953697654
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_wrist_yaw_link].mass
   value: 0.08457647
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_wrist_yaw_link].com
   value:
@@ -4585,7 +4583,7 @@ provenance:
   - 0.00053861123
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_wrist_yaw_link].inertia
   value:
@@ -4597,13 +4595,13 @@ provenance:
     izz: 3.928083826e-05
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_rubber_hand].mass
   value: 0.17
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_rubber_hand].com
   value:
@@ -4612,7 +4610,7 @@ provenance:
   - 0.00215413091
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: links[right_rubber_hand].inertia
   value:
@@ -4624,7 +4622,7 @@ provenance:
     izz: 0.00021894770413514
   unit: kg*m^2
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[pelvis_contour_joint].axis.dir
   value:
@@ -4633,7 +4631,7 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_hip_pitch_joint].limit.mech
   value:
@@ -4641,7 +4639,7 @@ provenance:
     upper: 2.8798
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_hip_pitch_joint].axis.dir
   value:
@@ -4650,13 +4648,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_hip_pitch_joint].limit.effort
   value: 88.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_hip_roll_joint].limit.mech
   value:
@@ -4664,7 +4662,7 @@ provenance:
     upper: 2.9671
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_hip_roll_joint].axis.dir
   value:
@@ -4673,13 +4671,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_hip_roll_joint].limit.effort
   value: 139.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_hip_yaw_joint].limit.mech
   value:
@@ -4687,7 +4685,7 @@ provenance:
     upper: 2.7576
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_hip_yaw_joint].axis.dir
   value:
@@ -4696,13 +4694,13 @@ provenance:
   - 1.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_hip_yaw_joint].limit.effort
   value: 88.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_knee_joint].limit.mech
   value:
@@ -4710,7 +4708,7 @@ provenance:
     upper: 2.8798
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_knee_joint].axis.dir
   value:
@@ -4719,13 +4717,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_knee_joint].limit.effort
   value: 139.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_ankle_pitch_joint].limit.mech
   value:
@@ -4733,7 +4731,7 @@ provenance:
     upper: 0.5236
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_ankle_pitch_joint].axis.dir
   value:
@@ -4742,13 +4740,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_ankle_pitch_joint].limit.effort
   value: 35.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_ankle_roll_joint].limit.mech
   value:
@@ -4756,7 +4754,7 @@ provenance:
     upper: 0.2618
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_ankle_roll_joint].axis.dir
   value:
@@ -4765,13 +4763,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_ankle_roll_joint].limit.effort
   value: 35.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_hip_pitch_joint].limit.mech
   value:
@@ -4779,7 +4777,7 @@ provenance:
     upper: 2.8798
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_hip_pitch_joint].axis.dir
   value:
@@ -4788,13 +4786,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_hip_pitch_joint].limit.effort
   value: 88.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_hip_roll_joint].limit.mech
   value:
@@ -4802,7 +4800,7 @@ provenance:
     upper: 0.5236
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_hip_roll_joint].axis.dir
   value:
@@ -4811,13 +4809,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_hip_roll_joint].limit.effort
   value: 139.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_hip_yaw_joint].limit.mech
   value:
@@ -4825,7 +4823,7 @@ provenance:
     upper: 2.7576
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_hip_yaw_joint].axis.dir
   value:
@@ -4834,13 +4832,13 @@ provenance:
   - 1.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_hip_yaw_joint].limit.effort
   value: 88.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_knee_joint].limit.mech
   value:
@@ -4848,7 +4846,7 @@ provenance:
     upper: 2.8798
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_knee_joint].axis.dir
   value:
@@ -4857,13 +4855,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_knee_joint].limit.effort
   value: 139.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_ankle_pitch_joint].limit.mech
   value:
@@ -4871,7 +4869,7 @@ provenance:
     upper: 0.5236
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_ankle_pitch_joint].axis.dir
   value:
@@ -4880,13 +4878,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_ankle_pitch_joint].limit.effort
   value: 35.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_ankle_roll_joint].limit.mech
   value:
@@ -4894,7 +4892,7 @@ provenance:
     upper: 0.2618
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_ankle_roll_joint].axis.dir
   value:
@@ -4903,13 +4901,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_ankle_roll_joint].limit.effort
   value: 35.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[waist_yaw_joint].limit.mech
   value:
@@ -4917,7 +4915,7 @@ provenance:
     upper: 2.618
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[waist_yaw_joint].axis.dir
   value:
@@ -4926,13 +4924,13 @@ provenance:
   - 1.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[waist_yaw_joint].limit.effort
   value: 88.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[waist_roll_joint].limit.mech
   value:
@@ -4940,7 +4938,7 @@ provenance:
     upper: 0.52
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[waist_roll_joint].axis.dir
   value:
@@ -4949,13 +4947,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[waist_roll_joint].limit.effort
   value: 35.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[waist_pitch_joint].limit.mech
   value:
@@ -4963,7 +4961,7 @@ provenance:
     upper: 0.52
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[waist_pitch_joint].axis.dir
   value:
@@ -4972,13 +4970,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[waist_pitch_joint].limit.effort
   value: 35.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[logo_joint].axis.dir
   value:
@@ -4987,7 +4985,7 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[head_joint].axis.dir
   value:
@@ -4996,7 +4994,7 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[imu_in_torso_joint].axis.dir
   value:
@@ -5005,7 +5003,7 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[imu_in_pelvis_joint].axis.dir
   value:
@@ -5014,7 +5012,7 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[d435_joint].axis.dir
   value:
@@ -5023,7 +5021,7 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[mid360_joint].axis.dir
   value:
@@ -5032,7 +5030,7 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_shoulder_pitch_joint].limit.mech
   value:
@@ -5040,7 +5038,7 @@ provenance:
     upper: 2.6704
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_shoulder_pitch_joint].axis.dir
   value:
@@ -5049,13 +5047,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_shoulder_pitch_joint].limit.effort
   value: 25.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_shoulder_roll_joint].limit.mech
   value:
@@ -5063,7 +5061,7 @@ provenance:
     upper: 2.2515
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_shoulder_roll_joint].axis.dir
   value:
@@ -5072,13 +5070,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_shoulder_roll_joint].limit.effort
   value: 25.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_shoulder_yaw_joint].limit.mech
   value:
@@ -5086,7 +5084,7 @@ provenance:
     upper: 2.618
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_shoulder_yaw_joint].axis.dir
   value:
@@ -5095,13 +5093,13 @@ provenance:
   - 1.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_shoulder_yaw_joint].limit.effort
   value: 25.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_elbow_joint].limit.mech
   value:
@@ -5109,7 +5107,7 @@ provenance:
     upper: 2.0944
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_elbow_joint].axis.dir
   value:
@@ -5118,13 +5116,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_elbow_joint].limit.effort
   value: 25.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_wrist_roll_joint].limit.mech
   value:
@@ -5132,7 +5130,7 @@ provenance:
     upper: 1.972222054
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_wrist_roll_joint].axis.dir
   value:
@@ -5141,13 +5139,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_wrist_roll_joint].limit.effort
   value: 25.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_wrist_pitch_joint].limit.mech
   value:
@@ -5155,7 +5153,7 @@ provenance:
     upper: 1.614429558
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_wrist_pitch_joint].axis.dir
   value:
@@ -5164,13 +5162,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_wrist_pitch_joint].limit.effort
   value: 5.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_wrist_yaw_joint].limit.mech
   value:
@@ -5178,7 +5176,7 @@ provenance:
     upper: 1.614429558
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_wrist_yaw_joint].axis.dir
   value:
@@ -5187,13 +5185,13 @@ provenance:
   - 1.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_wrist_yaw_joint].limit.effort
   value: 5.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[left_hand_palm_joint].axis.dir
   value:
@@ -5202,7 +5200,7 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_shoulder_pitch_joint].limit.mech
   value:
@@ -5210,7 +5208,7 @@ provenance:
     upper: 2.6704
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_shoulder_pitch_joint].axis.dir
   value:
@@ -5219,13 +5217,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_shoulder_pitch_joint].limit.effort
   value: 25.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_shoulder_roll_joint].limit.mech
   value:
@@ -5233,7 +5231,7 @@ provenance:
     upper: 1.5882
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_shoulder_roll_joint].axis.dir
   value:
@@ -5242,13 +5240,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_shoulder_roll_joint].limit.effort
   value: 25.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_shoulder_yaw_joint].limit.mech
   value:
@@ -5256,7 +5254,7 @@ provenance:
     upper: 2.618
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_shoulder_yaw_joint].axis.dir
   value:
@@ -5265,13 +5263,13 @@ provenance:
   - 1.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_shoulder_yaw_joint].limit.effort
   value: 25.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_elbow_joint].limit.mech
   value:
@@ -5279,7 +5277,7 @@ provenance:
     upper: 2.0944
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_elbow_joint].axis.dir
   value:
@@ -5288,13 +5286,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_elbow_joint].limit.effort
   value: 25.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_wrist_roll_joint].limit.mech
   value:
@@ -5302,7 +5300,7 @@ provenance:
     upper: 1.972222054
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_wrist_roll_joint].axis.dir
   value:
@@ -5311,13 +5309,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_wrist_roll_joint].limit.effort
   value: 25.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_wrist_pitch_joint].limit.mech
   value:
@@ -5325,7 +5323,7 @@ provenance:
     upper: 1.614429558
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_wrist_pitch_joint].axis.dir
   value:
@@ -5334,13 +5332,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_wrist_pitch_joint].limit.effort
   value: 5.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_wrist_yaw_joint].limit.mech
   value:
@@ -5348,7 +5346,7 @@ provenance:
     upper: 1.614429558
   unit: rad
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_wrist_yaw_joint].axis.dir
   value:
@@ -5357,13 +5355,13 @@ provenance:
   - 1.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_wrist_yaw_joint].limit.effort
   value: 5.0
   unit: N*m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: joints[right_hand_palm_joint].axis.dir
   value:
@@ -5372,13 +5370,13 @@ provenance:
   - 0.0
   unit: m
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
 - path: summary.total_mass
   value: 33.34114202
   unit: kg
   source: urdf
-  date: '2026-11-09'
+  date: '2026-11-10'
   ref: g1_29dof_rev_1_0.urdf
   note: 39 个 link 求和
 warnings:
