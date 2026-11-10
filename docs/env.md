@@ -173,6 +173,9 @@ bin/ducksir build --project sim/test/fixtures/project_demo.py --out build/releas
 bin/ducksir run build/release/demo --seconds 20 --vx 0.25
 bin/ducksir run build/release/demo --seconds 18 --fsm --pulses 3:1,8:1
 bin/ducksir run sim/test/fixtures/project_demo.py --seconds 20   # 兼容老路径（逐步淘汰）
+
+# 面板「工作台」里也能跑 bundle：选 build/release 下的包 → 点「在浏览器里跑」
+# （页面起 play.html?bundle=…，全程在浏览器执行，不起 Python 子进程）
 bin/ducksir run project.py --no-browser --report build/report/p.json
 bin/ducksir sim --seconds 20 --vx 0.25      # 单策略闭环（原 `run --policy`）
 bin/ducksir sim --fsm --pulses 3:1,8:1      # 14 状态机（原 `run --fsm`）

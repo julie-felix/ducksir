@@ -174,6 +174,28 @@ export function createLive({ repo, python = 'python3' }) {
     }
     REQUESTS += 1
     if (pathname === '/status') return json(200, status())
+    if (pathname === '/bundles') {
+      // 列出可运行的 bundle：build/release/* 里有 contract.json 的目录
+      const fs = await import('node:fs/promises')
+      const base = path.join(repo, 'build', 'release')
+      let names = []
+      try {
+        names = (await fs.readdir(base, { withFileTypes: true }))
+          .filter((d) => d.isDirectory())
+          .map((d) => d.name)
+      } catch { /* 没有目录就是空列表 */ }
+      const out = []
+      for (const name of names) {
+        const dir = path.join(base, name)
+        let hasContract = false
+        try { await fs.access(path.join(dir, 'contract.json')); hasContract = true } catch { /* noop */ }
+        if (!hasContract) continue
+        let meta = null
+        try { meta = JSON.parse(await fs.readFile(path.join(dir, 'project.json'), 'utf8')) } catch { /* 可选 */ }
+        out.push({ name, policies: (meta?.policies || []).map((p) => p.key), base: `/ducksir-static/build/release/${name}/` })
+      }
+      return json(200, { bundles: out })
+    }
     if (pathname === '/diag') {
       return json(200, {
         uptime_s: Math.round((Date.now() - STARTED_AT) / 1000),

@@ -14,6 +14,11 @@ import { loadDuck, makeObs, stepPhysics, read, setContract, getContract, slot, r
 import { planPath, policyPath } from './assets-map.mjs';
 
 const $ = (id) => document.getElementById(id);
+
+// `?bundle=<url 前缀>`：直接跑编译产物（工作台用），不依赖 data/live 里那份手搓素材。
+// 运行期只吃 bundle：contract.json + pre/post/fsm.blob + *.onnx。
+const BUNDLE = new URLSearchParams(location.search).get('bundle');
+const DATA = BUNDLE ? (BUNDLE.endsWith('/') ? BUNDLE : BUNDLE + '/') : './data/live/';
 const T0 = performance.now();
 /** 往遮罩上写一行阶段进度（带毫秒时间戳），这样「卡住」时能看到卡在哪一步。 */
 function stage(text) {
@@ -95,7 +100,7 @@ async function main() {
       import('./vendor/mujoco/mujoco.js'),
       import('./vendor/ducksim/ducksim.mjs'),
       import('./vendor/ort/ort.wasm.min.mjs'),
-      json('./data/live/contract.json'),
+      json(DATA + 'contract.json'),
       json('./data/duck-hd1910.json'),
       fetch('./data/mjcf-browser/duck.xml').then((r) => r.text()),
     ]), 30000);
@@ -172,9 +177,9 @@ async function main() {
     };
     // plan 的形状全部来自契约：文件、维度、具名槽位。加载后立刻对一次维度——
     // 不一致就报错，而不是用旧偏移去读新 blob。
-    const pre = loadPlan(await bytes(planPath(contract, 'pre')));
-    const post = loadPlan(await bytes(planPath(contract, 'post')));
-    const fsm = loadPlan(await bytes(planPath(contract, 'fsm')));
+    const pre = loadPlan(await bytes(planPath(contract, 'pre', DATA)));
+    const post = loadPlan(await bytes(planPath(contract, 'post', DATA)));
+    const fsm = loadPlan(await bytes(planPath(contract, 'fsm', DATA)));
     stage(`创建 ORT Web 会话（${contract.policies.length} 个策略）`);
     checkPlanAgainstContract('pre', pre);
     checkPlanAgainstContract('post', post);
@@ -182,7 +187,7 @@ async function main() {
     const policyList = contract.policies;
     const sessions = {};
     for (const pol of policyList) {
-      const buf = await bytes(policyPath(contract, pol.key));
+      const buf = await bytes(policyPath(contract, pol.key, DATA));
       sessions[pol.key] = await ort.InferenceSession.create(buf,
         { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
     }

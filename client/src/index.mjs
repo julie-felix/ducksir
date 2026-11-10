@@ -180,7 +180,7 @@ const STATIC_ROUTE = '/ducksir-static'
 /** 工作台实时后端：起仿真进程 + 代理显示端点（手机也能用同源地址）。 */
 const LIVE_ROUTE = '/ducksir-live'
 /** 只放这两棵子树，别的路径一律 403 —— 这条路由等于一个只读的小静态服务器。 */
-const STATIC_ALLOWED = ['client/viewer', 'assets']
+const STATIC_ALLOWED = ['client/viewer', 'assets', 'build/release']
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',

@@ -80,3 +80,13 @@ for (const [label, file] of [['studio.js', sJs], ['play.js', js], ['inspect.js',
   }
 }
 console.log('绝对 /static/ 引用检查：studio.js / play.js / inspect.js 都没有');
+
+// play.js 必须支持 ?bundle=（工作台的浏览器执行靠它），且不能把 contract 路径写死成 data/live
+const playSrc = readFileSync(resolve(ROOT, 'client/viewer/play.js'), 'utf8');
+const hasBundle = /new URLSearchParams\(location\.search\)\.get\('bundle'\)/.test(playSrc);
+const readsContractFromData = /json\('\.\/data\/live\/contract\.json'\)/.test(playSrc);
+if (!hasBundle || readsContractFromData) {
+  console.log(`play.js 的 bundle 支持有问题：hasBundle=${hasBundle} 写死 data/live=${readsContractFromData}`);
+  process.exit(1);
+}
+console.log('play.js ?bundle 支持：OK');
