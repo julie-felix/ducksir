@@ -36,3 +36,29 @@ native 端才链 `libonnxruntime.so`（`libducksim_ort.so`）。
 ```bash
 node engine/wasm/harness.mjs plan.blob obs.json --js-model 2,1
 ```
+
+## 浏览器实链路（`client/viewer/live.html`）
+
+页面上点一下，就在浏览器里跑：**wasm 核 + ORT Web 推理**，喂宿主采的 61 维观测，和宿主算出的 action 比。
+
+需要先备两样（都不入库）：
+
+```bash
+python3 tools/vendor_ort_web.py                 # 抓 onnxruntime-web 运行时到 client/viewer/vendor/ort/
+PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 sim/host/export_browser_check.py   # 生成 data/live/
+```
+
+图在**推理边界**切成两段：`pre.blob`（原始 obs → 策略输入）与 `post.blob`（原始 action → ctrl）。
+原因很实在：ORT Web 的 `session.run` 是异步的，我们的 C 核是同步的；把边界放这儿，两边都自然。
+
+实测（node 里跑同一份代码，`sim/test/test_browser_infer.mjs`）：
+
+```
+浏览器链：60 步｜10 节点｜61→14｜11 ms
+与宿主的 action 最大偏差 1.192e-6（阈 1e-5）
+```
+
+**判据分两层，别混**：
+1. **图运算** native vs wasm 是**逐位相同**（`test_wasm_parity.py`，0.000e+00）；
+2. **推理**换成 ORT Web 后 kernel 不同（native AVX vs wasm SIMD），末位会差 ~1e-6，阈值定 1e-5
+   （botlab 自己的 torch↔onnxruntime 奇偶校验是 1e-4，我们更严）。

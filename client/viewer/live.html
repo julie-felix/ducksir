@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ducksir · 浏览器自算</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #0b0f14; color: #d7dde5; font: 14px/1.6 system-ui, "Noto Sans CJK SC", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  p.sub { color: #8b98a8; margin: 0 0 24px; font-size: 13px; }
+  button { background: #1b2531; color: #d7dde5; border: 1px solid #2b3a4b; border-radius: 8px;
+           padding: 8px 14px; font: inherit; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  pre { background: #0f151d; border: 1px solid #1f2a36; border-radius: 8px; padding: 14px;
+        overflow: auto; font-size: 12.5px; line-height: 1.55; }
+  .ok { color: #63d18a; }
+  .bad { color: #e5675f; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0 20px; font-size: 13px; }
+  td { padding: 4px 8px; border-bottom: 1px solid #1b2430; }
+  td:first-child { color: #8b98a8; width: 38%; }
+</style>
+</head>
+<body>
+<main>
+  <h1>浏览器自算</h1>
+  <p class="sub">wasm 执行核 + ORT Web 推理，喂宿主采的 61 维观测，和宿主算出的 action 逐点比。图在推理边界切成 pre/post 两段。</p>
+  <p><button id="run">跑一遍（60 步）</button></p>
+  <table id="facts">
+    <tr><td>素材</td><td id="f-src">—</td></tr>
+    <tr><td>图</td><td id="f-nodes">—</td></tr>
+    <tr><td>耗时</td><td id="f-ms">—</td></tr>
+    <tr><td>与宿主的最大偏差</td><td id="f-diff">—</td></tr>
+  </table>
+  <pre id="log">点上面的按钮。</pre>
+</main>
+<script type="module" src="./live.js"></script>
+</body>
+</html>
