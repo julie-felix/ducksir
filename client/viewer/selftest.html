@@ -77,17 +77,52 @@
         ? '支持' : '不支持（旧浏览器，module 里 import "three" 会失败）',
         HTMLScriptElement.supports && HTMLScriptElement.supports('importmap') ? 'ok' : 'bad');
     render();
+    probeStudio();     // 自动跑：把工作台塞进 iframe 读它自报的状态
   })();
+
+  // 本页没有 module 脚本，所以**可以**先注入 importmap 再动态 import ——
+  // 否则只会得到「Failed to resolve module specifier "three"」：那是本页没有 map，不是 studio 的问题。
+  async function injectStudioImportMap() {
+    const html = await (await fetch('./studio.html')).text();
+    const m = html.match(/<script type="importmap">([\s\S]*?)<\/script>/);
+    if (!m) return '（studio.html 里没找到 importmap）';
+    const el = document.createElement('script');
+    el.type = 'importmap';
+    el.textContent = m[1];
+    document.head.appendChild(el);
+    return m[1].replace(/\s+/g, ' ').slice(0, 140);
+  }
 
   document.getElementById('imp').onclick = async () => {
     out.textContent = '导入中…';
     try {
+      out.textContent = '已注入 importmap：' + (await injectStudioImportMap()) + '\n';
       await import('./studio.js?selftest=1');
-      out.textContent = '导入成功（说明 module 链没问题；那症状就在运行期，把控制台错误发我）';
+      out.textContent += '导入成功：module 链没问题（若工作台仍不动，问题在运行期）';
     } catch (e) {
-      out.textContent = '导入失败：' + (e && (e.message || e));
+      out.textContent += '导入失败：' + (e && (e.message || e));
     }
   };
+
+  // 端到端：把 studio 页塞进同源 iframe，4 秒后读它顶栏那行字，
+  // 直接回答「工作台到底显示什么」，不用靠人转述。
+  async function probeStudio() {
+    const fr = document.createElement('iframe');
+    fr.style.cssText = 'width:min(100%,520px);height:320px;border:1px solid #22303f;border-radius:8px;margin-top:8px';
+    fr.src = './studio.html?embed=1&_=probe';
+    document.body.appendChild(fr);
+    await new Promise((r) => setTimeout(r, 4000));
+    try {
+      const doc = fr.contentDocument;
+      const conn = doc && doc.getElementById('conn');
+      const hud = doc && doc.getElementById('hud-line');
+      add('工作台顶栏自报', conn ? `<b>${conn.textContent}</b>` : '（读不到）',
+          conn && /已加载|运行中/.test(conn.textContent) ? 'ok' : 'bad');
+      if (hud) add('工作台 HUD', hud.textContent);
+    } catch (e) {
+      add('工作台 iframe 读取', '失败：' + e.message, 'bad');
+    }
+  }
 </script>
 </body>
 </html>
