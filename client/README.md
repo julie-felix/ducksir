@@ -10,8 +10,18 @@
 ## 现在有什么
 
 1. **只读工具 `ducksir_status`**：读仓库五个平面的落地情况、git 分支与脏文件数。
-2. **数字描述面板**：侧栏「机器人」→ 主区全屏面板，里面是 `client/viewer/` 那个查看器（iframe）。
-   视图本身由 host 侧的只读静态路由 `/ducksir-static/*` 提供，只放 `client/viewer/` 和 `assets/` 两棵子树。
+2. **机器人面板**：侧栏「机器人」→ 主区全屏面板，里面有**三个可切换的页面**（同一个 iframe，工具栏换 src）：
+
+   | 页 | 文件 | 干什么 |
+   |---|---|---|
+   | 数字描述 | `viewer/index.html` | 拖关节 / 并联解算 / 轨迹回放（GLB + three.js FK） |
+   | 浏览器跑 | `viewer/play.html` | MuJoCo wasm 物理 + wasm 执行核 + ORT Web，键盘 `W/S` 开鸭子 |
+   | 自算比对 | `viewer/live.html` | 浏览器算一遍 action，和宿主算的逐点比 |
+
+   这三个页面都由 host 侧的只读静态路由 `/ducksir-static/*` 提供，只放 `client/viewer/` 和 `assets/` 两棵子树。
+   **「浏览器跑」和「自算比对」需要先备素材**（都不入库）：
+   `python3 tools/vendor_mujoco_web.py && python3 tools/vendor_ort_web.py` +
+   `python3 sim/host/export_browser_check.py`，见 `docs/env.md` §8。
 
 它是 Day-1 预检台的第一块砖，也是这个插件能否被加载、能否跑通的冒烟测试。
 
