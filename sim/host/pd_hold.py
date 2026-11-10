@@ -256,7 +256,8 @@ def main() -> int:
         os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
         traj = {
             "meta": {
-                "robot": os.path.basename(args.mjcf).rsplit(".", 1)[0],
+                # 用实体 id，不是 MJCF 文件名：碰撞变体导出成 <id>-all.xml，文件名不能当机型用
+                "robot": doc["robot"]["id"],
                 "joints": driven,
                 "target": args.target,
                 "amp": args.amp,
@@ -264,7 +265,7 @@ def main() -> int:
                 "seconds": args.seconds,
                 "control_hz": args.control_hz,
                 "physics_hz": args.physics_hz,
-                "mcpf_digest": sha256(args.mjcf) if os.path.exists(args.mjcf) else "",
+                "mjcf_digest": sha256(args.mjcf) if os.path.exists(args.mjcf) else "",
                 "preset_digest": sha256(args.preset),
             },
             "frames": frames,

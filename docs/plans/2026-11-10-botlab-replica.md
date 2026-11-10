@@ -262,6 +262,11 @@ body 与 joint 名单一致、actuator 顺序一致、关节轴与限位全部�
    但 `neck*` 系列上游本来就没有。**这是资产限制，不是导出 bug**；选哪套碰撞集是建模决策（训练用 walk 快、摔倒测试要 all）。
    已加 **C9** 检查把这件事固定报出来。
 
+   **已修（2026-11-10）**：新增 `contract/robot/variants/<id>.all.yaml`（碰撞变体，`robot.variant_of` 指向本体，
+   导入自 `robot_allcollisions.xml`）+ 导出端 `--collision-set all`。实测：视觉最低点 **-181.5 mm → -12.5 mm**，
+   物理末态基座高度从 -0.009 m 变成 +0.035 m（头/髋有了碰撞体，撑住了）。剩下的 -12.5 mm 是上游本来就没有碰撞体的
+   `neck*` / `upper_leg*`，补它们要自己造碰撞壳（试过用视觉 mesh 凸包兜底，反而更差 -18.8 mm，已放弃）。
+
 **遗留**
 
 - **碰撞集选择**（W4 决策）：canonical 要不要同时带 walk / all 两套碰撞体，exports 用 `--collision` 选。现在只有 walk 那套。

@@ -54,6 +54,21 @@ def export(entity: str, mesh_dir: str, ext: str, out: str) -> None:
                    check=True, stdout=subprocess.DEVNULL)
 
 
+def export_collision_all(entity: str, mesh_dir: str, ext: str, out: str) -> str:
+    """有碰撞变体就再出一份 -all.xml，返回状态说明（没有变体就返回空串）。"""
+    import os as _os
+    ident = _os.path.basename(entity).rsplit(".", 1)[0]
+    variant = _os.path.join(ROOT, "contract/robot/variants", f"{ident}.all.yaml")
+    if not _os.path.exists(variant):
+        return ""
+    rel = _os.path.relpath(_os.path.join(ROOT, mesh_dir), _os.path.dirname(out))
+    subprocess.run([sys.executable, _os.path.join(HERE, "export_mjcf.py"), _os.path.join(ROOT, entity),
+                    "-o", out, "--mesh-dir", rel, "--mesh-ext", ext,
+                    "--collision-set", "all", "--collision-variant", variant],
+                   check=True, stdout=subprocess.DEVNULL)
+    return " +all"
+
+
 def export_preset(entity: str, mjcf: str, out: str) -> None:
     subprocess.run([sys.executable, os.path.join(HERE, "export_preset.py"), os.path.join(ROOT, entity),
                     "--mjcf", os.path.join(ROOT, mjcf), "-o", out],
@@ -104,6 +119,8 @@ def main() -> int:
         export(entity, mesh_dir, ext, out)
         pre = os.path.join(preset_dir, name + ".preset.yaml")
         export_preset(entity, os.path.relpath(out, ROOT), pre)
+        all_note = export_collision_all(entity, mesh_dir, ext,
+                                        os.path.join(mjcf_dir, name + "-all.xml"))
 
         doc = E.read_yaml(os.path.join(ROOT, entity))
         want = sum(l.get("mass") or 0.0 for l in doc["links"])
@@ -132,7 +149,8 @@ def main() -> int:
         mass_ok = ok and abs(got_mass - want) < 1e-6
         if not (ok and mass_ok and preset_state != "DIFF" and not warns):
             bad += 1
-        rows.append((name, ok, nbody, njnt, nu, f"{got_mass:.8f}", preset_state, len(warns), note))
+        rows.append((name, ok, nbody, njnt, nu, f"{got_mass:.8f}", preset_state, len(warns),
+                     (note + all_note).strip()))
 
     print(f"{'机型':<15}{'load':<6}{'body':>5}{'jnt':>5}{'act':>5}{'质量(kg)':>14}{'preset':>8}{'warn':>5}  备注")
     for r in rows:

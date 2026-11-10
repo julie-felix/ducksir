@@ -25,6 +25,28 @@ def _vec(xs) -> str:
     return " ".join(_f(x) for x in xs)
 
 
+def apply_collision_variant(doc: dict, variant_path: str) -> dict:
+    """用变体文件（`contract/robot/variants/<id>.all.yaml`）里的碰撞体覆盖本体的碰撞体。
+
+    只换 collision，visual/关节/质量一概不动——变体是「同一个机器人的另一种碰撞集」，
+    不是另一台机器人（`robot.variant_of` 指着本体）。
+    """
+    alt = E.read_yaml(variant_path)
+    if alt["robot"].get("variant_of") != doc["robot"]["id"]:
+        raise SystemExit(f"{variant_path}: variant_of={alt['robot'].get('variant_of')} 与 {doc['robot']['id']} 不符")
+    by_name = {l["name"]: l for l in alt["links"]}
+    for link in doc["links"]:
+        other = by_name.get(link["name"])
+        if other is not None:
+            link["collision"] = other.get("collision") or []
+    doc["robot"]["collision_set"] = {
+        "name": alt["robot"].get("variant", {}).get("value", "variant"),
+        "source": os.path.basename(variant_path),
+        "source_file": alt["robot"].get("variant", {}).get("source_file"),
+    }
+    return doc
+
+
 def export(doc: dict, mesh_dir: str | None = None, mesh_ext: str | None = None) -> ET.ElementTree:
     root = ET.Element("mujoco", model=doc["robot"]["id"])
     assets_dir = mesh_dir or doc["robot"].get("assets_dir") or "assets"
@@ -143,13 +165,24 @@ def main() -> int:
     ap.add_argument("-o", "--output", required=True)
     ap.add_argument("--mesh-dir", help="MJCF 的 meshdir（默认取实体里的 assets_dir）")
     ap.add_argument("--mesh-ext", help="强制 mesh 扩展名，例如 stl（MuJoCo 不认 glb）")
+    ap.add_argument("--collision-set", default="default", choices=["default", "all"],
+                    help="碰撞集：default=本体自带（walk 子集）；all=用 variants/<id>.all.yaml")
+    ap.add_argument("--collision-variant", help="显式指定变体文件（默认按 <id>.all.yaml 约定找）")
     args = ap.parse_args()
     doc = E.read_yaml(args.entity)
+    if args.collision_set == "all":
+        vp = args.collision_variant or os.path.join(
+            os.path.dirname(os.path.abspath(args.entity)), "..", "variants",
+            f"{doc['robot']['id']}.all.yaml")
+        if not os.path.exists(vp):
+            raise SystemExit(f"找不到碰撞变体：{vp}")
+        doc = apply_collision_variant(doc, os.path.normpath(vp))
     tree = export(doc, args.mesh_dir, args.mesh_ext)
     ET.indent(tree, space="  ")
     os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
     tree.write(args.output, encoding="utf-8", xml_declaration=True)
-    print(f"写入 {args.output}")
+    cs = (doc.get("robot") or {}).get("collision_set")
+    print(f"写入 {args.output}" + (f"（碰撞集 {cs['name']} ← {cs['source']}）" if cs else "（碰撞集 default）"))
     return 0
 
 

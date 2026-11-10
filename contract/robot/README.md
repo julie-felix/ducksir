@@ -34,3 +34,9 @@ python3 tools/robot/check_entity.py "contract/robot/types/*.yaml"
 1. **单位一律 SI**（m / kg / rad / s / N / N·m），四元数一律 `wxyz`。
 2. **每个数值都有出处**，在 `provenance[]` 里；同级冲突会直接让检查失败，不会替你选一个。
 3. **`warnings[]` 不是噪音**，它是「这份描述哪里还不完整」的清单（缺 mesh、URDF 没有执行器参数、只导入了一个变体）。
+
+## variants/
+
+`types/<id>.yaml` 是本体；`variants/<id>.<轴>.yaml` 是**同一台机器人的另一种取法**，靠 `robot.variant_of` 指回本体。
+现在只有一种：`duck-hd1910.all.yaml` —— 碰撞体来自上游 `robot_allcollisions.xml`（本体用的是 walk 子集）。
+导出时 `--collision-set all` 会用它覆盖碰撞体，其余（视觉/关节/质量）一概不动。

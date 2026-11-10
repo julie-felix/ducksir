@@ -67,6 +67,11 @@ export PYTHONPATH=$HOME/.local/share/ducksir/pylibs
 # 一条命令出全套：mjcf + preset + 校验
 python3 tools/robot/mjcf_smoke.py
 
+# 用「全碰撞集」导出（摔倒/上机前验证用；默认那条是 walk 子集，摔到头会穿地）
+python3 tools/robot/export_mjcf.py contract/robot/types/duck-hd1910.yaml \
+    -o build/mjcf/duck-hd1910-all.xml --mesh-dir third_party/fanhao-microduck-replica/assets \
+    --mesh-ext stl --collision-set all
+
 # 单独生成 preset（13 个 botlab 字段）
 python3 tools/robot/export_preset.py contract/robot/types/duck-hd1910.yaml \
     --mjcf build/mjcf/duck-hd1910.xml -o build/preset/duck-hd1910.preset.yaml
