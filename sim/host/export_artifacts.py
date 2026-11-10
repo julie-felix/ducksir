@@ -44,15 +44,31 @@ POLICIES = [
     ("roll", 4), ("ground-pick", 5), ("stand", 6),
 ]
 
-# 观测配方：槽位 + 从哪取（消费端照这个取数，不再写死偏移）
-OBS_RECIPE = [
-    {"name": "imu_ang_vel", "slot": [0, 3], "source": "sensor:imu_ang_vel"},
-    {"name": "projected_gravity", "slot": [3, 3], "source": "gravity:body:trunk_base"},
-    {"name": "joint_pos", "slot": [6, 14], "source": "qpos:joints", "minus": "default"},
-    {"name": "joint_vel", "slot": [20, 14], "source": "qvel:joints"},
-    {"name": "last_action", "slot": [34, 14], "source": "last_action"},
-    {"name": "command", "slot": [48, 13], "source": "fsm_slot:command"},
-]
+# 观测配方：**从 manifest 的 obs 段派生**（不手写偏移，manifest 才是声明源）。
+# 每种 slot 名映射到「端侧从哪取」；偏移由累加得出。
+SOURCE_BY_SLOT = {
+    "imu_ang_vel": lambda o: "sensor:imu_ang_vel",
+    "projected_gravity": lambda o: f"gravity:body:{o.get('target', 'trunk_base')}",
+    "joint_pos": lambda o: "qpos:joints",
+    "joint_vel": lambda o: "qvel:joints",
+    "last_action": lambda o: "last_action",
+    "command": lambda o: "fsm_slot:command",
+}
+
+
+def obs_recipe(man: dict) -> list[dict]:
+    """把 manifest 的 obs 段翻成端侧配方：`[{name, slot:[off,len], source, minus?}]`。"""
+    out, off = [], 0
+    for o in man["obs"]:
+        slot = o["slot"]
+        if slot not in SOURCE_BY_SLOT:
+            raise SystemExit(f"obs 段里有不认识的 slot：{slot}")
+        item = {"name": slot, "slot": [off, o["len"]], "source": SOURCE_BY_SLOT[slot](o)}
+        if o.get("minus"):
+            item["minus"] = o["minus"]
+        out.append(item)
+        off += o["len"]
+    return out
 
 
 def build_pre(man: dict) -> tuple[bytes, dict]:
@@ -138,7 +154,7 @@ def main() -> int:
             "fsm": contract.plan_entry("fsm", fsm_blob, fsm_slots),
         },
         policies=policies,
-        obs=OBS_RECIPE,
+        obs=obs_recipe(man),
         rates={"control_hz": 50, "physics_hz": 200, "inference_decimation": 1},
         states={"count": len(FSM.STATE_NAMES) if hasattr(FSM, "STATE_NAMES") else 14,
                 "initial": 0},
