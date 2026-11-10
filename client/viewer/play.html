@@ -82,9 +82,14 @@
 
   /* 窄屏：状态卡更紧凑，按钮两行放 */
   @media (max-width: 520px) {
-    #hud { max-width: calc(100vw - 20px); }
-    #hud .title { font-size: 12.5px; }
-    #dock button { font-size: 13px; min-height: 50px; }
+    #hud { max-width: calc(100vw - 20px); padding: 7px 9px; }
+    #hud .title { display: none; }          /* 窄屏先让位给数据 */
+    #hud .line { font-size: 12px; }
+    #dock { padding: 8px calc(8px + var(--safe-r)) calc(8px + var(--safe-b)) calc(8px + var(--safe-l)); gap: 6px; }
+    #dock button { font-size: 13.5px; min-height: 54px; }
+    #dock button span { display: none; }     /* 只留图标 + 主字 */
+    #dock button.wide span { display: inline; }
+    .row { gap: 6px; }
   }
 
   /* 横屏矮屏：把状态卡压扁，按钮一行 */
