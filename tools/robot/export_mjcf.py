@@ -47,7 +47,8 @@ def apply_collision_variant(doc: dict, variant_path: str) -> dict:
     return doc
 
 
-def export(doc: dict, mesh_dir: str | None = None, mesh_ext: str | None = None) -> ET.ElementTree:
+def export(doc: dict, mesh_dir: str | None = None, mesh_ext: str | None = None,
+           physics_only: bool = False) -> ET.ElementTree:
     root = ET.Element("mujoco", model=doc["robot"]["id"])
     assets_dir = mesh_dir or doc["robot"].get("assets_dir") or "assets"
     ET.SubElement(root, "compiler", angle="radian", meshdir=assets_dir, autolimits="true")
@@ -64,10 +65,13 @@ def export(doc: dict, mesh_dir: str | None = None, mesh_ext: str | None = None) 
         children.setdefault(l.get("parent") or "world", []).append(l)
 
     # asset：mesh + material（按 rgba 去重）
+    # physics_only：只留碰撞 geom 用到的 mesh——浏览器里视觉由 GLB 负责，STL 只喂物理，
+    # 这样 21 MB 的 STL 能砍到几 MB（手机上是决定性的）。
     asset = ET.SubElement(root, "asset")
     seen_mesh, materials = set(), []
     for l in doc["links"]:
-        for item in l["visual"] + l["collision"]:
+        items = l["collision"] if physics_only else l["visual"] + l["collision"]
+        for item in items:
             name = item.get("mesh_name")
             if not name or name in seen_mesh:
                 continue
@@ -123,7 +127,7 @@ def export(doc: dict, mesh_dir: str | None = None, mesh_ext: str | None = None) 
                          "quat": _vec(site.get("quat") or [1, 0, 0, 0]), "group": "3"}
                 ET.SubElement(body, "site", **attrs)
 
-        for item in link["visual"]:
+        for item in ([] if physics_only else link["visual"]):
             if not item.get("mesh_name"):
                 continue
             a = {"type": "mesh", "mesh": item["mesh_name"], "contype": "0", "conaffinity": "0",
@@ -193,6 +197,8 @@ def main() -> int:
     ap.add_argument("--collision-set", default="default", choices=["default", "all"],
                     help="碰撞集：default=本体自带（walk 子集）；all=用 variants/<id>.all.yaml")
     ap.add_argument("--collision-variant", help="显式指定变体文件（默认按 <id>.all.yaml 约定找）")
+    ap.add_argument("--physics-only", action="store_true",
+                    help="不导视觉 geom（浏览器里视觉走 GLB，STL 只喂物理）")
     args = ap.parse_args()
     doc = E.read_yaml(args.entity)
     if args.collision_set == "all":
@@ -202,7 +208,7 @@ def main() -> int:
         if not os.path.exists(vp):
             raise SystemExit(f"找不到碰撞变体：{vp}")
         doc = apply_collision_variant(doc, os.path.normpath(vp))
-    tree = export(doc, args.mesh_dir, args.mesh_ext)
+    tree = export(doc, args.mesh_dir, args.mesh_ext, args.physics_only)
     ET.indent(tree, space="  ")
     os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
     tree.write(args.output, encoding="utf-8", xml_declaration=True)

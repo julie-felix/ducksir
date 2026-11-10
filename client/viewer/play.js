@@ -169,15 +169,21 @@ async function main() {
     addEventListener('keydown', (e) => {
       if (e.key === 'w' || e.key === 'W') state.vx = Math.min(1, state.vx + 0.05);
       else if (e.key === 's' || e.key === 'S') state.vx = Math.max(-0.2, state.vx - 0.05);
-      else if (e.key === 'r' || e.key === 'R') {
-        for (let i = 0; i < model.nq; i++) data.qpos[i] = meta.initialQpos[i];
-        for (let i = 0; i < model.nv; i++) data.qvel[i] = 0;
-        state.vx = 0; state.lastAction.fill(0); state.simTime = 0;
-        mj.mj_forward(model, data);
-      }
+      else if (e.key === 'r' || e.key === 'R') resetSim();
     });
 
     stage('就绪（网格还在后台加载）');
+    const bump = (d) => { state.vx = Math.max(-0.2, Math.min(1, state.vx + d)); };
+    const resetSim = () => {
+      for (let i = 0; i < model.nq; i++) data.qpos[i] = meta.initialQpos[i];
+      for (let i = 0; i < model.nv; i++) data.qvel[i] = 0;
+      state.vx = 0; state.lastAction.fill(0); state.simTime = 0;
+      mj.mj_forward(model, data);
+    };
+    $('btn-slow').onclick = () => bump(-0.05);
+    $('btn-fast').onclick = () => bump(+0.05);
+    $('btn-reset').onclick = resetSim;
+
     $('busy').style.display = 'none';
     loadGeoms.then(() => stage('网格加载完成'));
 

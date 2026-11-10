@@ -2,113 +2,45 @@
 <mujoco model="duck-hd1910">
   <compiler angle="radian" meshdir="." autolimits="true" />
   <asset>
-    <mesh name="seeed_bearing__configuration__22x16x4" file="seeed_bearing__configuration__22x16x4.stl" />
-    <material name="mat0" rgba="0.713725 0.760784 0.8 1.0" />
-    <mesh name="right_shell" file="right_shell.stl" />
-    <material name="mat1" rgba="0.8 0.8 0.8 1.0" />
-    <mesh name="banana_pcb_locker" file="banana_pcb_locker.stl" />
-    <material name="mat2" rgba="0.647059 0.647059 0.647059 1.0" />
-    <mesh name="trunk_base" file="trunk_base.stl" />
-    <material name="mat3" rgba="0.34902 0.376471 0.4 1.0" />
-    <mesh name="xl330" file="xl330.stl" />
-    <material name="mat4" rgba="0.286275 0.286275 0.286275 1.0" />
     <mesh name="power_support" file="power_support.stl" />
-    <material name="mat5" rgba="0.901961 0.901961 0.901961 1.0" />
+    <material name="mat0" rgba="0.901961 0.901961 0.901961 1.0" />
     <mesh name="np_f970" file="np_f970.stl" />
-    <mesh name="left_shell" file="left_shell.stl" />
-    <mesh name="yaw2roll" file="yaw2roll.stl" />
-    <mesh name="bearing_roll" file="bearing_roll.stl" />
-    <material name="mat6" rgba="0.262745 0.282353 0.301961 1.0" />
     <mesh name="hip_l" file="hip_l.stl" />
-    <mesh name="upper_leg_left" file="upper_leg_left.stl" />
-    <material name="mat7" rgba="0.866667 0.866667 0.866667 1.0" />
-    <mesh name="upper_leg_rigidity_plate" file="upper_leg_rigidity_plate.stl" />
-    <material name="mat8" rgba="0.537255 0.854902 0.827451 1.0" />
     <mesh name="leg" file="leg.stl" />
-    <material name="mat9" rgba="0.811765 0.858824 0.898039 1.0" />
+    <material name="mat1" rgba="0.811765 0.858824 0.898039 1.0" />
     <mesh name="sole_left" file="sole_left.stl" />
-    <mesh name="foot_left" file="foot_left.stl" />
-    <material name="mat10" rgba="0.980392 0.713725 0.00392157 1.0" />
-    <mesh name="seeed_bearing__configuration_default" file="seeed_bearing__configuration_default.stl" />
-    <mesh name="ankle_left" file="ankle_left.stl" />
-    <mesh name="neck" file="neck.stl" />
-    <mesh name="neck_pitch" file="neck_pitch.stl" />
-    <mesh name="yaw_roll_motion" file="yaw_roll_motion.stl" />
-    <material name="mat11" rgba="0.768627 0.886275 0.952941 1.0" />
-    <mesh name="lens" file="lens.stl" />
-    <mesh name="face_part" file="face_part.stl" />
-    <mesh name="jaw_soft" file="jaw_soft.stl" />
-    <material name="mat12" rgba="0.85098 0.756863 0.866667 1.0" />
-    <mesh name="motor_support" file="motor_support.stl" />
+    <material name="mat2" rgba="0.537255 0.854902 0.827451 1.0" />
     <mesh name="top_head_shell" file="top_head_shell.stl" />
-    <mesh name="elec_rpi_robot_hat_pcb" file="elec_rpi_robot_hat_pcb.stl" />
-    <material name="mat13" rgba="0.313725 0.486275 0.411765 1.0" />
-    <mesh name="soft_mouth_top" file="soft_mouth_top.stl" />
-    <mesh name="noenoeil" file="noenoeil.stl" />
     <mesh name="jaw" file="jaw.stl" />
+    <material name="mat3" rgba="0.980392 0.713725 0.00392157 1.0" />
     <mesh name="bottom_head_shell" file="bottom_head_shell.stl" />
-    <mesh name="m12_lens_holder" file="m12_lens_holder.stl" />
-    <mesh name="pcb__raspberry_pi_zero_2_w" file="pcb__raspberry_pi_zero_2_w.stl" />
-    <material name="mat14" rgba="0.498039 0.498039 0.498039 1.0" />
-    <mesh name="speaker" file="speaker.stl" />
-    <material name="mat15" rgba="0.294118 0.290196 0.290196 1.0" />
-    <mesh name="upper_leg_right" file="upper_leg_right.stl" />
-    <mesh name="ankle_right" file="ankle_right.stl" />
     <mesh name="sole_right" file="sole_right.stl" />
-    <mesh name="foot_right" file="foot_right.stl" />
   </asset>
   <worldbody>
     <body name="trunk_base" pos="0.0 0.0 0.12">
       <freejoint name="trunk_base_freejoint" />
       <inertial pos="-0.0226332 -2.70828e-05 0.00280064" mass="0.199224" fullinertia="0.000123975 0.000145931 0.000115351 7.1651e-08 -2.06915e-05 1.32429e-07" />
       <site name="imu" pos="-0.021 6.64098e-05 -0.0146984" quat="1.0 -0.0 -0.0 0.0" group="3" />
-      <geom type="mesh" mesh="seeed_bearing__configuration__22x16x4" contype="0" conaffinity="0" group="2" pos="0.006 0.0175 -0.005" quat="1.0 -0.0 -0.0 0.0" material="mat0" />
-      <geom type="mesh" mesh="right_shell" contype="0" conaffinity="0" group="2" pos="0.004 -0.0005 -0.0175" quat="0.707107 -0.0 -0.0 0.707107" material="mat1" />
-      <geom type="mesh" mesh="banana_pcb_locker" contype="0" conaffinity="0" group="2" pos="0.0042 -0.0 -0.0175215" quat="0.707107 -0.0 0.0 0.707107" material="mat2" />
-      <geom type="mesh" mesh="trunk_base" contype="0" conaffinity="0" group="2" pos="0.004 -0.0 -0.0175" quat="0.707107 -0.0 -0.0 0.707107" material="mat3" />
-      <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="0.006 0.0175 0.0115" quat="0.0 0.707107 -0.0 0.707107" material="mat4" />
-      <geom type="mesh" mesh="power_support" contype="0" conaffinity="0" group="2" pos="0.004 -0.0 -0.0175215" quat="0.707107 -0.0 0.0 0.707107" material="mat5" />
-      <geom type="mesh" mesh="np_f970" contype="0" conaffinity="0" group="2" pos="-0.0359693 0.0 -0.00385049" quat="0.00617059 0.70708 -0.70708 -0.00617059" material="mat5" />
-      <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="0.006 -0.0175 0.0115" quat="0.0 0.707107 -0.0 0.707107" material="mat4" />
-      <geom type="mesh" mesh="left_shell" contype="0" conaffinity="0" group="2" pos="0.004 -0.0 -0.0175785" quat="0.707107 0.0 -0.0 0.707107" material="mat1" />
-      <geom type="mesh" mesh="seeed_bearing__configuration__22x16x4" contype="0" conaffinity="0" group="2" pos="0.006 -0.0175 -0.005" quat="1.0 -0.0 -0.0 0.0" material="mat0" />
       <geom type="mesh" mesh="power_support" group="3" pos="0.004 -0.0 -0.0175215" quat="0.707107 -0.0 0.0 0.707107" />
       <geom type="mesh" mesh="np_f970" group="3" pos="-0.0359693 0.0 -0.00385049" quat="0.00617059 0.70708 -0.70708 -0.00617059" />
       <body name="yaw2roll" pos="0.006 0.0175 -0.005" quat="0.0 -0.707107 -0.707107 -0.0">
         <inertial pos="-8.8e-11 0.00099414 0.0168917" mass="0.0230406" fullinertia="4.1964e-06 3.41752e-06 2.3265e-06 -0.0 -0.0 -5.0881e-08" />
         <joint name="left_hip_yaw" type="hinge" axis="0.0 0.0 1.0" range="-0.436332312999 0.523598775598" damping="0.053" frictionloss="0.0048" armature="0.0018" />
-        <geom type="mesh" mesh="yaw2roll" contype="0" conaffinity="0" group="2" pos="-0.0175 -0.002 0.0125" quat="0.0 1.0 0.0 0.0" material="mat2" />
-        <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="-0.0 0.0 0.0125" quat="0.0 -0.707107 0.707107 -0.0" material="mat4" />
-        <geom type="mesh" mesh="seeed_bearing__configuration__22x16x4" contype="0" conaffinity="0" group="2" pos="-0.0 0.0165 0.0125" quat="0.5 0.5 0.5 -0.5" material="mat0" />
-        <geom type="mesh" mesh="bearing_roll" contype="0" conaffinity="0" group="2" pos="-0.0175 -0.002 0.0125" quat="0.0 -1.0 -0.0 -0.0" material="mat6" />
         <body name="hip_l" pos="0.0 0.0165 0.0125" quat="0.707107 -0.707107 -0.0 -0.0">
           <inertial pos="0.014815 1.6179e-08 -0.00829992" mass="0.00618934" fullinertia="8.60626e-07 1.15753e-06 6.51588e-07 1e-12 3.89882e-07 -1e-12" />
           <joint name="left_hip_roll" type="hinge" axis="0.0 0.0 1.0" range="-0.383972435439 0.383972435439" damping="0.053" frictionloss="0.0048" armature="0.0018" />
-          <geom type="mesh" mesh="seeed_bearing__configuration__22x16x4" contype="0" conaffinity="0" group="2" pos="0.021 0.0 -0.0185" quat="0.5 0.5 0.5 0.5" material="mat0" />
-          <geom type="mesh" mesh="hip_l" contype="0" conaffinity="0" group="2" pos="-0.0175 0.0 -0.0185" quat="0.707107 -0.707107 0.0 -0.0" material="mat5" />
           <geom type="mesh" mesh="hip_l" group="3" pos="-0.0175 0.0 -0.0185" quat="0.707107 -0.707107 0.0 -0.0" />
           <body name="upper_leg_left" pos="0.025 0.0 -0.0185" quat="0.5 -0.5 0.5 -0.5">
             <inertial pos="0.006766 0.0228838 0.0134531" mass="0.0482067" fullinertia="1.68753e-05 1.03691e-05 1.98269e-05 -4.41852e-06 2.27982e-07 3.89298e-07" />
             <joint name="left_hip_pitch" type="hinge" axis="0.0 0.0 1.0" range="-1.570796326795 1.570796326795" damping="0.053" frictionloss="0.0048" armature="0.0018" />
-            <geom type="mesh" mesh="upper_leg_left" contype="0" conaffinity="0" group="2" pos="-0.0 -0.0 -0.0425" quat="0.5 -0.5 -0.5 -0.5" material="mat7" />
-            <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="0.022 0.0357771 0.0125" quat="0.0 -0.707107 -0.0 -0.707107" material="mat4" />
-            <geom type="mesh" mesh="upper_leg_rigidity_plate" contype="0" conaffinity="0" group="2" pos="0.0 -0.0 -0.0425" quat="0.5 -0.5 -0.5 -0.5" material="mat8" />
-            <geom type="mesh" mesh="seeed_bearing__configuration__22x16x4" contype="0" conaffinity="0" group="2" pos="0.022 0.0357771 -0.004" quat="0.0 0.0 0.0 1.0" material="mat0" />
-            <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="-0.0 -0.0 0.0125" quat="0.5 0.5 -0.5 0.5" material="mat4" />
             <body name="leg" pos="0.022 0.0357771 -0.004" quat="0.0 0.707107 0.707107 0.0">
               <inertial pos="-1.52e-10 0.0318937 -0.00953505" mass="0.0215844" fullinertia="5.25056e-06 2.15507e-06 4.33925e-06 -1e-12 0.0 7.65005e-07" />
               <joint name="left_knee" type="hinge" axis="0.0 0.0 1.0" range="-1.570796326795 1.570796326795" damping="0.053" frictionloss="0.0048" armature="0.0018" />
-              <geom type="mesh" mesh="leg" contype="0" conaffinity="0" group="2" pos="-0.022 0.0357771 0.0385" quat="0.5 0.5 0.5 -0.5" material="mat9" />
-              <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="0.0 0.042 -0.0115" quat="0.5 -0.5 -0.5 -0.5" material="mat4" />
               <geom type="mesh" mesh="leg" group="3" pos="-0.022 0.0357771 0.0385" quat="0.5 0.5 0.5 -0.5" />
               <body name="ankle_left" pos="0.0 0.042 -0.026" quat="0.0 1.0 -0.0 0.0">
                 <inertial pos="-0.00615738 -0.0137483 -0.0156586" mass="0.0300246" fullinertia="5.91525e-06 1.11534e-05 7.74015e-06 -2.0535e-07 8.2152e-08 5.6714e-08" />
                 <joint name="left_ankle" type="hinge" axis="0.0 0.0 1.0" range="-1.570796326795 1.570796326795" damping="0.053" frictionloss="0.0048" armature="0.0018" />
                 <site name="left_foot" pos="-0.0 -0.0238146 -0.0140852" quat="0.0 0.0 0.707107 0.707107" group="3" />
-                <geom type="mesh" mesh="sole_left" contype="0" conaffinity="0" group="2" pos="-0.022 0.00622291 -0.0647" quat="0.5 -0.5 -0.5 -0.5" material="mat8" />
-                <geom type="mesh" mesh="foot_left" contype="0" conaffinity="0" group="2" pos="-0.022 0.00622291 -0.0647" quat="0.5 -0.5 -0.5 -0.5" material="mat10" />
-                <geom type="mesh" mesh="seeed_bearing__configuration_default" contype="0" conaffinity="0" group="2" pos="0.0 0.0 -0.0322" quat="0.0 0.0 -0.0 1.0" material="mat0" />
-                <geom type="mesh" mesh="ankle_left" contype="0" conaffinity="0" group="2" pos="-0.022 0.00622291 -0.0647" quat="0.5 -0.5 -0.5 -0.5" material="mat10" />
                 <geom type="mesh" mesh="sole_left" group="3" pos="-0.022 0.00622291 -0.0647" quat="0.5 -0.5 -0.5 -0.5" />
               </body>
             </body>
@@ -118,22 +50,12 @@
       <body name="neck" pos="0.026 0.0145 0.0324215" quat="0.0 0.0 0.707107 -0.707107">
         <inertial pos="0.0 -0.025 0.0141665" mass="0.0368414" fullinertia="1.72925e-05 3.12694e-06 1.63707e-05 0.0 0.0 0.0" />
         <joint name="neck_pitch" type="hinge" axis="0.0 0.0 1.0" range="-1.570796326795 1.047197551197" damping="0.053" frictionloss="0.0048" armature="0.0018" />
-        <geom type="mesh" mesh="neck" contype="0" conaffinity="0" group="2" pos="0.022 0.05 0.028" quat="0.5 0.5 0.5 -0.5" material="mat1" />
-        <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="0.0 0.0 0.0145" quat="0.5 -0.5 -0.5 -0.5" material="mat4" />
-        <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="0.0 -0.05 0.0145" quat="0.5 0.5 -0.5 0.5" material="mat4" />
-        <geom type="mesh" mesh="neck" contype="0" conaffinity="0" group="2" pos="0.022 0.05 0.003" quat="0.5 0.5 0.5 -0.5" material="mat1" />
         <body name="neck_pitch" pos="0.0 -0.05 -0.0" quat="0.0 1.0 0.0 0.0">
           <inertial pos="-6.533e-09 0.0116641 -0.0145" mass="0.00572" fullinertia="1.09186e-06 9.66855e-07 5.12111e-07 0.0 0.0 0.0" />
           <joint name="head_pitch" type="hinge" axis="0.0 0.0 1.0" range="-1.570796326795 1.570796326795" damping="0.053" frictionloss="0.0048" armature="0.0018" />
-          <geom type="mesh" mesh="neck_pitch" contype="0" conaffinity="0" group="2" pos="-0.0 0.0287931 -0.0145" quat="0.5 -0.5 -0.5 -0.5" material="mat3" />
-          <geom type="mesh" mesh="seeed_bearing__configuration__22x16x4" contype="0" conaffinity="0" group="2" pos="-0.0 0.0207931 -0.0145" quat="0.707107 0.707107 0.0 0.0" material="mat0" />
           <body name="yaw_roll_motion" pos="-0.0 0.0186931 -0.0145" quat="0.0 0.0 -0.707107 -0.707107">
             <inertial pos="-0.000166657 -0.00500964 0.0178065" mass="0.0486" fullinertia="6.97903e-06 8.10293e-06 9.57884e-06 3.21657e-07 -3.4797e-08 3.4295e-07" />
             <joint name="head_yaw" type="hinge" axis="0.0 0.0 1.0" range="-2.96705972839 2.96705972839" damping="0.053" frictionloss="0.0048" armature="0.0018" />
-            <geom type="mesh" mesh="yaw_roll_motion" contype="0" conaffinity="0" group="2" pos="0.0 0.0 0.01" quat="0.707107 0.0 -0.0 0.707107" material="mat11" />
-            <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="0.0 0.0 0.0145" quat="0.5 -0.5 -0.5 -0.5" material="mat4" />
-            <geom type="mesh" mesh="seeed_bearing__configuration__22x16x4" contype="0" conaffinity="0" group="2" pos="-0.016 0.0 0.0145" quat="0.707107 -0.0 -0.707107 -0.0" material="mat0" />
-            <geom type="mesh" mesh="seeed_bearing__configuration__22x16x4" contype="0" conaffinity="0" group="2" pos="0.018 0.0 0.0145" quat="0.707107 -0.0 -0.707107 -0.0" material="mat0" />
             <body name="jaw_soft" pos="-0.0179 0.0 0.0145" quat="0.707107 -0.0 -0.707107 -0.0">
               <inertial pos="0.00460523 0.00120047 -0.0324761" mass="0.188766" fullinertia="0.000320812 0.0002541 0.000149882 -6.32292e-07 6.57154e-06 4.18476e-06" />
               <joint name="head_roll" type="hinge" axis="0.0 0.0 1.0" range="-0.436332312999 0.436332312999" damping="0.053" frictionloss="0.0048" armature="0.0018" />
@@ -141,22 +63,6 @@
               <site name="tof" pos="0.0135 0.0224086 -0.0733" quat="0.707107 0.0 0.707107 -0.0" group="3" />
               <site name="head_imu" pos="0.0152323 0.000111069 -0.05106" quat="1.0 0.0 0.0 -0.0" group="3" />
               <site name="mouth_tip" pos="-0.00809334 -0.0 -0.0777383" quat="0.704015 0.0 0.710185 -0.0" group="3" />
-              <geom type="mesh" mesh="lens" contype="0" conaffinity="0" group="2" pos="0.0155 -9.13778e-05 -0.05548" quat="0.5 -0.5 0.5 -0.5" material="mat6" />
-              <geom type="mesh" mesh="face_part" contype="0" conaffinity="0" group="2" pos="-0.0045 -9.13778e-05 -0.0178" quat="0.5 0.5 0.5 0.5" material="mat3" />
-              <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="0.003 0.0255 -0.018" quat="0.707107 0.0 -0.0 -0.707107" material="mat4" />
-              <geom type="mesh" mesh="jaw_soft" contype="0" conaffinity="0" group="2" pos="-0.0046 0.0 -0.0179996" quat="0.5 0.5 0.5 0.5" material="mat12" />
-              <geom type="mesh" mesh="motor_support" contype="0" conaffinity="0" group="2" pos="-0.0045 0.0 -0.018" quat="0.5 0.5 0.5 0.5" material="mat6" />
-              <geom type="mesh" mesh="top_head_shell" contype="0" conaffinity="0" group="2" pos="-0.0045 -0.0 -0.018" quat="0.5 0.5 0.5 0.5" material="mat5" />
-              <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="0.0 0.0 0.0145" quat="0.5 -0.5 -0.5 -0.5" material="mat4" />
-              <geom type="mesh" mesh="seeed_bearing__configuration_default" contype="0" conaffinity="0" group="2" pos="0.0032 -0.04 -0.018" quat="0.5 -0.5 0.5 0.5" material="mat0" />
-              <geom type="mesh" mesh="elec_rpi_robot_hat_pcb" contype="0" conaffinity="0" group="2" pos="0.02694 0.0289936 -0.0519" quat="0.707107 0.0 0.0 -0.707107" material="mat13" />
-              <geom type="mesh" mesh="soft_mouth_top" contype="0" conaffinity="0" group="2" pos="-0.00420071 1.7776e-08 -0.0180814" quat="0.5 0.5 0.5 0.5" material="mat12" />
-              <geom type="mesh" mesh="noenoeil" contype="0" conaffinity="0" group="2" pos="-0.0045 -9.13778e-05 -0.0178" quat="0.5 0.5 0.5 0.5" material="mat6" />
-              <geom type="mesh" mesh="jaw" contype="0" conaffinity="0" group="2" pos="-0.0045 0.0 -0.018" quat="0.5 0.5 0.5 0.5" material="mat10" />
-              <geom type="mesh" mesh="bottom_head_shell" contype="0" conaffinity="0" group="2" pos="-0.0043 -0.0 -0.018" quat="0.5 0.5 0.5 0.5" material="mat10" />
-              <geom type="mesh" mesh="m12_lens_holder" contype="0" conaffinity="0" group="2" pos="0.0155 -9.13778e-05 -0.05558" quat="0.5 -0.5 0.5 -0.5" material="mat6" />
-              <geom type="mesh" mesh="pcb__raspberry_pi_zero_2_w" contype="0" conaffinity="0" group="2" pos="0.015435 -1.13778e-05 -0.06001" quat="0.5 -0.5 -0.5 0.5" material="mat14" />
-              <geom type="mesh" mesh="speaker" contype="0" conaffinity="0" group="2" pos="0.01 -0.016786 0.0260226" quat="0.5 0.5 0.5 0.5" material="mat15" />
               <geom type="mesh" mesh="top_head_shell" group="3" pos="-0.0045 -0.0 -0.018" quat="0.5 0.5 0.5 0.5" />
               <geom type="mesh" mesh="jaw" group="3" pos="-0.0045 0.0 -0.018" quat="0.5 0.5 0.5 0.5" />
               <geom type="mesh" mesh="bottom_head_shell" group="3" pos="-0.0043 -0.0 -0.018" quat="0.5 0.5 0.5 0.5" />
@@ -167,38 +73,21 @@
       <body name="bearing_roll" pos="0.006 -0.0175 -0.005" quat="0.0 0.707107 0.707107 0.0">
         <inertial pos="-8.8e-11 0.00099414 0.0168917" mass="0.0230406" fullinertia="4.1964e-06 3.41752e-06 2.3265e-06 -0.0 -0.0 -5.0881e-08" />
         <joint name="right_hip_yaw" type="hinge" axis="0.0 0.0 1.0" range="-0.523598775598 0.436332312999" damping="0.053" frictionloss="0.0048" armature="0.0018" />
-        <geom type="mesh" mesh="yaw2roll" contype="0" conaffinity="0" group="2" pos="-0.0175 -0.002 0.0125" quat="0.0 1.0 0.0 0.0" material="mat2" />
-        <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="-0.0 0.0 0.0125" quat="0.0 -0.707107 0.707107 -0.0" material="mat4" />
-        <geom type="mesh" mesh="bearing_roll" contype="0" conaffinity="0" group="2" pos="-0.0175 -0.002 0.0125" quat="0.0 -1.0 -0.0 -0.0" material="mat6" />
-        <geom type="mesh" mesh="seeed_bearing__configuration__22x16x4" contype="0" conaffinity="0" group="2" pos="-0.0 0.0165 0.0125" quat="0.5 0.5 0.5 -0.5" material="mat0" />
         <body name="hip_l_2" pos="-0.0 0.0165 0.0125" quat="0.0 -0.0 0.707107 0.707107">
           <inertial pos="0.014815 1.6212e-08 -0.00829992" mass="0.00618934" fullinertia="8.60626e-07 1.15753e-06 6.51588e-07 1e-12 3.89882e-07 -1e-12" />
           <joint name="right_hip_roll" type="hinge" axis="0.0 0.0 1.0" range="-0.383972435439 0.383972435439" damping="0.053" frictionloss="0.0048" armature="0.0018" />
-          <geom type="mesh" mesh="hip_l" contype="0" conaffinity="0" group="2" pos="-0.0175 0.0 -0.0185" quat="0.707107 -0.707107 -0.0 -0.0" material="mat5" />
-          <geom type="mesh" mesh="seeed_bearing__configuration__22x16x4" contype="0" conaffinity="0" group="2" pos="0.025 0.0 -0.0185" quat="0.5 0.5 -0.5 -0.5" material="mat0" />
           <geom type="mesh" mesh="hip_l" group="3" pos="-0.0175 0.0 -0.0185" quat="0.707107 -0.707107 -0.0 -0.0" />
           <body name="upper_leg_right" pos="0.025 0.0 -0.0185" quat="0.5 -0.5 0.5 -0.5">
             <inertial pos="-0.006766 0.0228838 0.0134531" mass="0.0482067" fullinertia="1.68753e-05 1.03691e-05 1.98269e-05 4.41852e-06 -2.27982e-07 3.89298e-07" />
             <joint name="right_hip_pitch" type="hinge" axis="0.0 0.0 1.0" range="-1.570796326795 1.570796326795" damping="0.053" frictionloss="0.0048" armature="0.0018" />
-            <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="-0.022 0.0357771 0.0125" quat="0.707107 -0.0 -0.707107 -0.0" material="mat4" />
-            <geom type="mesh" mesh="seeed_bearing__configuration__22x16x4" contype="0" conaffinity="0" group="2" pos="-0.022 0.0357771 0.0" quat="0.0 1.0 -0.0 -0.0" material="mat0" />
-            <geom type="mesh" mesh="upper_leg_rigidity_plate" contype="0" conaffinity="0" group="2" pos="0.0 0.0 0.0435" quat="0.5 -0.5 0.5 0.5" material="mat8" />
-            <geom type="mesh" mesh="upper_leg_right" contype="0" conaffinity="0" group="2" pos="-0.0 0.0 -0.0425" quat="0.5 -0.5 0.5 0.5" material="mat7" />
-            <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="0.0 0.0 0.0125" quat="0.5 0.5 -0.5 0.5" material="mat4" />
             <body name="leg_2" pos="-0.022 0.0357771 -0.004" quat="0.0 1.0 -0.0 -0.0">
               <inertial pos="-0.0318937 -1.52e-10 -0.00953505" mass="0.0215844" fullinertia="2.15507e-06 5.25056e-06 4.33925e-06 1e-12 -7.65005e-07 0.0" />
               <joint name="right_knee" type="hinge" axis="0.0 0.0 1.0" range="-1.570796326795 1.570796326795" damping="0.053" frictionloss="0.0048" armature="0.0018" />
-              <geom type="mesh" mesh="xl330" contype="0" conaffinity="0" group="2" pos="-0.042 0.0 -0.0115" quat="0.707107 -0.0 -0.707107 -0.0" material="mat4" />
-              <geom type="mesh" mesh="leg" contype="0" conaffinity="0" group="2" pos="-0.0357771 -0.022 0.0385" quat="0.707107 0.0 0.707107 -0.0" material="mat9" />
               <geom type="mesh" mesh="leg" group="3" pos="-0.0357771 -0.022 0.0385" quat="0.707107 0.0 0.707107 -0.0" />
               <body name="ankle_right" pos="-0.042 0.0 -0.026" quat="0.0 -0.707107 -0.707107 0.0">
                 <inertial pos="0.00615539 -0.0137482 -0.0156566" mass="0.0300251" fullinertia="5.91534e-06 1.11534e-05 7.74016e-06 2.04877e-07 -8.247e-08 5.7017e-08" />
                 <joint name="right_ankle" type="hinge" axis="0.0 0.0 1.0" range="-1.570796326795 1.570796326795" damping="0.053" frictionloss="0.0048" armature="0.0018" />
                 <site name="right_foot" pos="0.0 -0.0238146 -0.0140852" quat="0.707107 -0.707107 0.0 0.0" group="3" />
-                <geom type="mesh" mesh="ankle_right" contype="0" conaffinity="0" group="2" pos="0.022 0.00622291 -0.0647" quat="0.5 -0.5 0.5 0.5" material="mat10" />
-                <geom type="mesh" mesh="sole_right" contype="0" conaffinity="0" group="2" pos="0.022 0.00622291 -0.0647" quat="0.5 -0.5 0.5 0.5" material="mat8" />
-                <geom type="mesh" mesh="seeed_bearing__configuration_default" contype="0" conaffinity="0" group="2" pos="-0.0 0.0 -0.0292" quat="0.0 1.0 -0.0 -0.0" material="mat0" />
-                <geom type="mesh" mesh="foot_right" contype="0" conaffinity="0" group="2" pos="0.022 0.00622291 -0.0647" quat="0.5 -0.5 0.5 0.5" material="mat10" />
                 <geom type="mesh" mesh="sole_right" group="3" pos="0.022 0.00622291 -0.0647" quat="0.5 -0.5 0.5 0.5" />
               </body>
             </body>
