@@ -187,6 +187,32 @@ def cmd_build(args) -> int:
     return 0
 
 
+# ───────────────────────── golden ─────────────────────────
+def cmd_golden(args) -> int:
+    import importlib
+    sys.path.insert(0, os.path.join(ROOT, "sim", "plan"))
+    golden = importlib.import_module("golden")
+    rel = os.path.join(ROOT, args.release)
+    if not os.path.exists(os.path.join(rel, "contract.json")):
+        bad(f"缺 {args.release}/contract.json —— 先跑 `bin/ducksir build --out {args.release}`")
+        return 2
+    cases = golden.cases_from_release(args.release)
+    fixture = os.path.join(ROOT, "contract/plan/fixtures/release-golden.json")
+    if args.update:
+        golden.record(cases, fixture, note="由 bin/ducksir golden --update 记录")
+        ok("已更新快照 → contract/plan/fixtures/release-golden.json")
+        return 0
+    problems = golden.check(cases, fixture)
+    if problems:
+        for prob in problems:
+            bad(prob)
+        say()
+        say("快照对不上。若是**有意**改图，跑 `bin/ducksir golden --update` 并说明原因。")
+        return 1
+    ok("与快照逐位相同：" + ", ".join(f"{n}({len(f)} 帧)" for n, _, f in cases))
+    return 0
+
+
 # ───────────────────────── run ─────────────────────────
 def cmd_run(args) -> int:
     if args.fsm:
@@ -237,6 +263,11 @@ def main(argv=None) -> int:
     r.add_argument("--report", help="写 JSON 报告")
     r.add_argument("--trajectory", help="写回放轨迹 JSON")
     r.set_defaults(fn=cmd_run)
+
+    g = sub.add_parser("golden", help="golden 快照比对（改核后确认行为没变）")
+    g.add_argument("--update", action="store_true", help="重新记录基准（会写文件）")
+    g.add_argument("--release", default="build/release/test", help="从哪个 release 目录取 plan")
+    g.set_defaults(fn=cmd_golden)
 
     args = ap.parse_args(argv)
     return args.fn(args)
