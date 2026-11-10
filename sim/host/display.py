@@ -103,6 +103,12 @@ class Display:
                 if self.path in ("/follow", "/follow.html"):
                     self._serve_file("follow.html", "text/html; charset=utf-8")
                     return
+                if self.path.startswith("/static/assets/"):
+                    # GLB 在仓库根 assets/ 下，不在 viewer/ 里：两棵根分别是 client/viewer 与 assets
+                    rel = self.path[len("/static/assets/"):].split("?")[0]
+                    assets_root = os.path.join(os.path.dirname(display.root), "..", "assets")
+                    self._serve_file(rel, None, base=os.path.abspath(assets_root))
+                    return
                 if self.path.startswith("/static/"):
                     rel = self.path[len("/static/"):].split("?")[0]
                     self._serve_file(rel)

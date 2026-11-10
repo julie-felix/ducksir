@@ -18,6 +18,9 @@ const IN_PANEL = location.pathname.startsWith('/ducksir-static/');
 const API = IN_PANEL ? '/ducksir-live' : '';
 const ASSET = IN_PANEL ? '/ducksir-static/client/viewer' : '/static';
 const assets = (rel) => `${ASSET}/${rel.replace(/^\.\//, '')}`;
+// GLB 在仓库根 assets/ 下，和 viewer 的静态资源不同根
+const GLB_BASE = IN_PANEL ? '/ducksir-static/assets' : '/static/assets';
+const glb = (rel) => `${GLB_BASE}/${rel.replace(/^\.\.\/\.\.\/assets\//, '').replace(/^\.\.\/assets\//, '')}`;
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
@@ -63,7 +66,7 @@ async function buildRobot() {
       robotGroup.add(group);
       groups.set(link.name, group);
     }
-    const url = assets(g.mesh.replace('../../assets/', 'assets/').replace('../assets/', 'assets/'));
+    const url = glb(g.mesh);
     const gltf = await loader.loadAsync(url);
     const inst = gltf.scene.clone(true);
     inst.position.fromArray(g.xyz);
@@ -246,18 +249,30 @@ async function main() {
   wireTabs();
   wireParams();
   wireRunControls();
+
+  // 先起渲染循环：即使模型加载失败，网格和 HUD 也要出来，不能「黑屏 = 看起来没反应」
+  loop();
+
+  const fail = (label) => (e) => {
+    $('conn').textContent = `${label}失败：${e?.message || e}`;
+    console.warn(label, e);
+  };
+
   try {
     const running = await refreshConn();
     const sc = await (await fetch(`${API}/scene`)).json();
     (sc.bodies || []).forEach((n, i) => bodyIndex.set(n, i));
-    await buildRobot();
-    await wireFiles();
-    await loadDiag();
-    loop();
     if (running) startStream();
-  } catch (e) {
-    $('conn').textContent = '连不上服务：' + (e?.message || e);
-  }
+    await loadDiag().catch(fail('诊断'));
+  } catch (e) { fail('连接')(e); }
+
+  // 模型与文件树各自兜底：一个坏了不影响另一个
+  try {
+    await buildRobot();
+  } catch (e) { fail('模型加载')(e); }
+  try {
+    await wireFiles();
+  } catch (e) { fail('文件树')(e); }
 }
 
 main();
