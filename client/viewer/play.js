@@ -6,7 +6,7 @@
 //   data/mjcf-browser/duck.xml                 ← tools/robot/export_mjcf.py --mesh-dir . --mesh-ext stl
 //   data/live/{pre,post}.blob + model.onnx + duck.json ← sim/host/export_browser_check.py
 
-import * as THREE from './vendor/three/three.module.js';
+import * as THREE from 'three';
 import { OrbitControls } from './vendor/three/controls/OrbitControls.js';
 import { GLTFLoader } from './vendor/three/loaders/GLTFLoader.js';
 import { loadDuck, makeObs, stepPhysics, read, OBS_DIM, N_JOINTS } from './play-core.mjs';
