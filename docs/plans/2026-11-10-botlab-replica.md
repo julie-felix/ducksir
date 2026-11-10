@@ -255,8 +255,16 @@ body 与 joint 名单一致、actuator 顺序一致、关节轴与限位全部�
 2. **设备增益偏软**：`kp=0.55`、`kv=0` 在重力下跟踪 0.2 rad 正弦，稳态误差 0.36 rad。链路是通的（关重力后稳态 0.003 rad），所以这不是 bug，是「这条策略要的增益得由训练侧给」——和 D13 的结论一致。
 3. **`--report` 的 digest 链现在能闭合**：`entity → mjcf → preset` 三层都有 sha256，report 里各一行。这是 incident 链的起点。
 
+4. **碰撞覆盖不全 —— 这才是「看着陷进地板」的真因**。canonical 的碰撞体是从上游 `robot_walk.xml`（walk 碰撞子集）导入的，
+   鸭子 15 个 link 里有 **10 个没有碰撞体**（`jaw_soft`、`neck*`、`upper_leg*` 等）。鸭子被重力放倒、压到头部时，
+   `jaw_soft` 的视觉网格比地面低 **181 mm**，而碰撞 geom 只到 -3 mm —— 也就是说物理上它躺在一个「没有头的碰撞壳」上，
+   看起来就是头和下巴插进地里。实测换用上游 `robot_allcollisions.xml` 重导，无碰撞体的 link 从 10 降到 7（jaw、hip 有了），
+   但 `neck*` 系列上游本来就没有。**这是资产限制，不是导出 bug**；选哪套碰撞集是建模决策（训练用 walk 快、摔倒测试要 all）。
+   已加 **C9** 检查把这件事固定报出来。
+
 **遗留**
 
+- **碰撞集选择**（W4 决策）：canonical 要不要同时带 walk / all 两套碰撞体，exports 用 `--collision` 选。现在只有 walk 那套。
 - 观测语义还内联在 `pd_hold.py`（8 个槽里的 5 个 + `base_height`），W6 迁到 `contract/policy/manifest` 后才算有契约。
 - G1 / 天工仍是 `BLOCKED`（没有执行器参数），W3 只在鸭子上验收。
 - 站立/行走：等策略。

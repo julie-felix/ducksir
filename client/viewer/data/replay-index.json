@@ -1,7 +1,7 @@
 {
   "clips": [
     {
-      "label": "链路验证：关重力，只动腿（5 s）",
+      "label": "链路验证：关重力，只动腿（5 s）· 默认",
       "file": "replay-duck-chain.json",
       "robot": "duck-hd1910"
     },
