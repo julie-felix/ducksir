@@ -162,3 +162,16 @@ PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 sim/test/test_core_vs_oracl
 
 **已知边界**：宿主侧 `run_policy.py` / `run_fsm.py` 目前仍按 manifest 自己组观测（不走契约），
 两边口径靠对拍测试（`test_fsm_parity.mjs`）钉住，尚未合并到契约驱动。
+
+## 加一个新节点：准入标准
+
+Q9 定下「不开 Python 每步逃生口，表达不了就扩图」之后，节点集合就是**唯一的扩展出口**。
+但节点不是随便加的——加一个要同时改：C 核、numpy oracle、wasm 构建、契约、浏览器通用执行器、golden 快照。
+所以三条缺一不可：
+
+1. **跨端可用**：纯张量运算、无 I/O，native 与 wasm 都能跑。带 I/O 或依赖宿主的节点会破坏「两端逐位一致」。
+2. **可对拍**：能在 `sim/plan/oracle.py` 里写出参考实现。写不出参考实现的节点，等于不能验证。
+3. **有真实需求**：至少有一个策略/项目现在就卡在它上面，不为「以后可能用」而加。
+
+加完的检查单：`test_core_vs_oracle.py`（对拍）、`test_wasm_parity.py`（逐位）、
+`bin/ducksir golden --update`（有意改变行为才更新，并写清原因）、`node-parity.md` 补一行。

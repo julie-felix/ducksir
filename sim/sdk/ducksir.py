@@ -25,7 +25,7 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 
-__all__ = ["Duck"]
+__all__ = ["Duck", "Project"]
 
 
 class Duck:
@@ -97,3 +97,81 @@ if __name__ == "__main__":
     print(f"{d.robot_id}：{len(d.joints())} 个驱动关节，站姿前 3 项 {[round(x, 3) for x in d.default_pose()[:3]]}")
     r = d.run(seconds=2, vx=0.25)
     print("panel：", json.dumps(r.get("panel", {}), ensure_ascii=False))
+
+
+class Project:
+    """链式声明一个可跑的项目——**只声明，不启动**。
+
+        # project.py
+        project = (Project("duck-hd1910")
+                   .policy("walking", mode=0)
+                   .command(forward=0.25, yaw=0.0)
+                   .rates(control_hz=50, physics_hz=200))
+
+        # 终端
+        bin/ducksir run project.py --seconds 20
+
+    循环、浏览器、落盘、Ctrl-C 处理都归 CLI（Q1′ 的决定）。这样「跑多久、开不开浏览器、参数多少」
+    都在命令行上，改它们不用改脚本。
+    """
+
+    def __init__(self, robot_id: str = "duck-hd1910", *, manifest: str | None = None):
+        self.robot_id = robot_id
+        self.manifest = manifest or "contract/policy/duck-walk.manifest.yaml"
+        self._policies: list[dict] = []
+        self._command = {"forward": 0.0, "yaw": 0.0}
+        self._rates = {"control_hz": 50, "physics_hz": 200}
+        self._seconds: float | None = None
+
+    # ── 链式声明（每个方法都返回 self）────────────────────────
+    def policy(self, key: str, *, mode: int = 0) -> "Project":
+        """登记一个策略（key 对应 `build/models/<key>.onnx`）。"""
+        if any(p["key"] == key for p in self._policies):
+            raise ValueError(f"策略 {key} 已经登记过了")
+        self._policies.append({"key": key, "mode": int(mode)})
+        return self
+
+    def policies(self, *keys: str) -> "Project":
+        for i, key in enumerate(keys):
+            self.policy(key, mode=i)
+        return self
+
+    def command(self, *, forward: float | None = None, yaw: float | None = None) -> "Project":
+        """常值指令（行走用）。范围照上游：forward ∈ [-0.2, 0.25]、yaw ∈ [-1, 1]。"""
+        if forward is not None:
+            self._command["forward"] = float(forward)
+        if yaw is not None:
+            self._command["yaw"] = float(yaw)
+        return self
+
+    def rates(self, *, control_hz: float | None = None, physics_hz: float | None = None) -> "Project":
+        if control_hz is not None:
+            self._rates["control_hz"] = float(control_hz)
+        if physics_hz is not None:
+            self._rates["physics_hz"] = float(physics_hz)
+        return self
+
+    def seconds(self, value: float) -> "Project":
+        """脚本里也可以给个默认时长（命令行 `--seconds` 会覆盖它）。"""
+        self._seconds = float(value)
+        return self
+
+    # ── 给 CLI / runner 用 ───────────────────────────────────
+    def describe(self) -> dict:
+        if not self._policies:
+            raise ValueError("Project 至少要有 `.policy(...)`")
+        hz, phz = self._rates["control_hz"], self._rates["physics_hz"]
+        if phz % hz != 0:
+            raise ValueError(f"physics_hz({phz}) 必须是 control_hz({hz}) 的整数倍")
+        return {
+            "robot": self.robot_id,
+            "manifest": self.manifest,
+            "policies": list(self._policies),
+            "command": dict(self._command),
+            "rates": dict(self._rates),
+            "seconds": self._seconds,
+        }
+
+    def __repr__(self) -> str:
+        return (f"Project({self.robot_id}, policies={[p['key'] for p in self._policies]}, "
+                f"rates={self._rates})")

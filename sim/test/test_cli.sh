@@ -16,8 +16,9 @@ check() {
 }
 check "validate" python3 tools/cli/ducksir.py validate
 check "build" python3 tools/cli/ducksir.py build --out build/release/cli-test
-check "run --policy" python3 tools/cli/ducksir.py run --seconds 2 --vx 0.25
-check "run --fsm" python3 tools/cli/ducksir.py run --fsm --seconds 4 --pulses "1:1"
+check "sim --policy" python3 tools/cli/ducksir.py sim --seconds 2 --vx 0.25
+check "sim --fsm" python3 tools/cli/ducksir.py sim --fsm --seconds 4 --pulses "1:1"
+check "run 项目脚本" python3 tools/cli/ducksir.py run sim/test/fixtures/project_demo.py --seconds 1 --no-browser
 check "golden" python3 tools/cli/ducksir.py golden --release build/release/cli-test
 
 if [ -f build/release/cli-test/contract.json ] && [ -f build/release/cli-test/release.json ]; then
