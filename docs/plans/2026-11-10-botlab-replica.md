@@ -1130,3 +1130,26 @@ node sim/test/test_play_page_ids.mjs  play.js ?bundle 支持：OK
 node sim/test/test_fsm_parity.mjs     bundle ↔ 浏览器状态迁移一致：是
 ```
 
+### W12c（2026-11-11）工作台手机端
+
+庆喆在手机上看工作台，顶栏挤成一行、按钮太小。这轮按手机重排：
+
+**布局（`max-width: 820px`）**
+
+- 顶栏折行、隐藏项目名占位；`select`/`input`/`button` 统一 `min-height: 40px`；
+- 左右两栏（文件树、右栏）隐藏，底部页签 `min-height: 44px` 且可横向滚动；
+- 底部参数区 `max-height: 38vh`，滑杆高度 32px（手指好拖）；
+- HUD / 键位条字号缩小，避免遮挡模型。
+
+**交互**
+
+- **手机默认走浏览器执行**：进工作台自动选第一个 bundle 并打开 `play.html?bundle=…`，
+  不再需要点「启动仿真」起 Python 子进程（省宿主、省流量、画面更顺）；
+- 加「返回宿主」按钮回切到宿主执行（桌面用）；
+- 浏览器模式下用 `body.browser-mode` 收起 host 专属控件（项目路径 / 启动 / 停止），顶栏只剩
+  「bundle 选择 + 在浏览器里跑 + 返回」；
+- `play.html`（iframe 里那页）窄屏下再收紧：隐藏标题行、按钮 54px、「左转/右转/慢/快」只留图标。
+
+**验收**：`node sim/test/test_play_page_ids.mjs`（19 处 id、无绝对 `/static/`、`?bundle` 支持）。
+视觉部分需要手机上看一眼。
+

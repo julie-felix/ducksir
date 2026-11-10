@@ -274,14 +274,25 @@ async function wireBundles() {
     opt.textContent = b.name;
     sel.appendChild(opt);
   }
-  $('btn-browser-run').onclick = () => {
-    const base = sel.value;
+  // 手机默认就用浏览器执行：不起子进程、不占宿主、画面最顺
+  const isPhone = matchMedia('(max-width: 820px)').matches;
+  if (isPhone && list.length) runInBrowser(list[0].base);
+  $('btn-browser-run').onclick = () => runInBrowser(sel.value);
+
+  function runInBrowser(base) {
     if (!base) return;
     // play.html 已经是「wasm 核 + ORT Web + MuJoCo wasm + 状态机」那套，这里只给它 bundle 路径
     frame.src = `/ducksir-static/client/viewer/play.html?bundle=${encodeURIComponent(base)}&embed=1`;
     frame.style.display = 'block';
     canvas.style.display = 'none';
-    $('conn').textContent = '浏览器内执行：' + (sel.options[sel.selectedIndex]?.textContent || '');
+    document.body.classList.add('browser-mode');   // 收起 host 专属控件
+    $('conn').textContent = '浏览器内执行';
+  }
+  $('btn-back').onclick = () => {
+    frame.style.display = 'none';
+    canvas.style.display = 'block';
+    document.body.classList.remove('browser-mode');
+    $('conn').textContent = '未连接';
   };
 }
 
