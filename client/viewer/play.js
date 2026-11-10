@@ -218,42 +218,46 @@ async function main() {
     $('busy').style.display = 'none';
     loadGeoms.then(() => stage('网格加载完成'));
 
-    // 主循环：50 Hz 控制（异步推理）+ 200 Hz 物理 + 渲染
-    let lastInfer = 0, ctrl = 0;
+    // 主循环：严格 4:1 的物理:控制比（200/50 Hz）。
+    //
+    // 之前这里是「每帧推 4 步物理 + 到点才推理」，移动端帧率一掉，每个控制步就变成 8/12 步物理，
+    // 策略看到的是被拉快的动力学 → 上去就打滚。现在用累加器：**一个控制步 = 1 次推理 + 恰好 4 步物理**。
+    const STEP_DT = 1 / CONTROL_HZ;
+    let acc = 0, last = performance.now(), ctrl = 0, ctrlWindowStart = performance.now(), ctrlWindowCount = 0, realHz = 0;
     const t0 = performance.now();
-    const loop = async () => {
-      const now = performance.now();
-      if (now - lastInfer >= 1000 / CONTROL_HZ) {
-        lastInfer = now;
-        // 1) 状态机：吃「脉冲 + 重力 z + vx」，吐 [state, mode, command(13)]
-        const bid = duck.bodyId('trunk_base');
-        const qw = read(data.xquat, bid * 4), qx = read(data.xquat, bid * 4 + 1);
-        const qy = read(data.xquat, bid * 4 + 2), qz = read(data.xquat, bid * 4 + 3);
-        // 重力在世界系是 (0,0,-1)，它在机体系的 z 分量 = -R[2][2] = -(1-2(qx²+qy²))
-        const gz = -(1 - 2 * (qx * qx + qy * qy));
-        const fsmOut = runPlan(fsm, [pendingCmd, gz, state.vx]);
-        pendingCmd = 0;
-        state.fsm = { state: fsmOut[0], mode: fsmOut[1] };
-        const cmd13 = fsmOut.slice(2, 15);
-        if (!manual) active = modeToKey[fsmOut[1]] || active;
 
-        // 2) obs（61 维）：指令段用状态机给的 command
-        const obs = makeObs(duck, { joints: meta.joints, defaultQ: meta.defaultQ,
-                                    lastAction: state.lastAction, vx: state.vx, command: cmd13 });
-        const policyInput = runPlan(pre, obs);
-        const feeds = { [inputName]: new ort.Tensor('float32', Float32Array.from(policyInput), [1, policyInput.length]) };
-        const res = await sessions[active].run(feeds);
-        const outName = sessions[active].outputNames[0];
-        const action = Array.from(res[outName].data);
-        const ctrlOut = runPlan(post, action);
-        for (let j = 0; j < model.nu; j++) data.ctrl[j] = ctrlOut[j];
-        state.lastAction.set(action);
-        state.simTime += 1 / CONTROL_HZ;
-        ctrl++;
-      }
+    async function controlStep() {
+      // 1) 状态机：吃「脉冲 + 重力 z + vx」，吐 [state, mode, command(13)]
+      const bid = duck.bodyId('trunk_base');
+      const qw = read(data.xquat, bid * 4), qx = read(data.xquat, bid * 4 + 1);
+      const qy = read(data.xquat, bid * 4 + 2);
+      // 重力在世界系是 (0,0,-1)，它在机体系的 z 分量 = -R[2][2] = -(1-2(qx²+qy²))
+      const gz = -(1 - 2 * (qx * qx + qy * qy));
+      const fsmOut = runPlan(fsm, [pendingCmd, gz, state.vx]);
+      pendingCmd = 0;
+      state.fsm = { state: fsmOut[0], mode: fsmOut[1] };
+      const cmd13 = fsmOut.slice(2, 15);
+      if (!manual) active = modeToKey[fsmOut[1]] || active;
+
+      // 2) obs（61 维）：指令段用状态机给的 command
+      const obs = makeObs(duck, { joints: meta.joints, defaultQ: meta.defaultQ,
+                                  lastAction: state.lastAction, vx: state.vx, command: cmd13 });
+      const policyInput = runPlan(pre, obs);
+      const sess = sessions[active];
+      const res = await sess.run({ [sess.inputNames[0]]:
+        new ort.Tensor('float32', Float32Array.from(policyInput), [1, policyInput.length]) });
+      const action = Array.from(res[sess.outputNames[0]].data);
+      const ctrlOut = runPlan(post, action);
+      for (let j = 0; j < model.nu; j++) data.ctrl[j] = ctrlOut[j];
+      state.lastAction.set(action);
+
+      // 3) 恰好 DECIM 步物理
       stepPhysics(mj, model, data, DECIM);
+      state.simTime += STEP_DT;
+      ctrl += 1;
+    }
 
-      // 渲染
+    function render() {
       for (const name of Object.keys(bodyOf)) {
         const { group, bid } = bodyOf[name];
         group.position.set(read(data.xpos, bid * 3), read(data.xpos, bid * 3 + 1), read(data.xpos, bid * 3 + 2));
@@ -270,10 +274,34 @@ async function main() {
       const fs = state.fsm || { state: '—', mode: '—' };
       $('vx').textContent = `vx ${state.vx.toFixed(2)} m/s · 状态 ${fs.state} · 策略 ${active}`
         + (manual ? '（手动）' : '');
-      $('perf').textContent = `墙钟 ${wall.toFixed(1)} s（${(state.simTime / wall || 0).toFixed(2)}× 实时）`;
-      requestAnimationFrame(loop);
-    };
-    loop();
+      $('perf').textContent = `墙钟 ${wall.toFixed(1)} s（${(state.simTime / wall || 0).toFixed(2)}× 实时，控制 ${realHz.toFixed(0)} Hz）`;
+    }
+
+    async function tick() {
+      const now = performance.now();
+      acc += Math.min(0.25, (now - last) / 1000);
+      last = now;
+      // 每次最多补 3 步，避免慢设备上「越补越慢」的死循环
+      let budget = 3;
+      while (acc >= STEP_DT && budget-- > 0) {
+        acc -= STEP_DT;
+        try {
+          await controlStep();
+        } catch (e) {
+          console.error(e);
+          break;
+        }
+        ctrlWindowCount += 1;
+      }
+      if (now - ctrlWindowStart >= 1000) {
+        realHz = (ctrlWindowCount * 1000) / (now - ctrlWindowStart);
+        ctrlWindowStart = now;
+        ctrlWindowCount = 0;
+      }
+      render();
+      requestAnimationFrame(tick);
+    }
+    tick();
   } catch (e) {
     console.error(e);
     stage('载入失败：' + (e && e.message ? e.message : e));

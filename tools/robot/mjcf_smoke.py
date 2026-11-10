@@ -70,9 +70,16 @@ def export_collision_all(entity: str, mesh_dir: str, ext: str, out: str) -> str:
 
 
 def export_preset(entity: str, mjcf: str, out: str) -> None:
-    subprocess.run([sys.executable, os.path.join(HERE, "export_preset.py"), os.path.join(ROOT, entity),
-                    "--mjcf", os.path.join(ROOT, mjcf), "-o", out],
-                   check=True, stdout=subprocess.DEVNULL)
+    """生成 preset。有位形文件就带上——**别把它漏了**：
+    漏了 defaultJointPositions 会退回全零、initialQpos 连基座高度都是 0，等于把鸭子生成在地里,
+    跑起来就是「一上去就打滚」（2026-11-10 踩过）。"""
+    ident = os.path.basename(entity).rsplit(".", 1)[0]
+    posture = os.path.join(ROOT, "contract/robot/postures", f"{ident}.yaml")
+    cmd = [sys.executable, os.path.join(HERE, "export_preset.py"), os.path.join(ROOT, entity),
+           "--mjcf", os.path.join(ROOT, mjcf), "-o", out]
+    if os.path.exists(posture):
+        cmd += ["--default-pose", posture]
+    subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
 
 
 def check_preset(mujoco, m, preset_path: str, driven: list[str]) -> tuple[str, str]:

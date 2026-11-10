@@ -178,3 +178,6 @@ PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 tools/robot/export_mjcf.py 
 页面：`/client/viewer/play.html`（物理+推理，键盘开鸭子）、`/client/viewer/live.html`（只做自算比对）。
 
 **都直连下载**：npm registry 与 storage.googleapis.com 直连比走代理快一个数量级。
+
+**版本必须对齐**：`@mujoco/mujoco` 的版本要和宿主 Python 的 `mujoco` **完全一致**（现在都是 3.17.0）。
+4.0.0 的浏览器版跑同一串 ctrl，200 步后基座差 85 mm——接触密集的步态直接失稳。物理版本是配方的一部分。
