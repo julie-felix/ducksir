@@ -94,6 +94,12 @@
         <input type="checkbox" id="camsync" checked /> 同步视角
       </label>
       <button id="split" title="左右并排：左边我们的解算，右边 MuJoCo 查表">并排对比</button>
+      <button id="replay" title="回放 sim 导出的轨迹（sim/host/pd_hold.py --trajectory）">回放</button>
+      <span id="replay-box" style="display:none;align-items:center;gap:6px">
+        <button id="play">播放</button>
+        <input type="range" id="replay-t" min="0" max="0" value="0" step="1" style="width:130px" />
+        <span id="replay-info" style="font-size:12px;color:var(--dim)"></span>
+      </span>
     </header>
     <div id="views">
       <div class="view"><canvas id="c"></canvas><div class="vcap" id="cap-l">我们的解算</div></div>

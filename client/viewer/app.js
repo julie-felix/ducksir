@@ -471,8 +471,94 @@ function setView(kind) {
   if (SPLIT.on && SPLIT.ready) camSync(camera, controls, SPLIT.camera, SPLIT.controls);
 }
 
+
+// ---------------------------------------------------------------------------
+// 轨迹回放：读 sim/host/pd_hold.py --trajectory 导出的 json
+//
+// 帧里只有「自由基座位姿 + 驱动关节角」，其余全部复用页面自己的 FK —— 这样回放看到的就是
+// 实体描述本身，不是另一套渲染。贴地（groundClamp）自动关掉：回放要的是真实位姿。
+// ---------------------------------------------------------------------------
+const REPLAY = { on: false, frames: [], meta: null, i: 0, playing: false, fps: 50, acc: 0, base: null };
+
+function replayQuat(qwxyz) {
+  // 实体 Z-up → three Y-up：先把整组按 -90° 绕 x 转过来，再叠加实体的旋转
+  return new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0))
+    .multiply(new THREE.Quaternion(qwxyz[1], qwxyz[2], qwxyz[3], qwxyz[0]));
+}
+
+function applyReplayFrame(i) {
+  if (!current || !REPLAY.frames.length) return;
+  const f = REPLAY.frames[Math.max(0, Math.min(i, REPLAY.frames.length - 1))];
+  const names = REPLAY.meta.joints;
+  for (let k = 0; k < names.length; k++) setJointIn(current.joints, names[k], f.q[k]);
+  // 实体坐标 (x,y,z) → three 世界 (x, z, -y)
+  robotGroup.position.set(f.pos[0], f.pos[2], -f.pos[1]);
+  robotGroup.quaternion.copy(replayQuat(f.quat));
+  REPLAY.i = i;
+  const slider = $('replay-t');
+  if (slider && Number(slider.value) !== i) slider.value = String(i);
+  const info = $('replay-info');
+  if (info) info.textContent = `${f.t.toFixed(2)} s / ${REPLAY.frames[REPLAY.frames.length - 1].t.toFixed(2)} s`;
+}
+
+function stopReplay() {
+  REPLAY.on = false; REPLAY.playing = false; REPLAY.frames = []; REPLAY.meta = null;
+  if ($('replay-box')) $('replay-box').style.display = 'none';
+  if ($('replay')) $('replay').textContent = '回放';
+  $('ground').checked = true; groundClamp = true;
+  robotGroup.position.set(0, groundClamp ? (current?.groundOffset ?? 0) : 0, 0);
+  robotGroup.quaternion.setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
+}
+
+async function startReplay(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`回放文件读不到：${url}（${res.status}）`);
+  const traj = await res.json();
+  if (!current) throw new Error('先加载机型');
+  const mine = new Set(current.joints.keys());
+  const missing = traj.meta.joints.filter((n) => !mine.has(n));
+  if (missing.length) throw new Error(`机型对不上，缺关节：${missing.slice(0, 3).join(', ')}…`);
+  REPLAY.frames = traj.frames;
+  REPLAY.meta = traj.meta;
+  REPLAY.fps = traj.meta.control_hz || 50;
+  REPLAY.on = true;
+  REPLAY.playing = true;
+  REPLAY.acc = 0;
+  groundClamp = false;
+  $('ground').checked = false;
+  $('replay-box').style.display = 'flex';
+  $('replay').textContent = '退出回放';
+  $('play').textContent = '暂停';
+  const slider = $('replay-t');
+  slider.max = String(Math.max(0, traj.frames.length - 1));
+  slider.value = '0';
+  const info = $('replay-info');
+  if (info) {
+    const m = traj.meta;
+    info.textContent = `${m.target} amp=${m.amp} gravity=${m.gravity} · 0.00 s`;
+  }
+  applyReplayFrame(0);
+}
+
+/** 每帧调用：按真实时间推进回放时钟 */
+function tickReplay(dt) {
+  if (!REPLAY.on || !REPLAY.playing || !REPLAY.frames.length) return;
+  REPLAY.acc += dt * REPLAY.fps;
+  if (REPLAY.acc < 1) return;
+  let step = Math.floor(REPLAY.acc);
+  REPLAY.acc -= step;
+  let next = REPLAY.i + step;
+  if (next >= REPLAY.frames.length) next = 0;   // 循环
+  applyReplayFrame(next);
+}
+
 let lastSize = { w: 0, h: 0 };
+let lastFrameMs = performance.now();
 function animate() {
+  const nowMs = performance.now();
+  const dt = Math.min(0.1, (nowMs - lastFrameMs) / 1000);
+  lastFrameMs = nowMs;
+  tickReplay(dt);
   // 右半边机器人每帧跟随左半边的位姿（贴地/回零会改 robotGroup 的位移）
   if (SPLIT.on && SPLIT.root) {
     SPLIT.root.position.copy(robotGroup.position);
@@ -523,6 +609,23 @@ function animate() {
     }
   });
   $('fit').addEventListener('click', () => fitView());
+  $('replay').addEventListener('click', async () => {
+    try {
+      if (REPLAY.on) { stopReplay(); return; }
+      const url = new URLSearchParams(location.search).get('replay') || './data/replay-duck-pd.json';
+      await startReplay(url);
+    } catch (e) { alert('回放失败：' + (e.message || e)); }
+  });
+  $('play').addEventListener('click', () => {
+    if (!REPLAY.on) return;
+    REPLAY.playing = !REPLAY.playing;
+    $('play').textContent = REPLAY.playing ? '暂停' : '播放';
+  });
+  $('replay-t').addEventListener('input', (e) => {
+    if (!REPLAY.on) return;
+    REPLAY.playing = false; $('play').textContent = '播放';
+    applyReplayFrame(Number(e.target.value));
+  });
   for (const [id, kind] of [['view-x', 'alongX'], ['view-y', 'alongY'], ['view-top', 'top']]) {
     const el = $(id);
     if (el) el.addEventListener('click', () => setView(kind));
