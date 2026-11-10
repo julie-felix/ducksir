@@ -8,7 +8,11 @@
 每步输出三样东西给 JS：
 
     输入 (3)   [policy_command 脉冲, 重力 z 分量, 前进指令 vx]
-    输出 (15)  [state, policy_mode, command(13)]
+    输出 (16)  [state, policy_mode, command(13), clear_last_action]
+
+`clear_last_action` 是 botlab 图里那个 `where(clear_last_action, 0, last_action)`：
+在 SIT_ENTER 的第一步、WALK_RESET、RECOVER_ENTER 这三种时刻，观测里的 `last_action` 必须清零。
+漏了它，坐完站起来时会把坐姿策略的上一帧动作喂给行走策略——第一帧动作直接顶飞，看起来就是「站起来就滚」。
 
 `command(13)` 是喂给策略的指令向量，按状态分三种：行走用 [vx,0…]；坐/站用 [1,0…]；
 地面拾取用 [phase,0…]（phase 来自 `phase_clock(machine.steps, 200)`）。这一层直接照 botlab 的
@@ -34,7 +38,7 @@ import run_fsm as F  # noqa: E402
 
 
 def build() -> dict:
-    p = ir.Plan(input_dim=3, output_dim=15, name="microduck-fsm")
+    p = ir.Plan(input_dim=3, output_dim=16, name="microduck-fsm")
 
     cmd = p.reorder(p.obs(0, 1), [0])        # policy_command 脉冲
     gz = p.reorder(p.obs(1, 1), [0])         # 重力 z 分量
@@ -84,13 +88,27 @@ def build() -> dict:
     phase = p.phase_clock(steps, F.GROUND_PICK_PERIOD_STEPS)
     gp_cmd = p.concat(phase, zero12)
 
+    # 严格照 botlab 的 `_command()`：只有 WALK/WALK_RESET 给速度、**只有 SIT** 给 sit_command、
+    # 只有 GROUND_PICK 给相位；其余状态（含 SIT_ENTER / SIT_EXIT）一律**零指令**。
+    # 之前把 SIT_ENTER/SIT_EXIT 也给了 [1,0…]，结果「坐下成功、起身就滚」——(2026-11-10 踩过)
     cmd13 = p.add(
         select_by_state({0: walk_cmd, 6: walk_cmd, 10: walk_cmd}),
-        select_by_state({1: sit_cmd, 2: sit_cmd, 3: sit_cmd}),
+        select_by_state({2: sit_cmd}),
         select_by_state({9: gp_cmd}),
     )
 
-    p.out_action(p.concat(state, mode, cmd13))
+    # clear_last_action = (state==SIT_ENTER & steps==0) | (state==WALK_RESET) | (state==RECOVER_ENTER)
+    def eq_const(x, v):
+        return p.compare(x, "eq", p.constant([float(v)]))
+
+    sit_enter_first = p.compare(p.add(eq_const(state, F.SIT_ENTER), eq_const(steps, 0.0)),
+                                "gte", p.constant([2.0]))
+    is_walk_reset = eq_const(state, F.WALK_RESET)
+    is_recover_enter = eq_const(state, F.RECOVER_ENTER)
+    clear = p.compare(p.add(sit_enter_first, is_walk_reset, is_recover_enter),
+                      "gte", p.constant([1.0]))
+
+    p.out_action(p.concat(state, mode, cmd13, clear))
     return p.to_json()
 
 
@@ -114,7 +132,7 @@ def main() -> int:
                        (9, F.POLICY_GROUND_PICK), (10, F.POLICY_WALK),
                        (11, F.POLICY_STAND), (12, F.POLICY_STAND), (13, F.POLICY_STAND)]}},
                   f, ensure_ascii=False, indent=2)
-    print(f"写入 {out}/fsm.blob（{len(blob)} B，{len(doc['nodes'])} 节点，3 → 15）")
+    print(f"写入 {out}/fsm.blob（{len(blob)} B，{len(doc['nodes'])} 节点，3 → 16）")
     return 0
 
 
