@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>ducksir · 自检</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; padding:14px; background:#0b0f14; color:#d7dde5;
+         font:13px/1.6 system-ui,-apple-system,"Noto Sans CJK SC",sans-serif; }
+  h1 { font-size:15px; margin:0 0 4px; }
+  .sub { color:#8b98a8; font-size:12px; margin-bottom:12px; }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th, td { text-align:left; padding:5px 8px; border-bottom:1px solid #22303f; vertical-align:top; }
+  th { color:#8b98a8; font-weight:500; width:180px; }
+  .ok { color:#63d18a; } .bad { color:#e5675f; } .warn { color:#e6b45f; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size:11.5px; word-break:break-all; }
+  pre { background:#0e151d; border:1px solid #22303f; border-radius:8px; padding:10px;
+        white-space:pre-wrap; word-break:break-all; font-size:11.5px; }
+  button { background:#1b6e3f; border:1px solid #2f8f57; color:#e8fff1; border-radius:8px;
+           padding:8px 14px; font:inherit; margin:6px 0; }
+</style>
+</head>
+<body>
+<h1>自检</h1>
+<div class="sub">这一步只验证「页面能不能跑、接口通不通」，不加载 three.js。把这张表截图发我就够定位。</div>
+<table id="rows"></table>
+<button id="imp">动态 import studio.js（复现失败原因）</button>
+<pre id="out">（未执行）</pre>
+
+<script>
+  // 故意用**普通 script**（不是 module）：即使 module 整条链坏了，这一页也能跑起来报告问题。
+  const rows = document.getElementById('rows');
+  const out = document.getElementById('out');
+  const add = (k, v, cls) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<th>${k}</th><td class="${cls || ''}">${v}</td>`;
+    rows.appendChild(tr);
+  };
+  const IN_PANEL = location.pathname.indexOf('/ducksir-static/') === 0;
+  const API = IN_PANEL ? '/ducksir-live' : '';
+
+  add('页面版本', '2026-11-11 01:10');
+  add('页面地址', `<code>${location.pathname}${location.search}</code>`);
+  add('判定', IN_PANEL ? '面板内 → API=/ducksir-live' : '直开 → API=根路径', 'ok');
+  add('浏览器', navigator.userAgent.slice(0, 90));
+
+  const errs = [];
+  window.addEventListener('error', (e) => { errs.push('error: ' + (e.message || e)); render(); });
+  window.addEventListener('unhandledrejection', (e) => { errs.push('reject: ' + (e.reason?.message || e.reason)); render(); });
+  function render() { add('捕获的错误', errs.length ? `<code>${errs.join('<br>')}</code>` : '（无）', errs.length ? 'bad' : 'ok'); }
+
+  async function probe(label, url, wantType) {
+    try {
+      const res = await fetch(url);
+      const ct = res.headers.get('content-type') || '';
+      const text = res.ok ? await res.text() : '';
+      const typeOk = !wantType || ct.includes(wantType);
+      add(label, `${res.status} · <code>${ct}</code> · ${text.length} B`,
+          res.ok && typeOk ? 'ok' : 'bad');
+      return res.ok && typeOk;
+    } catch (e) {
+      add(label, `请求失败：<code>${e.message || e}</code>`, 'bad');
+      return false;
+    }
+  }
+
+  (async () => {
+    await probe('后端 /status', API + '/status', 'json');
+    await probe('studio.js', './studio.js', 'javascript');
+    await probe('three.module.js', './vendor/three/three.module.js', 'javascript');
+    await probe('OrbitControls.js', './vendor/three/controls/OrbitControls.js', 'javascript');
+    await probe('GLTFLoader.js', './vendor/three/loaders/GLTFLoader.js', 'javascript');
+    await probe('duck-hd1910.json', './data/duck-hd1910.json', 'json');
+    await probe('一个 GLB', '../../assets/microduck/trunk_base.glb', '');
+    add('importmap 支持', HTMLScriptElement.supports && HTMLScriptElement.supports('importmap')
+        ? '支持' : '不支持（旧浏览器，module 里 import "three" 会失败）',
+        HTMLScriptElement.supports && HTMLScriptElement.supports('importmap') ? 'ok' : 'bad');
+    render();
+  })();
+
+  document.getElementById('imp').onclick = async () => {
+    out.textContent = '导入中…';
+    try {
+      await import('./studio.js?selftest=1');
+      out.textContent = '导入成功（说明 module 链没问题；那症状就在运行期，把控制台错误发我）';
+    } catch (e) {
+      out.textContent = '导入失败：' + (e && (e.message || e));
+    }
+  };
+</script>
+</body>
+</html>

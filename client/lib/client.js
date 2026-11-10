@@ -24,6 +24,7 @@ window.__ModuleLoader__.load({
       { id: 'live', label: '自算比对', file: 'live.html', hint: '浏览器算一遍 action，和宿主比' },
       { id: 'inspect', label: '实验台', file: 'inspect.html', hint: '面板指标 / 判据 / 摘要链 / Python 用法' },
       { id: 'studio', label: '工作台', file: 'studio.html', hint: '起仿真 → 实时 3D + 参数滑杆 + 文件树' },
+      { id: 'selftest', label: '自检', file: 'selftest.html', hint: '页面与接口逐项探测；出问题先看这页' },
     ]
 
     var CSS = [
