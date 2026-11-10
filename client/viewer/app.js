@@ -384,6 +384,7 @@ async function show(meta) {
   $('busy').style.display = 'grid';
   const data = await (await fetch(`./data/${meta.file}`)).json();
   robotGroup.position.set(0, 0, 0);
+  splitReset();                       // 换机型：右半边必须重来，否则会拿旧的机器人对比
   await buildRobot(data);
   renderJointList(data);
   // ?pose=knee_l:-40,hip_l:20（角度制），用于截图核对 FK，也可当姿态快照的雏形
@@ -427,7 +428,9 @@ async function show(meta) {
     }
   }
   $('busy').style.display = 'none';
-  initParallelOverlay(data).catch((e) => console.warn('并联叠加层初始化失败', e));
+  initParallelOverlay(data)
+    .then(() => splitEnsure())
+    .catch((e) => console.warn('并联叠加层初始化失败', e));
 }
 
 /** 一键切到标准视角：alongX（沿销轴看）/ alongY（侧看）/ top（俯视）。 */
@@ -867,6 +870,19 @@ async function initParallelOverlay(data) {
     }
   }
   if (qs.has('split')) setTimeout(() => { if (!SPLIT.on) splitToggle(); }, 600);
+  if (qs.get('selftest') === 'switch') {
+    setTimeout(() => {
+      console.log('SWITCH before: left', current.data.id, 'split joints',
+        SPLIT.joints ? SPLIT.joints.size : '-');
+      const sel = document.getElementById('robot');
+      sel.value = 'g1-29dof';
+      sel.dispatchEvent(new Event('change'));
+      setTimeout(() => {
+        console.log('SWITCH after: left', current.data.id, 'split joints',
+          SPLIT.joints ? SPLIT.joints.size : '-', 'sides', SPLIT.sides.length);
+      }, 4000);
+    }, 2500);
+  }
   if (qs.has('selftest')) setTimeout(() => {
     const f = (v) => `(${v.toArray().map((x) => x.toFixed(3)).join(',')})`;
     console.log('CAM left pos', f(camera.position), 'target', f(controls.target), 'fov', camera.fov);
@@ -937,6 +953,13 @@ async function splitToggle() {
   $('cap-l').textContent = SPLIT.on ? '我们的解算' : '我们的解算';
   if (!SPLIT.on) return;
   splitInit();
+  await splitEnsure();
+}
+
+/** 按当前机型建好右半边（换机型后要重来）。 */
+async function splitEnsure() {
+  if (!SPLIT.on) return;
+  splitInit();
   if (!SPLIT.ready && !SPLIT.building && current) {
     SPLIT.building = true;
     SPLIT.root = new THREE.Group();
@@ -980,6 +1003,26 @@ async function splitToggle() {
   if (!SPLIT.camHooked) { hookCamSync(); SPLIT.camHooked = true; }
   camSync(camera, controls, SPLIT.camera, SPLIT.controls);
   for (const side of Object.values(PAR.sides)) splitUpdate(side);
+}
+
+/** 换机型：把右半边拆干净（否则会变成「G1 对比天工」）。 */
+function splitReset() {
+  if (SPLIT.root && SPLIT.scene) {
+    SPLIT.scene.remove(SPLIT.root);
+    SPLIT.root.traverse((o) => {
+      if (o.isMesh) {
+        o.geometry?.dispose?.();
+        if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose?.());
+        else o.material?.dispose?.();
+      }
+    });
+  }
+  SPLIT.root = null;
+  SPLIT.joints = null;
+  SPLIT.sides = [];
+  SPLIT.ready = false;
+  SPLIT.building = false;
+  SPLIT.data = new Map();
 }
 
 /** 更新右半边：机器人与连杆都按 MuJoCo 的 roll/pitch。 */
