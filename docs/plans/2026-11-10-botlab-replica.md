@@ -901,3 +901,39 @@ Duck().run(seconds=2) → panel {rtf 165.891, p95 0.13 ms, deadline_miss 0, upri
 ```
 
 **还没做**：参数可改（现在只读展示）、指标历史/曲线（现在是一次运行的一张快照）。
+
+### W10（2026-11-11）「写代码 → 启动 → 跑仿真」
+
+照 botlab 那条链做出来，但按我们自己定的取舍：
+
+| 决定 | 选择 | 理由 |
+|---|---|---|
+| 入口 | `ducksir run project.py`，循环归 CLI | 循环里一堆不该让用户写对的东西（频率比、推理节流、读契约、报告、中断） |
+| 脚本写什么 | **只声明**（链式 `Project`），不写 run | 「跑多久/开不开浏览器」应该由命令参数决定，改它们不用改代码 |
+| Python 每步逃生口 | **不做**；表达不了就扩图 | 跨端一致性优先；加节点有三条准入标准（写进 `contract/plan/README.md`） |
+| 显示 | 起本机显示服务 + 自动开浏览器实时跟随 | 照 botlab `--native` 的形状；但用 **SSE** 而不是 WebSocket（无依赖、标准库够用） |
+
+**新增**
+
+- `sim/plan/graph.py`：高层构图 API。`Graph.standard(...)` 与 `run_policy.build_plan()` **产出逐字节相同的 blob**
+  （`test_graph_equiv.py` 直接比字节）。
+- `sim/sdk/ducksir.py` 里的 `Project`：链式声明 `policy/command/rates/seconds`，`describe()` 给 runner 用；
+  频率不成整数倍、没登记策略都会**早报错**。
+- `sim/host/run_project.py`：加载脚本 → 建物理 → 编译图 → ORT 会话 → 循环（`--seconds`/`--steps` 双上限）→
+  报告；Ctrl-C **先落盘**、报告记 `interrupted: true`、退出码 130；`--pace auto`（开显示时按实时，否则全速）。
+- `sim/host/display.py`：本机显示服务，`/scene`（body 名序）+ `/stream`（SSE，`{t, pos, quat}`）+ `/static/*`；
+  只绑 127.0.0.1，同时供 `follow.html`。
+- `client/viewer/follow.html`：实时跟随页，只做「连流 → 按帧设每个 link 的位姿 → HUD」。
+- CLI：`run` 给项目脚本，老的 `--policy/--fsm` 改名 `ducksir sim`（实现一行未删）。
+
+**验收**
+
+```
+python3 sim/test/test_graph_equiv.py      builder 与 ir.Plan 的 blob 完全相同（764 B，13 节点）
+python3 sim/test/test_project_run.py      正常跑 / Ctrl-C 落盘退出码 130 / 写错早报错
+python3 sim/test/test_follow_stream.py    /follow 可访问、SSE 12 帧、pos%3==0、quat%4==0、时间戳单调
+bash sim/test/test_cli.sh                 validate / build / sim / run 全过
+```
+
+**还没做**：多策略在项目里切换（要接状态机）、参数热更新、板端。显示用 SSE 而非 botlab 的 WebSocket——
+形状对齐、实现更薄，但**不是二进制协议**，将来要推高帧率/大模型时可能要换。

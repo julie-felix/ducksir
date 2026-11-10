@@ -167,8 +167,10 @@ env -u https_proxy -u HTTPS_PROXY -u http_proxy -u HTTP_PROXY -u all_proxy -u AL
 ```bash
 bin/ducksir validate              # 实体 C1–C9 + manifest + 图编译 + MJCF load，一次查完
 bin/ducksir build                 # 产出 build/release/<时间戳>/：duck.xml + preset + blob + 模型 + contract.json + release.json
-bin/ducksir run --seconds 20 --vx 0.25      # 单策略闭环
-bin/ducksir run --fsm --pulses 3:1,8:1      # 14 状态机
+bin/ducksir run sim/test/fixtures/project_demo.py --seconds 20   # 跑项目脚本（默认自动开浏览器实时跟随）
+bin/ducksir run project.py --no-browser --report build/report/p.json
+bin/ducksir sim --seconds 20 --vx 0.25      # 单策略闭环（原 `run --policy`）
+bin/ducksir sim --fsm --pulses 3:1,8:1      # 14 状态机（原 `run --fsm`）
 bin/ducksir golden                # 与快照逐位比（改核后跑）
 bin/ducksir golden --update       # 有意改行为时重新记录基准
 ```
@@ -182,7 +184,19 @@ from ducksir import Duck
 d = Duck(); print(d.joints()); report = d.run(seconds=10, vx=0.25)
 ```
 
-退出码统一（0 通过 / 1 失败）。三者都是薄包装（`tools/cli/ducksir.py`），真现在老脚本上。
+退出码统一（0 通过 / 1 失败）。都是薄包装（`tools/cli/ducksir.py`），真现在老脚本上。
+
+`run` 跑的是**项目脚本**（只声明，不启动）：
+
+```python
+# project.py
+import sys; sys.path.insert(0, "sim/sdk")
+from ducksir import Project
+project = (Project("duck-hd1910").policy("walking").command(forward=0.25).rates(control_hz=50, physics_hz=200))
+```
+
+显示：`run` 默认起本机显示服务（SSE，只绑 127.0.0.1）并打开 `follow.html` 实时跟随；
+`--no-open` 只起服务不开浏览器、`--no-browser` 全关。`--pace realtime|max|auto` 控制节拍。
 冒烟：`bash sim/test/test_cli.sh`。
 
 ## 8. 浏览器里跑物理 + 推理（素材）

@@ -213,8 +213,28 @@ def cmd_golden(args) -> int:
     return 0
 
 
-# ───────────────────────── run ─────────────────────────
+# ───────────────────────── run（项目脚本）─────────────────────────
 def cmd_run(args) -> int:
+    argv = ["--project", args.project]
+    if args.seconds is not None:
+        argv += ["--seconds", str(args.seconds)]
+    if args.steps is not None:
+        argv += ["--steps", str(args.steps)]
+    if args.report:
+        argv += ["--report", args.report]
+    if args.trajectory:
+        argv += ["--trajectory", args.trajectory]
+    if args.port is not None:
+        argv += ["--port", str(args.port)]
+    if args.no_browser:
+        argv += ["--no-browser"]
+    if args.no_open:
+        argv += ["--no-open"]
+    return _py("sim/host/run_project.py", *argv, quiet=False).returncode
+
+
+# ───────────────────────── sim（内置策略 / 状态机）─────────────────────────
+def cmd_sim(args) -> int:
     if args.fsm:
         argv = ["--mjcf", args.mjcf, "--preset", args.preset,
                 "--seconds", str(args.seconds), "--pulses", args.pulses]
@@ -253,16 +273,27 @@ def main(argv=None) -> int:
     b.add_argument("--out", help="输出目录（默认 build/release/<时间戳>）")
     b.set_defaults(fn=cmd_build)
 
-    r = sub.add_parser("run", help="跑策略或状态机（宿主）")
-    common(r)
-    r.add_argument("--mjcf", default=DEFAULT_MJCF)
-    r.add_argument("--seconds", type=float, default=20.0)
-    r.add_argument("--vx", type=float, help="前进指令（walk 用）")
-    r.add_argument("--fsm", action="store_true", help="跑 14 状态机而不是单策略")
-    r.add_argument("--pulses", default="3:1,8:1", help="--fsm 的指令脉冲，秒:值")
+    r = sub.add_parser("run", help="跑一个项目脚本（project.py）")
+    r.add_argument("project", help="项目脚本路径，例如 project.py")
+    r.add_argument("--seconds", type=float, help="跑多久（默认取脚本里的，否则 20s）")
+    r.add_argument("--steps", type=int, help="控制步上限（与 --seconds 先到先停）")
     r.add_argument("--report", help="写 JSON 报告")
     r.add_argument("--trajectory", help="写回放轨迹 JSON")
+    r.add_argument("--port", type=int, help="显示服务端口（默认 8765）")
+    r.add_argument("--no-browser", action="store_true", help="不起显示服务也不开浏览器")
+    r.add_argument("--no-open", action="store_true", help="起显示服务但不自动开浏览器")
     r.set_defaults(fn=cmd_run)
+
+    s = sub.add_parser("sim", help="跑内置策略或 14 状态机（宿主）")
+    common(s)
+    s.add_argument("--mjcf", default=DEFAULT_MJCF)
+    s.add_argument("--seconds", type=float, default=20.0)
+    s.add_argument("--vx", type=float, help="前进指令（walk 用）")
+    s.add_argument("--fsm", action="store_true", help="跑 14 状态机而不是单策略")
+    s.add_argument("--pulses", default="3:1,8:1", help="--fsm 的指令脉冲，秒:值")
+    s.add_argument("--report", help="写 JSON 报告")
+    s.add_argument("--trajectory", help="写回放轨迹 JSON")
+    s.set_defaults(fn=cmd_sim)
 
     g = sub.add_parser("golden", help="golden 快照比对（改核后确认行为没变）")
     g.add_argument("--update", action="store_true", help="重新记录基准（会写文件）")
