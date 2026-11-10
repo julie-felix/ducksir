@@ -27,7 +27,10 @@ const glb = (rel) => rel;   // duck-hd1910.json 里的 mesh 本来就是 ../../a
 
 // 启动标记：页面脚本真的跑起来了就先把这行改掉。
 // 如果顶栏停在初始文案，说明 module 没执行（importmap/路径问题），而不是 fetch 失败。
-document.getElementById('conn').textContent = '页面已加载';
+// 防呆：这段脚本也可能被别的页面动态 import（比如自检页），那里没有 #conn，
+// 不能因为一个标记就把整页炸掉。
+const bootConn = document.getElementById('conn');
+if (bootConn) bootConn.textContent = '页面已加载';
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));

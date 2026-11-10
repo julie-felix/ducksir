@@ -25,7 +25,8 @@
 <h1>自检</h1>
 <div class="sub">这一步只验证「页面能不能跑、接口通不通」，不加载 three.js。把这张表截图发我就够定位。</div>
 <table id="rows"></table>
-<button id="imp">动态 import studio.js（复现失败原因）</button>
+<button id="run">在工作台 iframe 里点「启动仿真」</button>
+<button id="imp">动态 import studio.js（只测 module 链）</button>
 <pre id="out">（未执行）</pre>
 
 <script>
@@ -92,6 +93,31 @@
     document.head.appendChild(el);
     return m[1].replace(/\s+/g, ' ').slice(0, 140);
   }
+
+  // 真·端到端：在 iframe 里点「启动仿真」，等 6 秒，读它顶栏 + 后端 status。
+  // 这一条能直接回答「点了启动到底发生了什么」。
+  document.getElementById('run').onclick = async () => {
+    out.textContent = '在 iframe 里点启动仿真…';
+    const fr = document.createElement('iframe');
+    fr.style.cssText = 'width:min(100%,520px);height:320px;border:1px solid #22303f;border-radius:8px;margin-top:8px';
+    fr.src = './studio.html?embed=1&_=run';
+    document.body.appendChild(fr);
+    await new Promise((r) => setTimeout(r, 3500));
+    try {
+      const doc = fr.contentDocument;
+      const btn = doc && doc.getElementById('btn-start');
+      if (!btn) throw new Error('iframe 里找不到「启动仿真」按钮');
+      btn.click();
+      out.textContent += '\n已点击，等 6 秒…';
+      await new Promise((r) => setTimeout(r, 6000));
+      const conn = doc.getElementById('conn');
+      const st = await (await fetch(API + '/status')).json();
+      out.textContent += `\n工作台顶栏：${conn ? conn.textContent : '（读不到）'}`
+        + `\n后端 status：${JSON.stringify(st)}`;
+    } catch (e) {
+      out.textContent += '\n失败：' + (e && (e.message || e));
+    }
+  };
 
   document.getElementById('imp').onclick = async () => {
     out.textContent = '导入中…';
