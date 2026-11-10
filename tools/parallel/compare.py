@@ -2,7 +2,7 @@
 """把解算器和 MuJoCo 对拍：给两个电机同一条正弦，比 pitch/roll 曲线。
 
     PYTHONPATH=/tmp/pylibs python3 tools/parallel/compare.py \
-        contract/robot/types/ankle-rig-tg10.yaml \
+        contract/robot/rigs/ankle-rig-tg10.yaml \
         refs/parallel-ankle/5_tiangong/urdf_TG10-00.xml
 
 做法（与笔记里的对拍同构）：

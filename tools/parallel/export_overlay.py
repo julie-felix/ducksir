@@ -7,7 +7,7 @@
 导出「并联踝叠加层」数据：几何（挂在 G1 踝 pitch link 坐标系里）+ MuJoCo 查表。
 
     PYTHONPATH=/tmp/pylibs python3 tools/parallel/export_overlay.py \
-        contract/robot/types/ankle-rig-g1.yaml /tmp/rig_g1_nomesh.xml \
+        contract/robot/rigs/ankle-rig-g1.yaml /tmp/rig_g1_nomesh.xml \
         -o client/viewer/data/parallel-g1-overlay.json --grid 41
 
 坐标系约定：rig 的 `pitch_link` 原点 = 踝的 pitch 关节中心（rig 里它在 z=0.15）。

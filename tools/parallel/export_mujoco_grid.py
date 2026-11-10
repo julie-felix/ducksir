@@ -2,7 +2,7 @@
 """导出 MuJoCo 的 (θA, θB) → (roll, pitch) 查表，给查看器做并排对比。
 
     PYTHONPATH=/tmp/pylibs python3 tools/parallel/export_mujoco_grid.py \
-        contract/robot/types/ankle-rig-g1.yaml /tmp/rig_g1_nomesh.xml --grid 41 -o ...
+        contract/robot/rigs/ankle-rig-g1.yaml /tmp/rig_g1_nomesh.xml --grid 41 -o ...
 
 rig 的 XML 里执行器是 **position 伺服**（讲者把 motor 改成了 position），
 所以直接把目标角写进 ctrl、跑几百步等它稳住，读 roll/pitch 就行；不需要自己写 PD。

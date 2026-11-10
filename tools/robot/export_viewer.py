@@ -74,6 +74,7 @@ def slim(doc: dict) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--with-cad", action="store_true", help="把 assets/cad 下的静态 GLB 也列进下拉")
     ap.add_argument("entities", nargs="+")
     ap.add_argument("--out", default=OUT)
     args = ap.parse_args()
@@ -91,8 +92,9 @@ def main() -> int:
         index.append({"id": data["id"], "name": data["name"], "file": file_name,
                       "links": len(data["links"]), "joints": len(data["joints"])})
         print(f"  {data['id']}: {len(data['links'])} link / {len(data['joints'])} joint → {file_name}")
-    cad_dir = os.path.join("assets", "cad")
-    if os.path.isdir(cad_dir):
+    # 静态 CAD 只做判读用，不进机型下拉（--with-cad 可临时加回来）
+    cad_dir = os.path.join("assets", "cad") if args.with_cad else None
+    if cad_dir and os.path.isdir(cad_dir):
         for name in sorted(os.listdir(cad_dir)):
             if not name.lower().endswith(".glb"):
                 continue

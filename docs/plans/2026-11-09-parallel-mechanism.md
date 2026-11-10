@@ -170,7 +170,7 @@ python3 tools/cad/mechanism.py "<x.stp>" --out /tmp/cadout   # → mechanism.md 
 ### 3.8 解算与对拍（2026-11-10 落地）
 
 代码：`tools/parallel/solver.py`（通用 2-DOF 并联解算）、`tools/parallel/compare.py`（与 MuJoCo 对拍）。
-机型：`contract/robot/types/ankle-rig-tg10.yaml`、`ankle-rig-g1.yaml`（从讲者的 XML 导入，含 `loops[]`）。
+机型：`contract/robot/rigs/ankle-rig-tg10.yaml`、`ankle-rig-g1.yaml`（从讲者的 XML 导入，含 `loops[]`）。
 
 **解算怎么写的（不搬他的代码，只借三条思路）**
 

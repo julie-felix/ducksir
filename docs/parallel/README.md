@@ -26,7 +26,7 @@ MuJoCo 侧用 **41×41 的 (θA,θB) → (roll,pitch) 查表** 双线性插值�
 
 ```bash
 PYTHONPATH=/tmp/pylibs python3 tools/parallel/export_mujoco_grid.py \
-    contract/robot/types/ankle-rig-g1.yaml /tmp/rig_g1_nomesh.xml \
+    contract/robot/rigs/ankle-rig-g1.yaml /tmp/rig_g1_nomesh.xml \
     --grid 41 --span 0.5 -o client/viewer/data/mujoco-grid-g1.json
 ```
 
@@ -44,3 +44,11 @@ https://100.110.238.101:3080/ducksir-static/client/viewer/index.html?robot=tienk
 - 并联结构补在 `contract/robot/specs/tienkung-lite-parallel.yaml`：左右踝 analytic，连杆几何沿用
   讲者的 TC10-00 装配 rig —— 依据是 rig 的 roll 相对 pitch 位移 `(0,0,0)` 与 Lite 的 `ankle_roll_*_joint` origin 一致；
 - `ab_unresolved: true`：Lite URDF 里没有电机关节，A/B 槽位尚未确定，所以侧栏 AB 读数显示「-」。
+
+## 下拉里只保留三台
+
+查看器的机型下拉现在只有 **G1（完整 29DOF）、天工 Lite、小鸭子（MicroDuck）**，
+以及 `assets/cad` 下的静态 CAD（默认不再列出，`python3 tools/robot/export_viewer.py --with-cad ...` 可加回）。
+
+两个 rig（`ankle-rig-tg10` / `ankle-rig-g1`）不再是机型，挪到了 `contract/robot/rigs/`：
+它们只用来给 G1 / 天工 Lite 提供并联几何与 MuJoCo 查表的来源。
