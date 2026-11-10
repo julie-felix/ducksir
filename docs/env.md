@@ -162,6 +162,18 @@ env -u https_proxy -u HTTPS_PROXY -u http_proxy -u HTTP_PROXY -u all_proxy -u AL
 
 **不在 CI 里跑**：runner 没有 emsdk，`test_wasm_parity.py` 缺产物会自动跳过（exit 0）。
 
+## 7.5 统一入口 `ducksir`
+
+```bash
+bin/ducksir validate              # 实体 C1–C9 + manifest + 图编译 + MJCF load，一次查完
+bin/ducksir build                 # 产出 build/release/<时间戳>/：duck.xml + preset + blob + 模型 + contract.json + release.json
+bin/ducksir run --seconds 20 --vx 0.25      # 单策略闭环
+bin/ducksir run --fsm --pulses 3:1,8:1      # 14 状态机
+```
+
+退出码统一（0 通过 / 1 失败）。三者都是薄包装（`tools/cli/ducksir.py`），真现在老脚本上。
+冒烟：`bash sim/test/test_cli.sh`。
+
 ## 8. 浏览器里跑物理 + 推理（素材）
 
 ```bash

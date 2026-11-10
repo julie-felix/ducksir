@@ -822,3 +822,18 @@ VEL_FWD = 0.25   VEL_BACK = -0.2   VEL_ANG = 1.0
    页面直接抛 `ReferenceError: N_JOINTS is not defined`。改成载入契约后按 `contract.robot.joints.length` 建数组。
 3. **静态守卫加一条**：`test_play_page_ids.mjs` 现在还检查「`play.js` 从 `play-core` 导入的每个名字都真有导出」——
    这类漏改不靠跑起来才发现。11 个导入名全过。
+
+### W9b（2026-11-10）统一 CLI 三件套
+
+照 botlab 的 `run/build/validate` 收了一条统一入口 `bin/ducksir`（薄包装 `tools/cli/ducksir.py`）：
+
+| 子命令 | 干什么 | 为什么需要 |
+|---|---|---|
+| `validate` | 实体 C1–C9 + manifest 校验 + 图编译 + MJCF load，四步一次跑完 | 以前散在三个脚本，且只有编译期才发现 |
+| `build` | 产出 `build/release/<时间戳>/`：`duck.xml` + `preset.yaml` + 3 个 blob + 7 个模型 + `contract.json` + **`release.json`**（每个文件的 sha256） | 「从声明产出可分发的包」这条链以前是断的 |
+| `run` | 单策略闭环 / 14 状态机（透传到老的 `run_policy.py` / `run_fsm.py`） | 免去记一堆参数 |
+
+**验收**：`bash sim/test/test_cli.sh` 四条全过（validate / build / run --policy / run --fsm），产物 13 个文件带摘要。
+
+**还没做**（比 botlab 少的）：`deploy` / `agent` / `target` / `control`（部署子系统整体推迟，见 `docs/botlab-diff.md` §5），
+`ui`（我们有面板，不需要它的 UI 快照管理）。

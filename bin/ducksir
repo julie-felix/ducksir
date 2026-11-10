@@ -1,0 +1,3 @@
+#!/bin/sh
+# ducksir 统一入口（薄包装）：真现在 python3 tools/cli/ducksir.py
+exec python3 "$(dirname "$0")/../tools/cli/ducksir.py" "$@"
