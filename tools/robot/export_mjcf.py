@@ -25,10 +25,16 @@ def _vec(xs) -> str:
     return " ".join(_f(x) for x in xs)
 
 
-def export(doc: dict) -> ET.ElementTree:
+def export(doc: dict, mesh_dir: str | None = None, mesh_ext: str | None = None) -> ET.ElementTree:
     root = ET.Element("mujoco", model=doc["robot"]["id"])
-    assets_dir = doc["robot"].get("assets_dir") or "assets"
+    assets_dir = mesh_dir or doc["robot"].get("assets_dir") or "assets"
     ET.SubElement(root, "compiler", angle="radian", meshdir=assets_dir, autolimits="true")
+
+    def _mesh_file(mesh_path: str) -> str:
+        base = os.path.basename(mesh_path)
+        if mesh_ext:
+            base = os.path.splitext(base)[0] + "." + mesh_ext.lstrip(".")
+        return base
 
     links = {l["name"]: l for l in doc["links"]}
     children: dict[str, list] = {}
@@ -44,7 +50,7 @@ def export(doc: dict) -> ET.ElementTree:
             if not name or name in seen_mesh:
                 continue
             seen_mesh.add(name)
-            ET.SubElement(asset, "mesh", name=name, file=os.path.basename(item["mesh"]))
+            ET.SubElement(asset, "mesh", name=name, file=_mesh_file(item["mesh"]))
             rgba = item.get("material") or []
             if rgba and rgba not in materials:
                 materials.append(rgba)
@@ -55,7 +61,8 @@ def export(doc: dict) -> ET.ElementTree:
 
     def build(link: dict, parent_el: ET.Element) -> None:
         body = ET.SubElement(parent_el, "body", name=link["name"])
-        if link.get("parent") == "world":
+        # 根 link 的 parent 可能写成 null，也可能写成 "world"；两种都算根（否则少一个 freejoint）
+        if (link.get("parent") or "world") == "world":
             body.set("pos", _vec(link["transform"]["xyz"]))
             if doc["frames"].get("world_attachment") == "floating":
                 ET.SubElement(body, "freejoint", name=doc["frames"].get("freejoint") or f"{link['name']}_freejoint")
@@ -134,9 +141,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("entity")
     ap.add_argument("-o", "--output", required=True)
+    ap.add_argument("--mesh-dir", help="MJCF 的 meshdir（默认取实体里的 assets_dir）")
+    ap.add_argument("--mesh-ext", help="强制 mesh 扩展名，例如 stl（MuJoCo 不认 glb）")
     args = ap.parse_args()
     doc = E.read_yaml(args.entity)
-    tree = export(doc)
+    tree = export(doc, args.mesh_dir, args.mesh_ext)
     ET.indent(tree, space="  ")
     os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
     tree.write(args.output, encoding="utf-8", xml_declaration=True)

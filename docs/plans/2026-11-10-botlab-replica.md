@@ -148,3 +148,35 @@ v0.1 补：`compare` / `logic`（`state_machine` 的 `when` 需要真值输入�
 1. **端侧 aarch64 何时进来**：D16 定了产物形状，但第一版不实跑板子。硬件路线（kissqy / fanhao375）与舵机（XL330 / HD1910）还没定，`types/duck-hd1910.yaml` 已存在说明倾向 HD1910，但没拍板。
 2. **训练侧还没有管线**，第一版 manifest 只能手写或脚本生成；mjlab 真接进来时这份 schema 要不要改。
 3. **在线改图/改代码**（botlab 编辑器那一层）要不要做，以及在交互版跑通之后再做还是不做。
+
+---
+
+## 9. 进度记录
+
+### W1（2026-11-10）canonical → MJCF，三台机型都能加载
+
+**交付**
+
+- `tools/robot/export_mjcf.py`：加 `--mesh-dir` / `--mesh-ext`（MuJoCo 不认 glb，要能指到 STL）；修根 link 判断——`parent` 写成 `null` 和写成 `"world"` 都算根，原来只认后者，导致 G1 与天工**少一个 freejoint**。
+- `tools/robot/glb2stl.py`（新，零依赖）：glb → 二进制 STL，带顶点聚类简化（STL 解码器上限 20 万面/文件）。
+- `tools/robot/mjcf_smoke.py`（新）：三台机型导出 → 加载 → 抓 stderr 数警告 → 比总质量。
+- `docs/env.md`（新）：依赖目录 + `PYTHONPATH`、mesh 来源与限制。
+
+**验收**（`python3 tools/robot/mjcf_smoke.py`）
+
+| 机型 | load | body | jnt | act | 质量 (kg) | canonical | warn |
+|---|---|---|---|---|---|---|---|
+| duck-hd1910 | OK | 16 | 15 | 14 | 0.73724318 | 0.73724318 | 0 |
+| g1-29dof | OK | 40 | 30 | 0 | 33.34114202 | 33.34114202 | 0 |
+| tienkung-lite | OK | 23 | 21 | 0 | 42.51599707 | 42.51599707 | 0 |
+
+**三个发现**（都是 canonical 或 exporter 的真空洞，不是环境问题）
+
+1. **根 link 的 `parent` 有两种写法**。鸭子写 `"world"`，G1 / 天工写 `null`；exporter 只认前者 → 后两台少了 freejoint（29/20 关节变 30/21）。已修，并提醒：`check_entity.py` 的 C1 只校验「parent 指得到」，没约束写法，这类不一致还能长出来。
+2. **天工的 mesh 只有 glb 且是重模**。`waist_link` 66.8 万面，MuJoCo 的 STL 解码器上限 20 万，必须简化；已用顶点聚类降到 2.07 万面。
+3. **G1 / 天工的 `actuators` 是空的** → `nu=0`。鸭子有 14 条（含 `kp/kv/forcerange/ctrlrange/armature` 等）。补它们要先把 `kp/kd/effortLimit` 落进 canonical（D13），属于 W2–W3，不是 W1 的活。
+
+**遗留**
+
+- MJCF 产物暂时只写到 `build/mjcf/`（gitignore）。它以后的家（`sim/` 还是 `contract/robot/export/`）等 W4 建 `sim/` 时一起定。
+- 环境仍靠 `PYTHONPATH` 约定，没有锁文件。若以后上 CI，需要在 runner 上装 mujoco 才能跑冒烟。
