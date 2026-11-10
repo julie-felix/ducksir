@@ -52,3 +52,8 @@ https://100.110.238.101:3080/ducksir-static/client/viewer/index.html?robot=tienk
 
 两个 rig（`ankle-rig-tg10` / `ankle-rig-g1`）不再是机型，挪到了 `contract/robot/rigs/`：
 它们只用来给 G1 / 天工 Lite 提供并联几何与 MuJoCo 查表的来源。
+
+## 半透明
+
+头部「模型半透明」是全局开关，对**三台机型都生效**（之前只在有并联机构的机型上生效，小鸭子勾了没反应，已修）。
+`?opaque=1` 可以不勾选进入，用于对比实心/半透明。

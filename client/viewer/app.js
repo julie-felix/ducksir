@@ -403,6 +403,13 @@ async function show(meta) {
   renderTree(data);
   renderMeta(data);
   fitView();
+  {
+    const tb = document.getElementById('translucent');
+    if (tb) {
+      if (new URLSearchParams(location.search).has('opaque')) tb.checked = false;
+      setTranslucent(tb.checked);
+    }
+  }
   const focus = new URLSearchParams(location.search).get('focus');
   if (focus) {
     const jn = current.joints.get(focus);
@@ -712,10 +719,11 @@ function setTranslucent(on) {
     if (!o.isMesh) return;
     const mats = Array.isArray(o.material) ? o.material : [o.material];
     for (const m of mats) {
-      if (m.userData.origOpacity === undefined) m.userData.origOpacity = m.opacity;
-      m.transparent = on || m.transparent;
+      if (m.userData.origOpacity === undefined) m.userData.origOpacity = 1;
+      if (m.userData.origTransparent === undefined) m.userData.origTransparent = m.transparent;
+      m.transparent = on ? true : m.userData.origTransparent;
       m.opacity = on ? 0.22 : m.userData.origOpacity;
-      m.depthWrite = !on;
+      m.depthWrite = on ? false : true;
       m.needsUpdate = true;
     }
   });
