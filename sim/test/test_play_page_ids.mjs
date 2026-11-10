@@ -27,6 +27,17 @@ if (badImports.length) {
 }
 console.log(`导入检查：${imported.length} 个名字全部在 play-core 里有导出`);
 
+// planFile('xxx') 的字面参数必须在契约里存在（这一处曾经写成 planFile(pol.file)，运行时才炸）
+const contract = JSON.parse(readFileSync(resolve(ROOT, 'client/viewer/data/live/contract.json'), 'utf8'));
+const planNames = new Set(Object.keys(contract.plans));
+const called = new Set([...js.matchAll(/planFile\('([^']+)'\)/g)].map((m) => m[1]));
+const badPlans = [...called].filter((n) => !planNames.has(n));
+if (badPlans.length) {
+  console.log('play.js 请求了契约里不存在的 plan：' + badPlans.join(', '));
+  process.exit(1);
+}
+console.log(`planFile 检查：${[...called].join(', ')} 都在契约里`);
+
 if (missing.length) {
   console.log('缺失：' + missing.join(', '));
   console.log('FAIL：脚本引用了页面里不存在的 id');
