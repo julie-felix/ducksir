@@ -17,6 +17,7 @@
 | `third_party/` | 上游原样文件（MJCF/URDF/许可），只加不改 |
 | `hardware/` | BOM、结构件、板卡、标定记录 |
 | `training/` | 重定向、跟踪训练、评估、导出 |
+| `sim/` | 编排 + 宿主仿真：物理、报告、图（`engine/` 那份 C++ 核由它拉起） |
 | `runtime/` | 端侧：总线、安全层、推理 |
 | `client/` | DSH 插件 |
 | `docs/sop/` | 人执行的操作手册 |
