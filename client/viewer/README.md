@@ -69,3 +69,25 @@ python3 sim/host/pd_hold.py --mjcf build/mjcf/duck-hd1910.xml \
 ```
 
 也可以 `?replay=./data/<别的>.json` 指定文件，或把按钮换成别的机型轨迹——机型和轨迹的关节名对不上会直接报错。
+
+### 回放为什么改了根节点的写法
+
+2026-11-10 第一版回放把自由基座位姿写到了 `robotGroup.position` 上，而根 link（鸭子的 `trunk_base`）本身还带着
+`link.xyz = [0, 0, 0.12]`——两边都加，整机就比物理里高 12 cm，看起来像浮在地板上。现在根节点自己吃 qpos，
+`robotGroup` 只负责 Z-up → Y-up 那层显示旋转。
+
+顺手修的观感问题：回放开始时自动关「模型半透明」并重算一次视角（退出回放还原）。
+
+### 怎么证明画面对得上物理
+
+```bash
+export PYTHONPATH=$HOME/.local/share/ducksir/pylibs
+python3 tools/robot/check_replay_fk.py \
+    client/viewer/data/duck-hd1910.json \
+    client/viewer/data/replay-duck-pd.json \
+    build/mjcf/duck-hd1910.xml
+# 首/中/末三帧，逐个 body 比，最大偏差 0.000 mm → PASS
+```
+
+它把页面那套 FK 复刻成 Python，用同一帧的 qpos 让 MuJoCo 算 `xpos` 对照。
+**肉眼看不出「渲染错」还是「模型本来躺成那样」时，跑这个用毫米说话。**

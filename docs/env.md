@@ -71,6 +71,10 @@ python3 tools/robot/mjcf_smoke.py
 python3 tools/robot/export_preset.py contract/robot/types/duck-hd1910.yaml \
     --mjcf build/mjcf/duck-hd1910.xml -o build/preset/duck-hd1910.preset.yaml
 
+# 回放画面与物理一致性（viewer FK vs MuJoCo xpos）
+python3 tools/robot/check_replay_fk.py client/viewer/data/duck-hd1910.json \
+    client/viewer/data/replay-duck-pd.json build/mjcf/duck-hd1910.xml
+
 # 与上游 MJCF 比结构
 python3 tools/robot/compare_mjcf.py build/mjcf/duck-hd1910.xml \
     third_party/fanhao-microduck-replica/robot_walk.xml
