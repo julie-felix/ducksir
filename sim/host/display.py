@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import json
+import mimetypes
 import os
 import queue
 import threading
@@ -28,12 +29,17 @@ LOOPBACK = ("127.0.0.1", "localhost")
 
 class Display:
     def __init__(self, port: int = 8765, scene: dict | None = None, host: str = "127.0.0.1",
-                 root: str | None = None):
+                 root: str | None = None, files_root: str | None = None,
+                 files: list[str] | None = None, command: dict | None = None):
         if host not in LOOPBACK:
             raise ValueError(f"display 只允许绑本机（现在 {host}）")
         self.host = host
         self.port = int(port)
         self.scene = scene or {}
+        self.files_root = files_root or ""
+        self.files = list(files or [])          # 允许只读展示的相对路径
+        self._command = dict(command or {})     # 实时指令（滑杆写这里）
+        self._stats = {}                        # runner 每步塞进来的小指标
         self.root = root or os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
             os.path.abspath(__file__)))), "client", "viewer")
         self._subs: list[queue.Queue] = []
@@ -53,10 +59,10 @@ class Display:
             def log_message(self, *args):  # 安静
                 pass
 
-            def _serve_file(self, rel, ctype=None):
-                import mimetypes
-                target = os.path.normpath(os.path.join(display.root, rel))
-                if not target.startswith(os.path.abspath(display.root)):
+            def _serve_file(self, rel, ctype=None, base=None):
+                base = base or display.root
+                target = os.path.normpath(os.path.join(base, rel))
+                if not target.startswith(os.path.abspath(base)):
                     self.send_response(403)
                     self.send_header("content-length", "0")
                     self.end_headers()
@@ -91,12 +97,48 @@ class Display:
                     self.end_headers()
                     self.wfile.write(body)
                     return
-                if self.path in ("/", "/follow", "/follow.html"):
+                if self.path in ("/", "/studio", "/studio.html"):
+                    self._serve_file("studio.html", "text/html; charset=utf-8")
+                    return
+                if self.path in ("/follow", "/follow.html"):
                     self._serve_file("follow.html", "text/html; charset=utf-8")
                     return
                 if self.path.startswith("/static/"):
                     rel = self.path[len("/static/"):].split("?")[0]
                     self._serve_file(rel)
+                    return
+                if self.path.startswith("/files"):
+                    body = json.dumps({"root": os.path.basename(display.files_root),
+                                       "files": display.files}, ensure_ascii=False).encode()
+                    self.send_response(200)
+                    self.send_header("content-type", "application/json; charset=utf-8")
+                    self.send_header("content-length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
+                if self.path.startswith("/file"):
+                    from urllib.parse import parse_qs, urlsplit
+                    rel = (parse_qs(urlsplit(self.path).query).get("path") or [""])[0]
+                    if rel not in display.files:
+                        self.send_response(403)
+                        self.send_header("content-length", "0")
+                        self.end_headers()
+                        return
+                    self._serve_file(rel, None, base=display.files_root)
+                    return
+                if self.path.startswith("/command"):
+                    from urllib.parse import parse_qs, urlsplit
+                    q = parse_qs(urlsplit(self.path).query)
+                    if q:
+                        got = {k: float(v[0]) for k, v in q.items() if k in ("forward", "yaw")}
+                        display.set_command(**got)
+                    body = json.dumps(display.get_command(), ensure_ascii=False).encode()
+                    self.send_response(200)
+                    self.send_header("content-type", "application/json; charset=utf-8")
+                    self.send_header("content-length", str(len(body)))
+                    self.send_header("access-control-allow-origin", "*")
+                    self.end_headers()
+                    self.wfile.write(body)
                     return
                 if self.path.startswith("/stream"):
                     self.send_response(200)
@@ -144,6 +186,21 @@ class Display:
             self._httpd.server_close()
             self._httpd = None
 
+    # ── 实时指令（滑杆 → runner）────────────────────────────
+    def set_command(self, **kw) -> None:
+        with self._lock:
+            for k in ("forward", "yaw"):
+                if k in kw:
+                    self._command[k] = float(kw[k])
+
+    def get_command(self) -> dict:
+        with self._lock:
+            return dict(self._command)
+
+    def set_stats(self, stats: dict) -> None:
+        with self._lock:
+            self._stats = dict(stats)
+
     @property
     def url(self) -> str:
         return f"http://{self.host}:{self.port}/stream"
@@ -155,8 +212,11 @@ class Display:
             xpos = xpos.reshape(-1)
         if hasattr(xquat, "reshape") and getattr(xquat, "ndim", 1) > 1:
             xquat = xquat.reshape(-1)
+        with self._lock:
+            stats = dict(self._stats)
         frame = {
             "t": round(float(t), 4),
+            "stats": stats,
             "pos": [round(float(v), 5) for v in xpos],
             "quat": [round(float(v), 5) for v in xquat],
         }
