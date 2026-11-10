@@ -76,6 +76,8 @@ def main() -> int:
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--no-browser", action="store_true", help="不起显示服务也不开浏览器")
     ap.add_argument("--no-open", action="store_true", help="起显示服务但不自动开浏览器")
+    ap.add_argument("--page", choices=("studio", "follow"), default="studio",
+                    help="打开哪个页面（默认 studio：文件树 + 3D + 参数/指标）")
     ap.add_argument("--pace", choices=("auto", "realtime", "max"), default="auto",
                     help="节拍：auto=开显示时按实时、否则全速（默认）")
     args = ap.parse_args()
@@ -163,17 +165,34 @@ def main() -> int:
 
     body_names = [mujoco.mj_id2name(m, mujoco.mjtObj.mjOBJ_BODY, i) or f"body{i}" for i in range(m.nbody)]
     scene = {"model": os.path.basename(args.mjcf), "bodies": body_names,
-             "control_hz": control_hz, "physics_hz": physics_hz}
+             "control_hz": control_hz, "physics_hz": physics_hz,
+             "policy": pol["key"], "project": os.path.basename(args.project)}
+
+    # studio 的文件树：项目脚本所在目录里的源码/配置（只读展示）
+    project_abs = args.project if os.path.isabs(args.project) else os.path.join(ROOT, args.project)
+    project_dir = os.path.dirname(project_abs) or ROOT
+    allow_ext = (".py", ".yaml", ".yml", ".md", ".json", ".txt")
+    proj_files = []
+    for name in sorted(os.listdir(project_dir)):
+        full = os.path.join(project_dir, name)
+        if os.path.isfile(full) and name.endswith(allow_ext):
+            proj_files.append(name)
+    # 再挂上仓库里跟这个项目有关的两份声明（相对路径，只读）
+    for rel in (cfg["manifest"], "contract/robot/postures/duck-hd1910.yaml"):
+        if os.path.exists(os.path.join(ROOT, rel)):
+            proj_files.append(rel)
 
     disp = None
     if not args.no_browser:
-        disp = DSP.Display(port=args.port, scene=scene).start()
+        disp = DSP.Display(port=args.port, scene=scene,
+                           files_root=project_dir, files=proj_files,
+                           command=dict(cfg["command"])).start()
         if not DSP.wait_ready(f"http://127.0.0.1:{args.port}"):
             print("  (显示服务没起来，继续无头跑)")
             disp.stop()
             disp = None
         else:
-            follow_url = f"http://127.0.0.1:{args.port}/follow"
+            follow_url = f"http://127.0.0.1:{args.port}/{args.page}"
             if not args.no_open:
                 webbrowser.open(follow_url)
             print(f"  显示：{follow_url}（SSE {disp.url}）")
@@ -206,6 +225,10 @@ def main() -> int:
             if interrupted:
                 break
             t_step = time.perf_counter()
+            if disp is not None:
+                live = disp.get_command()
+                cmd13[0] = float(live.get("forward", cmd13[0]))
+                cmd13[2] = float(live.get("yaw", cmd13[2]))
             obs = CO.make_obs(con, view, last_action=act, command=cmd13)
             bi = (ctypes.c_float * len(obs))(*obs.tolist())
             bo = (ctypes.c_float * n)()
@@ -225,6 +248,14 @@ def main() -> int:
             tilts.append(float(1 - 2 * (d.qpos[4] ** 2 + d.qpos[5] ** 2)))
             completed = k + 1
             if disp is not None:
+                disp.set_stats({
+                    "base_height": round(float(d.qpos[2]), 4),
+                    "upright": round(float(1 - 2 * (d.qpos[4] ** 2 + d.qpos[5] ** 2)), 4),
+                    "rtf": round(completed / max(1e-6, time.time() - t0), 2),
+                    "forward": round(float(cmd13[0]), 3),
+                    "yaw": round(float(cmd13[2]), 3),
+                    "step": completed,
+                })
                 disp.push(t_sim, d.xpos.reshape(-1), d.xquat.reshape(-1))
             if pace_realtime:
                 deadline += 1.0 / control_hz

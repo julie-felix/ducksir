@@ -937,3 +937,36 @@ bash sim/test/test_cli.sh                 validate / build / sim / run 全过
 
 **还没做**：多策略在项目里切换（要接状态机）、参数热更新、板端。显示用 SSE 而非 botlab 的 WebSocket——
 形状对齐、实现更薄，但**不是二进制协议**，将来要推高帧率/大模型时可能要换。
+
+### W11（2026-11-11）工作台页（照 botlab 的布局）
+
+BotLab 那页的骨架是「左文件树 + 中 3D + 下参数/指标/诊断 + 右栏图标」。我们做了同一副骨架，
+但**代码区只读**（在线编辑器要后端保存/冲突/持久化，我们的编辑本来在本地编辑器里）。
+
+**页面**（`client/viewer/studio.html` + `studio.js`，由 runner 的显示服务直接供）：
+
+| 区块 | 内容 |
+|---|---|
+| 顶栏 | 项目名 · 策略名 · 连接状态 |
+| 左 | 项目文件树（`.py/.yaml/.md/.json`）+ 点击只读查看（带行号样式） |
+| 中 | three.js 实时跟随 + HUD（t / 基座 / 直立 / 帧率）+ 键位提示条 |
+| 下 | 三个页签：**参数**（前进/转向滑杆，实时生效）、**指标**（每帧 stats）、**诊断**（模型/频率/body 数） |
+| 右 | 仿真 / 代码 / 指标 / 诊断 四个切换 |
+
+**服务端**（`sim/host/display.py`）新增：
+
+- `/files`、`/file?path=`：只读文件树，**路径白名单**（不在清单里一律 403；越界路径也拒）；
+- `/command?forward=&yaw=`：滑杆写进去，runner **下一步就采纳**；
+- SSE 帧里带 `stats`（基座高度、直立度、实时倍率、当前指令、步数）。
+
+**验收**（`python3 sim/test/test_follow_stream.py`）
+
+```
+PASS  /studio 能拿到工作台页 / /files 列出项目文件 / /file 能读内容 / 越界路径要拒绝 403
+PASS  SSE 20 帧、pos%3、quat%4、时间戳单调、帧里带 stats
+PASS  /command 写进去能读回 {forward:0.12, yaw:0.3}
+PASS  runner 真的采纳了滑杆值 0.12
+PASS  studio 页 14 处 id 引用全部命中（静态守卫）
+```
+
+**还没做**：在线编辑（写回文件）、曲线图、控制台输出流、AI 助手侧栏。

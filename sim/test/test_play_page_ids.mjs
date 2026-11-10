@@ -57,3 +57,15 @@ if (iMissing.length) {
   process.exit(1);
 }
 console.log(`inspect 页：${iRefs.size} 处引用全部命中`);
+
+// studio（工作台）同样要防「js 找 html 里没有的 id」
+const sHtml = readFileSync(resolve(ROOT, 'client/viewer/studio.html'), 'utf8');
+const sJs = readFileSync(resolve(ROOT, 'client/viewer/studio.js'), 'utf8');
+const sIds = new Set(sHtml.match(/\bid="([^"]+)"/g).map((m) => m.slice(4, -1)));
+const sRefs = new Set([...sJs.matchAll(/\$\('([^']+)'\)/g)].map((m) => m[1]));
+const sMissing = [...sRefs].filter((r) => !sIds.has(r));
+if (sMissing.length) {
+  console.log('studio.js 引用了不存在的 id：' + sMissing.join(', '));
+  process.exit(1);
+}
+console.log(`studio 页：${sRefs.size} 处引用全部命中`);
