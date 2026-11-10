@@ -106,7 +106,8 @@ python3 sim/plan/make_test_policy.py -o build/models/duck-hold.onnx
 
 # 策略闭环：obs → C 核（含 ONNX 推理）→ action → MuJoCo（W5 验收）
 python3 sim/host/run_policy.py --mjcf build/mjcf/duck-hd1910-all.xml \
-    --preset build/preset/duck-hd1910.preset.yaml --onnx build/models/duck-hold.onnx \
+    --preset build/preset/duck-hd1910.preset.yaml \
+    --manifest contract/policy/duck-hold.manifest.yaml \
     --seconds 30 --report build/report/policy.json \
     --trajectory client/viewer/data/replay-duck-policy.json
 
