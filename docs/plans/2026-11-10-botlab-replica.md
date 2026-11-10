@@ -525,3 +525,36 @@ botlab 自己的 torch↔onnxruntime 奇偶校验阈值是 1e-4；我们这条�
 
 **踩的坑**：`ort.min.mjs` 是含 WebGPU/WebNN 的默认构建，会去加载 `jsep` 那套胶水（29 MB）——缺文件直接报
 「no available backend found」。要用 `ort.wasm.min.mjs` + `ort-wasm-simd-threaded.{mjs,wasm}` 那一套。
+
+### W7c（2026-11-10）物理也搬进浏览器
+
+**做的**：`client/viewer/play.html` + `play.js` + `play-core.mjs`——浏览器里同时跑 **MuJoCo wasm 物理 + wasm 执行核 + ORT Web 推理**，
+three.js 只负责画。键盘 `W/S` 调前进指令，`R` 复位。这就是 botlab 那个「打开网页就能开鸭子」的原味体验。
+
+素材三样，两条命令复现（都不入库）：
+
+```bash
+python3 tools/vendor_mujoco_web.py                    # @mujoco/mujoco 4.0.0 的 js+wasm（11 MB）+ 38 个 STL（21 MB）
+PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 sim/host/export_browser_check.py   # plan blob + obs + model
+```
+
+**几个必须知道的实现细节**
+
+1. **MuJoCo 只吃 STL/OBJ**，而 viewer 用的是 GLB。所以物理侧单独拷一份 STL 到 `client/viewer/assets/mjcf/`，
+   MJCF 用 `--mesh-dir .` 导出，运行时按名字塞进 `MjVFS`。
+   **`MjVFS.addBuffer` 不接受 `./name` 这种带前缀的键**（error 2），只能加裸文件名。
+2. **`mjtObj` 的枚举是包装对象**，传给 `mj_name2id` 要取 `.value`，直接传会报 `Cannot convert "[object Object]" to int`。
+3. **模型字段是普通 TypedArray**（`Float64Array` / `Int32Array`），`data.qpos[i]` 直接读写；别用 `.set(i, v)`
+   （那是 TypedArray 的 `set(array, offset)`，会静默做错事）。
+4. 渲染不再用 FK：每个 link 的 group 直接吃 MuJoCo 的 `xpos/xquat`，`robotGroup` 那层仍负责 Z-up → Y-up。
+
+**验收（无头，`node sim/test/test_play_core.mjs`）**
+
+```
+模型：nbody=16 njnt=15 nq=21 nu=14 nsensor=5
+观测：61 维｜前 6 项 0.000, 0.000, 0.000, 0.000, 0.000, -1.000
+物理 200 步后基座高度 0.0349 m  PASS
+```
+
+浏览器里的最终画面需要你打开看：`python3 -m http.server 8123` → `/client/viewer/play.html`。
+（页面里 `data/live/`、`vendor/mujoco/`、`assets/mjcf/` 都是上面两条命令的产物。）

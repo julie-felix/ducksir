@@ -21,5 +21,8 @@ third_party/*/assets/
 
 # onnxruntime-web 的运行时（14 MB），用 tools/vendor_ort_web.py 抓
 client/viewer/vendor/ort/
+client/viewer/vendor/mujoco/
 # 浏览器自算用的策略权重（*.onnx 已在上面统一忽略）
 client/viewer/data/live/*.onnx
+# 浏览器物理用的 STL（21 MB），用 tools/vendor_mujoco_web.py 抓
+client/viewer/assets/mjcf/
