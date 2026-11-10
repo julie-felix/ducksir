@@ -1061,3 +1061,51 @@ PASS  /stop 成功 → 停止后 status 未运行
 
 **界面改动**：HUD 与「指标」页签加 `实际速度` / `路程`（把「走没走」变成数字）；
 参数页签加一句口径说明（<0.22 不响应，想看它走拉满 0.25）。
+
+### W12（2026-11-11）bundle：Python 退回编译期
+
+**动机**（庆喆的原话）：「Python 不应该只是一个 DSL 吗？为什么还需要执行 Python 的代码？它不应该只是一个编译期的东西吗？」
+
+对。之前的实现把「声明」和「驱动」混在一起：工作台必须起 Python 子进程跑循环，于是要反代、手机访问不到、
+同一个循环写了两份（宿主 / 浏览器）——`last_action` 的 bug 只出现在宿主那份里。
+
+**现在的分层**
+
+```
+编译期（Python，只跑一次）                     运行期（不执行任何 .py）
+project.py + manifest + preset                 bundle/
+        │                                        ├ contract.json
+        └─ ducksir build project.py --out bundle └ pre/post/fsm.blob + *.onnx + project.json
+                    └── export_artifacts.py      └ duck.xml + preset.yaml + release.json
+                                                       │
+                                     ┌─────────────────┴─────────────────┐
+                                浏览器 target（wasm 核 + ORT Web）   宿主 target（run_bundle.py）
+```
+
+**新产物与新入口**
+
+| 命令 | 作用 |
+|---|---|
+| `ducksir build --project project.py --out bundle/` | 编译：MJCF + preset + blob + 模型 + 契约 + `project.json` + `release.json`（每文件 sha256） |
+| `ducksir run bundle/ --seconds 20 --vx 0.25` | 运行 bundle（单策略常值指令） |
+| `ducksir run bundle/ --fsm --pulses 3:1,8:1` | 运行 bundle（状态机：坐站/踢腿/翻滚/拾取/起身） |
+| `ducksir run project.py` | 兼容老路径（内部仍是「加载脚本 → 建图 → 跑」），逐步被 build+run 取代 |
+
+`sim/host/run_bundle.py` 只吃产物：契约 → plan 形状与槽位 → `fsm.blob` → 观测配方 → `pre` → 模型（按 mode 选会话）→ `post` → ctrl。
+**它和浏览器那条链是同构的**：都是 fsm → obs → model → post。
+
+**验收：三路对拍**（`node sim/test/test_fsm_parity.mjs`）
+
+```
+bundle 状态迁移：3.00s→1，3.82s→2，8.00s→3，10.02s→10，10.06s→0
+宿主状态迁移：  3.00s→1，3.82s→2，8.00s→3，10.02s→10，10.06s→0
+浏览器状态迁移：3.00s→1，3.82s→2，8.00s→3，10.02s→10，10.06s→0
+bundle ↔ 浏览器状态迁移一致：是
+```
+
+单策略也一致：bundle `--forward 0.25` 10 s → 路程 1.53 m / 0.172 m/s，与浏览器 1.00 m/10 s 同量级
+（差在 1e-6 推理差被接触放大）。
+
+**还没做**：工作台改成「浏览器内跑 bundle」（现在是宿主 target 的调试器）。
+这一步完成后，工作台不需要子进程，手机也不依赖反代。
+
