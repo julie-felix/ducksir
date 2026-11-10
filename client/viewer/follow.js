@@ -8,6 +8,8 @@ import { OrbitControls } from '/static/vendor/three/controls/OrbitControls.js';
 import { GLTFLoader } from '/static/vendor/three/loaders/GLTFLoader.js';
 
 const $ = (id) => document.getElementById(id);
+// runner 直开模式：GLB 从 /static/assets 拿（显示服务把仓库 assets/ 挂在这里）
+const glb = (rel) => '/static/assets/' + rel.replace(/^\.\.\/\.\.\/assets\//, '').replace(/^\.\.\/assets\//, '');
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));

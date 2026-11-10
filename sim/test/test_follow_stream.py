@@ -93,6 +93,18 @@ try:
         stats = frames[-1].get("stats") or {}
         ok("帧里带 stats", all(k in stats for k in ("base_height", "upright", "step")), sorted(stats))
 
+    # 静态资源必须真的能拿到（GLB 和 viewer 不同根，这里最容易 404）
+    import urllib.request as _u
+    for path, label in (("/static/studio.js", "studio.js"),
+                        ("/static/vendor/three/three.module.js", "three.module.js"),
+                        ("/static/data/duck-hd1910.json", "duck-hd1910.json"),
+                        ("/static/assets/microduck/trunk_base.glb", "GLB")):
+        try:
+            code = _u.urlopen(BASE + path, timeout=5).status
+        except Exception as e:  # noqa: BLE001
+            code = str(e)
+        ok(f"静态资源可取：{label}", code == 200, code)
+
     cmd = json.loads(get("/command?forward=0.12&yaw=0.3"))
     ok("/command 写进去能读回", abs(cmd.get("forward", 0) - 0.12) < 1e-6 and abs(cmd.get("yaw", 0) - 0.3) < 1e-6, cmd)
     time.sleep(0.6)   # 让 runner 多跑几步，采纳新的滑杆值
