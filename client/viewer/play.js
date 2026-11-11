@@ -56,7 +56,8 @@ const canvas = $('c');
 const isTouch = matchMedia('(hover: none) and (pointer: coarse)').matches;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isTouch, powerPreference: 'high-performance' });
 // 手机上像素比给到 1.5 就够（2 及以上在 60 Hz 下很吃 GPU）；桌面保留 2
-let pixelRatio = Math.min(devicePixelRatio || 1, isTouch ? 1.5 : 2);
+// 手机上 1.0 就够：AGL/GLB 多、像素比一高帧率就塌，而帧率会反过来拖慢仿真（循环是 rAF 驱动）
+let pixelRatio = Math.min(devicePixelRatio || 1, isTouch ? 1.0 : 2);
 renderer.setPixelRatio(pixelRatio);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b0f14);
@@ -368,8 +369,9 @@ async function main() {
       const now = performance.now();
       acc += Math.min(0.25, (now - last) / 1000);
       last = now;
-      // 每次最多补 3 步，避免慢设备上「越补越慢」的死循环
-      let budget = 3;
+      // 每帧最多补的步数：手机上渲染只有 10–20 fps 时，预算太小会让仿真「越跑越慢」。
+      // 8 步 ≈ 160 ms 仿真，仍能挡住「一次补几千步」的雪崩。
+      let budget = isTouch ? 8 : 4;
       while (acc >= STEP_DT && budget-- > 0) {
         acc -= STEP_DT;
         try {

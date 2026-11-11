@@ -77,8 +77,16 @@
   #busy.gone { opacity: 0; pointer-events: none; }
   .ok { color: #63d18a; } .warn { color: #e6b45f; } .bad { color: #e5675f; }
 
-  /* 触屏设备：不显示键盘提示 */
+  /* 触屏设备 / 小屏：不显示键盘提示 */
   @media (hover: none) and (pointer: coarse) { #hint { display: none; } }
+
+  /* 被工作台嵌进 iframe（?embed=1）或窄屏时：HUD 只留最关键的三行，别占掉五分之一屏 */
+  @media (max-width: 520px) {
+    #hint { display: none; }
+    #perf { display: none; }                 /* 墙钟/实时倍率：调试看，手机上先让位 */
+    #hud select#policy { display: none; }    /* 工作台顶栏已经有 bundle 选择 */
+    #hud .title { display: none; }
+  }
 
   /* 窄屏：状态卡更紧凑，按钮两行放 */
   @media (max-width: 520px) {
