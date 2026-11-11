@@ -96,6 +96,36 @@ ok("状态段首帧：角速度 0、投影重力 [0,0,-1]",
 grav_at = [i for i in range(len(obs)) if abs(obs[i] + 1) < 1e-6]
 ok("4 帧历史各有一个投影重力", len(grav_at) == 4, f"位置 {grav_at}")
 
+# 5) 播放头：推进 / 夹取 / 暂停
+ph = W.Playhead(6574, start=0, frame_interval=1)
+ok("播放头起始夹到 1", ph.current() == (1, 1))
+ph.advance(); ok("推进一步 → (2,1)", ph.current() == (2, 1), str(ph.current()))
+ph.pause(True)
+before = ph.current()
+ph.advance()
+ok("暂停时不推进", ph.current() == before, str(ph.current()))
+ok("暂停时 idx == last_idx", ph.current()[0] == ph.current()[1])
+ph.pause(False)
+for _ in range(10):
+    ph.advance()
+ok("推进到第 12 帧", ph.current()[0] == 12, str(ph.current()))
+
+ph2 = W.Playhead(20, start=100, frame_interval=5)
+ok("越界起点被夹到 end", ph2.current()[0] == 19, str(ph2.current()))
+ph3 = W.Playhead(20, start=2, frame_interval=5)
+ph3.advance()
+ok("frame_interval=5 → (7,2)", ph3.current() == (7, 2), str(ph3.current()))
+
+# 6) 真值里的播放头：逐步匹配 motion 帧号
+if os.path.exists(TRACE):
+    jp_all = motion.load_motion(MOTION, "joint_pos")["data"]
+    seq = []
+    lines = [x for x in open(TRACE, encoding="utf-8") if x.strip()][:12]
+    for line in lines:
+        o = np.asarray(json.loads(line)["in"]["obs"][:29], dtype=np.float32)
+        seq.append(int(np.abs(jp_all - o).max(axis=1).argmin()))
+    ok("真值播放头 = 1,2,3…（每步 1 帧）", seq == list(range(1, 13)), str(seq))
+
 print()
 if fails:
     print(f"失败 {len(fails)} 项：" + "、".join(fails))

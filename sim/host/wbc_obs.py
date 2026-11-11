@@ -107,3 +107,47 @@ def assemble(*, reference67, history4) -> np.ndarray:
     if ref.shape != (REFERENCE_DIM,):
         raise ValueError(f"reference 形状 {ref.shape} != ({REFERENCE_DIM},)")
     return np.concatenate([ref, hist.reshape(-1)]).astype(np.float32)
+
+
+class Playhead:
+    """动作参考的播放头：每控制步推进 `frame_interval` 帧，支持暂停与区间夹取。
+
+    语义对齐 `ccrpRepo/wbc_fsm` 的 `State_WBC`：
+    - `idx = refer_idx + i*frame_interval`，先夹到 `[1, end]` 再用；
+    - 暂停时 `idx = last_idx = refer_idx`，且参考关节速度强制 0；
+    - 进入 mode 时从 `start` 开始（参考实现 `start=0`，实际用之前夹到 1）。
+    """
+
+    def __init__(self, frame_count: int, *, start: int = 0, frame_interval: int = 1,
+                 end: int | None = None):
+        if frame_count < 2:
+            raise ValueError("动作参考至少 2 帧")
+        self.frame_count = int(frame_count)
+        self.end = int(end) if end is not None else self.frame_count - 1
+        self.frame_interval = max(1, int(frame_interval))
+        self.refer_idx = max(1, int(start))   # 第 0 帧不用（参考实现也夹到 >=1）
+        self.paused = False
+
+    def _clamp(self, idx: int) -> int:
+        if idx >= self.end:
+            return self.end
+        if idx <= 1:
+            return 1
+        return idx
+
+    def current(self) -> tuple[int, int]:
+        """返回 `(idx, last_idx)`；暂停时两者相同。"""
+        idx = self._clamp(self.refer_idx)
+        if self.paused:
+            return idx, idx
+        return idx, self._clamp(idx - self.frame_interval)
+
+    def advance(self) -> None:
+        if not self.paused:
+            self.refer_idx += self.frame_interval
+
+    def pause(self, flag: bool = True) -> None:
+        self.paused = bool(flag)
+
+    def at_end(self) -> bool:
+        return self.refer_idx >= self.end
