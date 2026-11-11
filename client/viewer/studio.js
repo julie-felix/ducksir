@@ -252,6 +252,15 @@ function wireTabs() {
   });
 }
 
+// 3D 区的消息层：出错时把原因写在画面上（手机看不到控制台）。
+// 注意：它必须声明在**第一次使用之前**，否则会撞 TDZ（`Cannot access 'msg' before initialization`）。
+function showMsg(text) {
+  const el = $('view-msg');
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = text ? 'grid' : 'none';
+}
+
 // ── bundle 浏览器执行：把编译产物交给 play.html（wasm 核 + ORT Web + MuJoCo wasm）──
 // 这条路径**不需要宿主进程**：Python 只在编译期出现，运行期只吃 bundle。
 async function wireBundles() {
@@ -278,14 +287,6 @@ async function wireBundles() {
   const isPhone = matchMedia('(max-width: 820px)').matches;
   if (isPhone && list.length) runInBrowser(list[0].base);
   $('btn-browser-run').onclick = () => runInBrowser(sel.value);
-
-  const msg = $('view-msg');
-
-  function showMsg(text) {
-    if (!msg) return;
-    msg.textContent = text;
-    msg.style.display = text ? 'grid' : 'none';
-  }
 
   async function runInBrowser(base) {
     if (!base) return;
