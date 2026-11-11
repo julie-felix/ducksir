@@ -180,23 +180,26 @@ async function main() {
     const pre = loadPlan(await bytes(planPath(contract, 'pre', DATA)));
     const post = loadPlan(await bytes(planPath(contract, 'post', DATA)));
     const fsm = loadPlan(await bytes(planPath(contract, 'fsm', DATA)));
-    stage(`创建 ORT Web 会话（${contract.policies.length} 个策略）`);
     checkPlanAgainstContract('pre', pre);
     checkPlanAgainstContract('post', post);
     checkPlanAgainstContract('fsm', fsm);
     const policyList = contract.policies;
+
+    // 惰性建会话：以前一次性建 7 个（手机上要几秒、几十 MB），但同一时刻只用一个。
+    // 现在用到哪个建哪个，切换策略时才付这个代价。
     const sessions = {};
-    for (const pol of policyList) {
-      const buf = await bytes(policyPath(contract, pol.key, DATA));
-      sessions[pol.key] = await ort.InferenceSession.create(buf,
+    async function getSession(key) {
+      if (sessions[key]) return sessions[key];
+      stage(`创建 ORT Web 会话（${key}）`);
+      const buf = await bytes(policyPath(contract, key, DATA));
+      sessions[key] = await ort.InferenceSession.create(buf,
         { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
+      return sessions[key];
     }
     const modeToKey = {};
     for (const pol of policyList) modeToKey[pol.mode] = pol.key;
     let manual = null;            // 非空 = 手动选的策略（下拉/数字键）；按键后回到状态机
     let active = policyList[0].key;
-    const inputName = sessions[active].inputNames[0];
-    const outputName = sessions[active].outputNames[0];
     const picker = $('policy');
     for (const pol of policyList) {
       const opt = document.createElement('option');
@@ -239,6 +242,7 @@ async function main() {
       }
     });
 
+    await getSession(policyList[0].key);   // 先把默认策略建好，第一帧别等
     stage('就绪（网格还在后台加载）');
     const bump = (d) => { state.vx = Math.max(LIM.back, Math.min(LIM.fwd, state.vx + d)); };
     const resetSim = () => {
@@ -310,7 +314,7 @@ async function main() {
       // 2) obs（61 维）：指令段用状态机给的 command
       const obs = makeObs(duck, { lastAction: state.lastAction, vx: state.vx, command: cmd13 });
       const policyInput = runPlan(pre, obs);
-      const sess = sessions[active];
+      const sess = await getSession(active);
       const res = await sess.run({ [sess.inputNames[0]]:
         new ort.Tensor('float32', Float32Array.from(policyInput), [1, policyInput.length]) });
       const action = Array.from(res[sess.outputNames[0]].data);
