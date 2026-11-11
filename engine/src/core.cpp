@@ -525,12 +525,7 @@ void ds_free(ds_plan* p) {
         delete[] p->rnns;
     }
     if (p->delays) {
-        for (uint32_t i = 0; i < p->rnn_count; ++i) {
-        ds_plan::RnnState& r = p->rnns[i];
-        std::memset(r.h, 0, sizeof(float) * (r.h_len ? r.h_len : 1));
-        std::memset(r.c, 0, sizeof(float) * (r.c_len ? r.c_len : 1));
-    }
-    for (uint32_t i = 0; i < p->delay_count; ++i) {
+        for (uint32_t i = 0; i < p->delay_count; ++i) {
             delete[] p->delays[i].buf;
             delete[] p->delays[i].fill;
         }
@@ -562,6 +557,11 @@ int ds_reset(ds_plan* p) {
         const size_t n = static_cast<size_t>(p->hists[i].frames) * p->hists[i].frame_len;
         std::memset(p->hists[i].buf, 0, n * sizeof(float));
         p->hists[i].head = 0;
+    }
+    for (uint32_t i = 0; i < p->rnn_count; ++i) {
+        ds_plan::RnnState& r = p->rnns[i];
+        std::memset(r.h, 0, sizeof(float) * (r.h_len ? r.h_len : 1));
+        std::memset(r.c, 0, sizeof(float) * (r.c_len ? r.c_len : 1));
     }
     for (uint32_t i = 0; i < p->delay_count; ++i) {
         ds_plan::DelayState& d = p->delays[i];
