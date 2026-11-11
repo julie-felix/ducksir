@@ -230,3 +230,17 @@ PYTHONPATH=$HOME/.local/share/ducksir/pylibs python3 tools/robot/export_mjcf.py 
 
 **版本必须对齐**：`@mujoco/mujoco` 的版本要和宿主 Python 的 `mujoco` **完全一致**（现在都是 3.17.0）。
 4.0.0 的浏览器版跑同一串 ctrl，200 步后基座差 85 mm——接触密集的步态直接失稳。物理版本是配方的一部分。
+
+
+## 9. 浏览器里自检（headless Chrome）
+
+手机上看不到控制台，所以用 Chrome CDP 自己验（Node 22 自带 WebSocket，不需要 puppeteer）：
+
+```bash
+node tools/dev/webcheck.mjs "https://100.110.238.101:3080/ducksir-static/client/viewer/studio.html" \
+  --mobile --wait 20000 --shot /tmp/studio.png
+# 可选 --eval "<js>"：在页面里跑一段表达式（支持 async，返回 JSON）
+```
+
+它会打印：DOM/布局摘要（关键元素宽高、顶栏文字、iframe src）、控制台异常、以及截图。
+多开时用 `CDP_PORT` / `CDP_PROFILE` 区分，避免实例互相踩。
