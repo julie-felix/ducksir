@@ -416,8 +416,14 @@ async function main() {
           ? Array.from(concatOutputs(res, sess.duckOutLens))
           : Array.from(res[sess.outputNames[0]].data);
       }
-      const ctrlOut = runPlan(post, action);
+      let ctrlOut = runPlan(post, action);
       const robotCfg = getContract().robot;
+      // WBC：目标基准是 referenceJointPositions（不是 default）。post 按 default 算好了，这里补差值。
+      if (motion && robotCfg.reference_joint_positions && robotCfg.reference_joint_positions.length) {
+        const ref = robotCfg.reference_joint_positions;
+        const def = robotCfg.default_q || [];
+        ctrlOut = ctrlOut.map((v, i) => v + ((ref[i] ?? 0) - (def[i] ?? 0)));
+      }
       // 物理：两种执行器语义分开写，**每个控制步恰好 DECIM 个物理子步**（不多不少）
       for (let sub = 0; sub < DECIM; sub += 1) {
         if (isTorque(getContract())) {
@@ -438,6 +444,9 @@ async function main() {
           for (let j = 0; j < model.nu; j += 1) data.ctrl[j] = ctrlOut[j];
         }
         stepPhysics(mj, model, data, 1);
+      }
+      for (let i = 0; i < action.length; i += 1) {
+        action[i] = Math.max(-100, Math.min(100, action[i]));
       }
       state.lastAction.set(action);
 
