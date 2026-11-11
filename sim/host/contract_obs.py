@@ -84,8 +84,15 @@ def make_obs(doc: dict, view: dict, *, last_action=None, command=None, vx: float
             obs[off:off + 3] = quat_to_mat(q).T @ np.array([0.0, 0.0, -1.0])
         elif src == "qpos:joints":
             q = np.array([data.qpos[i] for i in view["qpos_off"]])
-            if item.get("minus") == "default":
+            minus = item.get("minus")
+            if minus == "default":
                 q = q - np.array(robot["default_q"])
+            elif minus == "reference":
+                # WBC/AMP：策略看到的关节量是「相对参考站姿」（referenceJointPositions）
+                ref = robot.get("reference_joint_positions")
+                if not ref:
+                    raise SystemExit("配方用了 minus=reference，但契约里没有 reference_joint_positions")
+                q = q - np.array(ref)
             if item.get("order") == "policy":
                 # 策略训练时用的是策略序（G1 的 dof_mapping 不是恒等），按 motor_order 取
                 q = np.array([q[int(m)] if int(m) < len(q) else 0.0

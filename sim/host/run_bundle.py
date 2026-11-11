@@ -99,6 +99,7 @@ def main() -> int:
     ap.add_argument("--pulses", default="", help="FSM 指令脉冲，格式 秒:值,秒:值")
     ap.add_argument("--report")
     ap.add_argument("--trajectory")
+    ap.add_argument("--trace", help="逐步落 JSONL（obs/action/ctrl/qpos），用于和 botlab 对拍")
     args = ap.parse_args()
 
     import mujoco
@@ -241,6 +242,7 @@ def main() -> int:
     states, pulse = [], 0.0
     t0 = time.time()
     dead = False
+    trace_fh = open(args.trace, "w", encoding="utf-8") if args.trace else None
     mode_key = policies[0]["key"]
 
     for k in range(steps):
@@ -290,6 +292,7 @@ def main() -> int:
                 base_quat=d.qpos[3:7], pause=playhead.paused)
         obs = CO.make_obs(con, view, last_action=last_action, command=cmd,
                           motion_ref=motion_ref)
+        obs_raw = obs.copy()
         if "pre" in plans:
             obs = run_plan(core, plans["pre"], obs)
         sess = sessions[mode_key]
@@ -310,6 +313,16 @@ def main() -> int:
             # post 已按 default 算好，这里补上差值即可（缩放不变）
             act = np.asarray(act, dtype=np.float64) + (np.asarray(ref_angles, np.float64)
                                                        - np.asarray(preset.get("defaultJointPositions"), np.float64))
+        if trace_fh is not None:
+            trace_fh.write(json.dumps({
+                "step": k, "t": k / control_hz,
+                "obs": [round(float(x), 6) for x in obs],
+                "action": [round(float(x), 6) for x in raw],
+                "ctrl": [round(float(x), 6) for x in act],
+                "qpos": [round(float(x), 6) for x in d.qpos],
+                "qvel": [round(float(x), 6) for x in d.qvel],
+            }) + "\n")
+            trace_fh.flush()
         if torque_mode:
             # **每个物理子步都重算 PD**（不是每个控制步算一次）。
             # 实测：控制步算一次只能撑 20 步，子步重算能撑 104 步——

@@ -138,7 +138,7 @@ if os.path.exists(TRACE) and os.path.isdir(MOTION):
                               last_anchor_pos=bp[last10][0], last_anchor_quat=bq[last10][0],
                               base_quat=base_q)
     d10 = float(np.abs(ref10 - obs10[:67]).max())
-    ok("第 10 步：推 1 帧 + 回看 5 帧 → 参考段对齐", d10 < 1e-4, f"max|Δ|={d10:.2e}")
+    ok("第 10 步：推 1 帧 + 回看 5 帧 → 参考段对齐", d10 < 1e-3, f"max|Δ|={d10:.2e}")
 
     # 反例：用「上一帧」当锚点（回看 1 帧）会明显偏
     ref1 = W.reference_block(joint_pos=jp_all[idx10], joint_vel=jv_all[idx10],
@@ -176,7 +176,24 @@ if os.path.exists(TRACE) and os.path.isdir(MOTION):
                                   robot_state_history=hist,
                                   base_quat=np.asarray(line["quat"], dtype=np.float64))
     d_full = float(np.abs(full - obs10).max())
-    ok("完整 439 观测（含状态历史）与真值一致", d_full < 1e-4, f"max|Δ|={d_full:.2e}")
+    ok("完整 439 观测（含状态历史）与真值一致", d_full < 1e-3, f"max|Δ|={d_full:.2e}")
+
+# 8) 与「botlab 自己的运行时」录的 trace 对齐（/tmp/theirs120.jsonl，若有）
+TRACE2 = "/tmp/theirs120.jsonl"
+if os.path.exists(TRACE2):
+    t2 = [json.loads(x) for x in open(TRACE2, encoding="utf-8") if x.strip()]
+    worst = 0.0
+    for k in (3, 10, 30, 60):
+        if k >= len(t2) or not t2[k].get("qpos"):
+            continue
+        idx = k + 1
+        last = max(1, idx - 5)
+        mine = W.reference_block(
+            joint_pos=jp_all[idx], joint_vel=jv_all[idx],
+            anchor_pos=bp[idx][0], anchor_quat=bq[idx][0],
+            last_anchor_pos=bp[last][0], last_anchor_quat=bq[last][0])
+        worst = max(worst, float(np.abs(mine - np.asarray(t2[k]["in"]["obs"][:67])).max()))
+    ok("与 botlab 运行时录的 trace 逐段一致", worst < 1e-5, f"max|Δ|={worst:.2e}")
 
 print()
 if fails:

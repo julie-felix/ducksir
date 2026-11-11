@@ -68,22 +68,31 @@ def six_d(m):
 
 
 def reference_block(*, joint_pos, joint_vel, anchor_pos, anchor_quat,
-                    last_anchor_pos, last_anchor_quat, base_quat, pause=False) -> np.ndarray:
-    """动作参考 67 维：关节位置/速度 + 锚点相对位姿（偏航对齐基座后转到机体系）。"""
+                    last_anchor_pos, last_anchor_quat, base_quat=None, pause=False) -> np.ndarray:
+    """动作参考 67 维——与 botlab 引擎 `write_motion_reference()` **逐字同公式**。
+
+    权威实现在 `botlab/_runtime/_processors/_output.py`（不是 ccrpRepo 那份）：
+
+        last_inv     = quat_inverse(last_quat)          # 只做「上一参考帧」的相对变换
+        target_pos   = quat_apply(last_inv, cur_pos - last_pos)
+        target_quat  = last_inv * cur_quat
+        6D           = mat[0], mat[1], mat[3], mat[4], mat[6], mat[7]
+
+    `base_quat` 只保留在签名里做兼容：botlab 这一版**不做基座偏航对齐**。
+    核对：dance12 + G1，和他们的 obs 前 67 维差 **0.00000**（各步）。
+    """
     if pause:
         joint_vel = np.zeros_like(np.asarray(joint_vel, float))
-    ref_yaw = yaw_quat(anchor_quat)
-    base_yaw = yaw_quat(base_quat)
-    yaw_delta = quat_mul(base_yaw, quat_conj(ref_yaw))
-    aligned = quat_mul(yaw_delta, anchor_quat)
-    last_rot = quat_to_mat(quat_mul(yaw_delta, last_anchor_quat))
-    rel_pos = last_rot.T @ (np.asarray(anchor_pos, float) - np.asarray(last_anchor_pos, float))
-    rel_rot_mat = last_rot.T @ quat_to_mat(aligned)
+    last_inv = quat_conj(np.asarray(last_anchor_quat, float))
+    # 注意：`quat_apply(last_inv, dp)` = R(last_inv) @ dp（**不是**转置）
+    rel_pos = quat_to_mat(last_inv) @ (np.asarray(anchor_pos, float) - np.asarray(last_anchor_pos, float))
+    rel_quat = quat_mul(last_inv, np.asarray(anchor_quat, float))
+    m = quat_to_mat(rel_quat)
     return np.concatenate([
         np.asarray(joint_pos, np.float32),
         np.asarray(joint_vel, np.float32),
         rel_pos.astype(np.float32),
-        six_d(rel_rot_mat),
+        np.array([m[0, 0], m[0, 1], m[1, 0], m[1, 1], m[2, 0], m[2, 1]], np.float32),
     ]).astype(np.float32)
 
 

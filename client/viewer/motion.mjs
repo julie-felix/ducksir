@@ -129,25 +129,30 @@ function matVec(m, v) {
   return [0, 1, 2].map((i) => m[i][0] * v[0] + m[i][1] * v[1] + m[i][2] * v[2]);
 }
 
-/** 参考段 67 维：关节位置 29 + 关节速度 29 + 锚点位移 3 + 锚点朝向 6D 6。 */
+/** 参考段 67 维：与 botlab 引擎 `write_motion_reference()` 逐字同公式。
+ *
+ *     last_inv    = quat_inverse(last_quat)
+ *     target_pos  = quat_apply(last_inv, cur_pos - last_pos)
+ *     target_quat = last_inv * cur_quat
+ *     6D          = mat[0], mat[1], mat[3], mat[4], mat[6], mat[7]
+ *
+ * `baseQuat` 只为兼容保留：这一版**不做基座偏航对齐**。
+ */
 export function referenceBlock({
   jointPos, jointVel, anchorPos, anchorQuat, lastAnchorPos, lastAnchorQuat, baseQuat, pause = false,
 }) {
   const out = new Float32Array(67);
   out.set(jointPos, 0);
   if (!pause) out.set(jointVel, 29);
-  const refYaw = yawQuat(anchorQuat);
-  const baseYaw = yawQuat(baseQuat);
-  const yawDelta = quatMul(baseYaw, quatConj(refYaw));
-  const aligned = quatMul(yawDelta, anchorQuat);
-  const lastRot = quatToMat(quatMul(yawDelta, lastAnchorQuat));
-  const relPos = matVec(matT(lastRot), [
-    anchorPos[0] - lastAnchorPos[0],
-    anchorPos[1] - lastAnchorPos[1],
-    anchorPos[2] - lastAnchorPos[2],
-  ]);
-  out.set(relPos, 58);
-  const m = matMul(matT(lastRot), quatToMat(aligned));
+  const lastInv = quatConj(lastAnchorQuat);
+  const R = quatToMat(lastInv);
+  const dp = [anchorPos[0] - lastAnchorPos[0],
+              anchorPos[1] - lastAnchorPos[1],
+              anchorPos[2] - lastAnchorPos[2]];
+  out[58] = R[0][0] * dp[0] + R[0][1] * dp[1] + R[0][2] * dp[2];
+  out[59] = R[1][0] * dp[0] + R[1][1] * dp[1] + R[1][2] * dp[2];
+  out[60] = R[2][0] * dp[0] + R[2][1] * dp[1] + R[2][2] * dp[2];
+  const m = quatToMat(quatMul(lastInv, anchorQuat));
   out[61] = m[0][0]; out[62] = m[0][1];
   out[63] = m[1][0]; out[64] = m[1][1];
   out[65] = m[2][0]; out[66] = m[2][1];

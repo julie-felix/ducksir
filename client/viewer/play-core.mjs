@@ -146,7 +146,9 @@ export function makeObs(duck, { lastAction, vx, command, motionRef: motionRefVal
       for (let k = 0; k < len; k++) {
         const idx = item.order === 'policy' ? robot.motor_order[k] : k;
         const qa = read(model.jnt_qposadr, jointId(robot.joints[idx]));
-        obs[off + k] = read(data.qpos, qa) - (item.minus === 'default' ? robot.default_q[idx] : 0);
+        const base = item.minus === 'default' ? (robot.default_q[idx] || 0)
+          : item.minus === 'reference' ? ((robot.reference_joint_positions || [])[idx] || 0) : 0;
+        obs[off + k] = read(data.qpos, qa) - base;
       }
     } else if (src === 'qvel:joints') {
       for (let k = 0; k < len; k++) {

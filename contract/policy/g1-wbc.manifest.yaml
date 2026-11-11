@@ -23,7 +23,7 @@ obs:
   - {slot: body_angvel, len: 3, target: pelvis}
   - {slot: projected_gravity, len: 3, target: pelvis}
   # 观测的关节量用**策略序**（真值核对时策略吃的是 policy order；动作输出在 post 里再换回电机序）
-  - {slot: joint_pos, len: 29, minus: default, order: policy, scale: 1.0}
+  - {slot: joint_pos, len: 29, minus: reference, order: policy, scale: 1.0}
   - {slot: joint_vel, len: 29, order: policy, scale: 1.0}
   - {slot: last_action, len: 29, scale: 1.0}
 
