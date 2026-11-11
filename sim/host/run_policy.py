@@ -81,8 +81,13 @@ def check_manifest(man: dict, preset: dict, n_joints: int) -> None:
             if not os.path.exists(os.path.join(ROOT, pol["file"])):
                 errs.append(f"策略文件不存在：{pol['file']}")
     total = sum(o["len"] for o in man["obs"])
-    if in_shape[-1] != total:
-        errs.append(f"obs 总长 {total} != 模型输入 {in_shape[-1]}")
+    # obs_history：状态段会在 pre 图里展开成 frames 帧，模型看到的是展开后的长度
+    hist = man.get("obs_history")
+    expected = total
+    if hist:
+        expected = int(hist["offset"]) + int(hist["frames"]) * int(hist["length"])
+    if in_shape[-1] != expected:
+        errs.append(f"obs 总长 {total}（展开后 {expected}）!= 模型输入 {in_shape[-1]}")
     if out_shape[-1] != n_joints:
         errs.append(f"模型输出 {out_shape[-1]} != 驱动关节 {n_joints}")
     if preset["actionDimension"] != n_joints:
@@ -94,8 +99,8 @@ def check_manifest(man: dict, preset: dict, n_joints: int) -> None:
         errs.append("inference_decimation 必须 ≥ 1")
     if man["action"]["mapping"] != "default_plus_scale":
         errs.append(f"暂只支持 mapping=default_plus_scale（现在 {man['action']['mapping']}）")
-    if man["action"]["order"] != "motor":
-        errs.append(f"暂只支持 order=motor（现在 {man['action']['order']}）")
+    if man["action"]["order"] not in ("motor", "policy"):
+        errs.append(f"action.order 只支持 motor / policy（现在 {man['action']['order']}）")
     if sorted(preset["motorJointOrder"]) != list(range(n_joints)):
         errs.append("motorJointOrder 不是 0..n-1 的置换")
     if errs:

@@ -30,6 +30,12 @@ def main() -> int:
     ap.add_argument("-o", "--output", required=True)
     ap.add_argument("--motor-order", help="策略序 → 电机序（逗号分隔）。botlab 的 JSON 里没有这条，"
                                         "它写在参考实现的 dof_mapping 里（如 G1 的 State_Loco.h）")
+    ap.add_argument("--motion", help="动作参考目录（bin/npz），给 WBC/AMP 用")
+    ap.add_argument("--motion-frames", type=int, help="动作参考帧数（写了才能校验收尾）")
+    ap.add_argument("--motion-fps", type=float, help="动作参考 fps")
+    ap.add_argument("--frame-interval", type=int, default=5,
+                    help="锚点回看间隔（参考实现 motion_reference(frame_interval=5)）")
+    ap.add_argument("--active-mode", type=int, default=3, help="哪个 mode 播放这份参考")
     ap.add_argument("--control-hz", type=float, default=50.0)
     ap.add_argument("--physics-hz", type=float, default=200.0)
     args = ap.parse_args()
@@ -84,6 +90,10 @@ def main() -> int:
         "effortLimit": arr("effortLimit") or [0.0] * n_act,
         "actionScale": arr("actionScale") or [1.0] * n_act,
         "initialQpos": arr("initialQpos"),
+        "referenceJointPositions": arr("referenceJointPositions"),
+        "motion": ({"path": args.motion, "frames": args.motion_frames, "fps": args.motion_fps,
+                    "frame_interval": args.frame_interval, "active_mode": args.active_mode}
+                   if args.motion else None),
         "assumptions": {
             "actuatorMode": ("扭矩：PD 由宿主按 kp/kd 在每个控制步算，ctrl 是力矩" if motor
                              else "位置：MuJoCo 自己做 PD"),

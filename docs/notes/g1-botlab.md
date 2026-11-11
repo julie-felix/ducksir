@@ -310,3 +310,38 @@ PASS
 - 这是宿主侧（Python + MuJoCo）跑通；**浏览器侧还没接**（要 model_rnn 之外再加「动作参考 + 4 帧历史」的图）；
 - 动作参考还没进 `contract.json`（现在是冒烟脚本里直接装配的）；
 - mode 切换（loco ↔ WBC）还没接 `state_machine`。
+
+## 12. 把 WBC 接进契约/bundle：管道通了，端到端还没站住
+
+### 已落地（都有单测）
+
+| 改动 | 说明 |
+|---|---|
+| `contract_obs` 新增 `motion_ref` source | 67 维动作参考由运行期按播放头算好传进来 |
+| `contract_obs` 的 `body:angvel` 默认转机体系 | 对位 botlab 的 `body_angular_velocity(frame="local")`（`frame: world` 可关） |
+| `export_artifacts.build_pre` 支持 `obs_history` | 状态段在图里用 `history` 节点展开：160 → 439，5 个节点 |
+| `export_artifacts` 写 `preset.yaml` 进 bundle | 运行期靠它判断执行器模式与 PD 增益 |
+| 契约 `robot` 段加 `motion` / `reference_joint_positions` | 动作参考路径、fps、frame_interval、active_mode、参考目标角 |
+| `run_bundle` 支持动作参考 + mode 切换 | 播放头随 fsm 的 mode 起停；WBC 的目标基准换成 `referenceJointPositions` |
+| `contract/policy/g1-wbc.manifest.yaml` | 439 观测 + `obs_history` + 策略清单（manifest 驱动，不再写死鸭子那 7 个） |
+| `sim/test/test_pre_history.py` | 历史展开的图：结构逐字节一致 + 语义（最老在前/尾部最新）正确 |
+
+`build/release/g1-wbc` 能导出：`pre 5 节点 160 → 439`、`post 5 节点 29 → 29`、`fsm 66 节点`。
+
+### 但端到端没站住（如实记录）
+
+```
+$ python3 sim/host/run_bundle.py --bundle build/release/g1-wbc --mjcf build/mjcf/g1-29dof-torque.xml --steps 300
+bundle g1-wbc｜300/300 步｜18.5× 实时
+  基座 终 +0.093 最低 +0.073 m｜直立 -0.267
+```
+
+同一套观测、同一个模型、同一个 PD，**直接装配**（`tools/dev/g1_wbc_smoke.py`）能站 600 步，
+走 bundle（`pre` 图里展开历史）却 ~20–40 步就倒。已经排除：
+
+- 引擎的 `history` 节点语义（与 oracle 逐位相同，5 步 0.000e+00）；
+- 关节序三种约定（电机序 / 策略序 / 交叉索引），都在 20 步左右倒；
+- 历史缓冲预热（预热更差：12 步 vs 36 步）。
+
+**下一步要定位的**：直接装配与 bundle 路径在「每步喂给策略的 439 维」上到底哪几维不同——
+把两条路径第 0 步的 obs 打出来逐维比对，比继续猜快。

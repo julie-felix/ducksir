@@ -10,7 +10,8 @@
 2026-11-10 的教训是：改 Python 生成新 IR 之后，两边都各自漂。现在两边都读同一份契约。
 
 配方条目 `{name, slot, source}` 支持：
-`sensor:<名>`、`gravity:body:<名>`、`qpos:joints`、`qvel:joints`、`last_action`、`fsm_slot:<槽位名>`。
+`sensor:<名>`、`gravity:body:<名>`、`qpos:joints`、`qvel:joints`、`last_action`、`fsm_slot:<槽位名>`、
+`motion_ref`（动作参考 67 维：关节位置/速度 + 锚点 6D，由调用方按播放头算好传进来）。
 """
 
 from __future__ import annotations
@@ -62,7 +63,8 @@ def _body(name: str, view: dict):
     return view["body"](name) if callable(view.get("body")) else None
 
 
-def make_obs(doc: dict, view: dict, *, last_action=None, command=None, vx: float = 0.0) -> np.ndarray:
+def make_obs(doc: dict, view: dict, *, last_action=None, command=None, vx: float = 0.0,
+             motion_ref=None) -> np.ndarray:
     """按契约配方组 61 维观测。
 
     `view` 需要提供：`data`（MuJoCo 数据）、`qpos_off`/`dof_off`（驱动序地址）、
@@ -84,12 +86,28 @@ def make_obs(doc: dict, view: dict, *, last_action=None, command=None, vx: float
             q = np.array([data.qpos[i] for i in view["qpos_off"]])
             if item.get("minus") == "default":
                 q = q - np.array(robot["default_q"])
+            if item.get("order") == "policy":
+                # 策略训练时用的是策略序（G1 的 dof_mapping 不是恒等），按 motor_order 取
+                q = np.array([q[int(m)] if int(m) < len(q) else 0.0
+                              for m in (robot.get("motor_order") or range(len(q)))])
             obs[off:off + length] = q
         elif src == "qvel:joints":
-            obs[off:off + length] = np.array([data.qvel[i] for i in view["dof_off"]])
+            v = np.array([data.qvel[i] for i in view["dof_off"]])
+            if item.get("order") == "policy":
+                v = np.array([v[int(m)] if int(m) < len(v) else 0.0
+                              for m in (robot.get("motor_order") or range(len(v)))])
+            obs[off:off + length] = v
         elif src == "last_action":
             if last_action is not None:
                 obs[off:off + length] = last_action
+        elif src == "motion_ref":
+            # 动作参考（WBC/AMP）：67 维，由 run_bundle 用 wbc_obs 按播放头算好传进来
+            if motion_ref is None:
+                raise SystemExit("契约里有 motion_ref 槽位，但调用方没给 motion_ref 数组")
+            ref = np.asarray(motion_ref, dtype=np.float32)
+            if ref.shape != (length,):
+                raise SystemExit(f"motion_ref 长度 {ref.shape} != 槽位 {length}")
+            obs[off:off + length] = ref
         elif src.startswith("body:"):
             # botlab 的 Robot.body_*：body 位姿/速度，全部世界系
             parts = src.split(":")
@@ -102,7 +120,11 @@ def make_obs(doc: dict, view: dict, *, last_action=None, command=None, vx: float
             elif kind == "vel":
                 obs[off:off + 3] = b["cvel"][3:6]
             elif kind == "angvel":
-                obs[off:off + 3] = b["cvel"][0:3]
+                # botlab 的 Robot.body_angular_velocity(body, frame="local") 是**机体系**角速度；
+                # MuJoCo 的 cvel 是世界系，所以这里乘 R^T 转过去。
+                w = np.asarray(b["cvel"][0:3], dtype=float)
+                mode = item.get("frame", "local")
+                obs[off:off + 3] = (quat_to_mat(b["xquat"]).T @ w) if mode == "local" else w
             else:
                 raise SystemExit(f"不认识的 body 观测：{src}")
         elif src.startswith("contact:"):

@@ -61,6 +61,7 @@ SOURCE_BY_SLOT = {
     "body_angvel": lambda o: f"body:angvel:{o.get('target', 'trunk')}",
     "contact": lambda o: f"contact:{o.get('target', 'trunk')}",
     "base_height": lambda o: "base:z",
+    "motion_ref": lambda o: "motion_ref",
 }
 
 
@@ -74,14 +75,46 @@ def obs_recipe(man: dict) -> list[dict]:
         item = {"name": slot, "slot": [off, o["len"]], "source": SOURCE_BY_SLOT[slot](o)}
         if o.get("minus"):
             item["minus"] = o["minus"]
+        if o.get("order"):
+            item["order"] = o["order"]
+        if o.get("frame"):
+            item["frame"] = o["frame"]
         out.append(item)
         off += o["len"]
     return out
 
 
 def build_pre(man: dict) -> tuple[bytes, dict]:
+    """观测 → 模型输入。
+
+    默认只做拼接。若 manifest 声明了 `obs_history`（WBC 那种 4 帧历史），则：
+
+        ref   = obs[offset_before]            （长度 offset）
+        state = obs[offset, offset+length)    （长度 length）
+        hist  = history(state, frames)        （frames × length）
+        out   = concat(ref, hist)             （offset + frames*length）
+
+    例（G1 WBC）：ref 67 + state 93×4 = 439。
+    """
     total = sum(o["len"] for o in man["obs"])
-    p = ir.Plan(input_dim=total, output_dim=total, name="pre")
+    hist_cfg = man.get("obs_history")
+    # 历史展开会改变输出维度：out = offset + frames × length
+    out_dim = total
+    if hist_cfg:
+        out_dim = int(hist_cfg["offset"]) + int(hist_cfg["frames"]) * int(hist_cfg["length"])
+    p = ir.Plan(input_dim=total, output_dim=out_dim, name="pre")
+    if hist_cfg:
+        h_off = int(hist_cfg["offset"])
+        h_len = int(hist_cfg["length"])
+        h_frames = int(hist_cfg["frames"])
+        ref = p.obs(0, h_off) if h_off else None
+        state = p.obs(h_off, h_len)
+        hist = p.history(state, frames=h_frames)
+        out = hist if ref is None else p.concat(ref, hist)
+        p.out_action(out)
+        return ir.compile_blob(p.to_json()), {"in:obs": (0, total),
+                                              "out:model_in": (0, h_off + h_frames * h_len)}
+
     sl, off = [], 0
     for o in man["obs"]:
         sl.append(p.obs(off, o["len"]))
@@ -132,13 +165,20 @@ def main() -> int:
     ap.add_argument("--manifest", default="contract/policy/duck-walk.manifest.yaml")
     ap.add_argument("--preset", default="build/preset/duck-hd1910.preset.yaml")
     ap.add_argument("--out", default="client/viewer/data/live")
+    ap.add_argument("--entity", default="contract/robot/types/g1-29dof-torque.yaml",
+                    help="实体 yaml（preset 的 generated.from 不是实体时用它）")
     args = ap.parse_args()
 
     with open(os.path.join(ROOT, args.preset), encoding="utf-8") as f:
         preset = yaml.safe_load(f)
     with open(os.path.join(ROOT, args.manifest), encoding="utf-8") as f:
         man = yaml.safe_load(f)
-    doc = E.read_yaml(os.path.join(ROOT, preset["generated"]["from"]))
+    # preset 有两个来源：① 从实体导出的（generated.from = 实体 yaml）
+    # ② 从 botlab preset 转的（generated.from = botlab 的 yaml，这时要看 --entity）
+    entity_path = preset["generated"]["from"]
+    if not entity_path.endswith((".yaml", ".yml")) or "/contract/robot/types/" not in entity_path:
+        entity_path = args.entity
+    doc = E.read_yaml(os.path.join(ROOT, entity_path))
     driven = [j["name"] for j in doc["joints"] if j.get("actuated")]
     n = len(driven)
     RP.check_manifest(man, preset, n)
@@ -155,15 +195,23 @@ def main() -> int:
     for name, blob in (("pre", pre_blob), ("post", post_blob), ("fsm", fsm_blob)):
         with open(os.path.join(out, f"{name}.blob"), "wb") as f:
             f.write(blob)
+    # preset 也要进 bundle：运行期靠它判断执行器模式（位置/扭矩）与 PD 增益
+    shutil.copyfile(os.path.join(ROOT, args.preset), os.path.join(out, "preset.yaml"))
 
+    # 策略清单：manifest 里声明了 `policies`（多模式）就用它，否则用鸭子那 7 个动作模型
+    spec = man.get("policies") or [{"key": k, "mode": m, "file": f"build/models/{k}.onnx"}
+                                   for k, m in POLICIES]
     policies = []
-    for fname, mode in POLICIES:
-        src = os.path.join(ROOT, "build/models", f"{fname}.onnx")
+    for item in spec:
+        src = os.path.join(ROOT, item["file"])
         if not os.path.exists(src):
-            print(f"  跳过 {fname}（缺 build/models/{fname}.onnx）")
+            print(f"  跳过 {item['key']}（缺 {item['file']}）")
             continue
-        shutil.copyfile(src, os.path.join(out, f"{fname}.onnx"))
-        policies.append({"key": fname, "mode": mode, "file": f"{fname}.onnx"})
+        dst_name = item.get("as") or os.path.basename(item["file"])
+        shutil.copyfile(src, os.path.join(out, dst_name))
+        policies.append({"key": item["key"], "mode": int(item["mode"]), "file": dst_name})
+    if not policies:
+        raise SystemExit("一个策略都没导出（manifest.policies / build/models 都缺）")
 
     doc_contract = contract.build_contract(
         plans={
@@ -190,6 +238,9 @@ def main() -> int:
             "kd": preset.get("kd") or [],
             "effort_limit": preset.get("effortLimit") or [],
             "motor_order": preset.get("motorJointOrder") or list(range(n)),
+            # 动作参考（WBC / AMP 才用）：运行期按这些参数滚动播放头，算 67 维参考
+            "motion": preset.get("motion") or None,
+            "reference_joint_positions": preset.get("referenceJointPositions") or None,
         },
     )
     with open(os.path.join(out, "contract.json"), "w", encoding="utf-8") as f:

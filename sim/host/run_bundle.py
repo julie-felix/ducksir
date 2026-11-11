@@ -113,6 +113,31 @@ def main() -> int:
         import yaml as _yaml
         preset = _yaml.safe_load(open(preset_path, encoding="utf-8")) or {}
     torque_mode = str(preset.get("actuatorMode") or "").lower() == "torque"
+    # 动作参考（WBC / AMP）：契约里有 robot.motion 才启用；播放头 + 参考目标角
+    motion_cfg = (con.get("robot") or {}).get("motion")
+    ref_angles = (con.get("robot") or {}).get("reference_joint_positions")
+    motion_arrays = motion_meta = playhead = None
+    if motion_cfg and motion_cfg.get("path"):
+        import sys as _sys
+        _sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "plan"))
+        import motion as _M
+        import wbc_obs as _W
+        base = motion_cfg["path"]
+        if not os.path.isabs(base):
+            base = os.path.join(os.path.dirname(os.path.abspath(bdir)), base)
+        meta_path = os.path.join(base, "metadata.json")
+        names = (json.load(open(meta_path, encoding="utf-8")).get("body_names")
+                 if os.path.exists(meta_path) else None)
+        motion_arrays = {
+            "joint_pos": _M.load_motion(base, "joint_pos")["data"],
+            "joint_vel": _M.load_motion(base, "joint_vel")["data"],
+            "body_pos": _M.load_motion(base, "body_pos_w", indices=names)["data"].reshape(-1, len(names), 3),
+            "body_quat": _M.load_motion(base, "body_quat_w", indices=names)["data"].reshape(-1, len(names), 4),
+        }
+        motion_meta = motion_cfg
+        playhead = _W.Playhead(motion_arrays["joint_pos"].shape[0],
+                               start=0, frame_interval=int(motion_cfg.get("frame_interval", 5)))
+        playhead.pause(True)   # 进 WBC 之前参考停在起点（botlab: active_mode=3）
 
     mjcf = args.mjcf or (os.path.join(bdir, "duck.xml") if os.path.exists(os.path.join(bdir, "duck.xml"))
                          else "build/mjcf/duck-hd1910-all.xml")
@@ -241,7 +266,27 @@ def main() -> int:
             if out[off_clr]:
                 last_action = np.zeros(n, dtype=np.float32)
 
-        obs = CO.make_obs(con, view, last_action=last_action, command=cmd)
+        motion_ref = None
+        in_active_mode = False
+        if playhead is not None:
+            import wbc_obs as _W
+            active = int(motion_meta.get("active_mode", 3))
+            in_active_mode = (fsm is None) or (int(out[off_m]) == active)
+            if in_active_mode and playhead.paused:
+                playhead.pause(False)      # 进入 WBC：参考从头播放
+            if not in_active_mode:
+                playhead.pause(True)
+            idx, last = playhead.current()
+            motion_ref = _W.reference_block(
+                joint_pos=motion_arrays["joint_pos"][idx],
+                joint_vel=motion_arrays["joint_vel"][idx],
+                anchor_pos=motion_arrays["body_pos"][idx][0],
+                anchor_quat=motion_arrays["body_quat"][idx][0],
+                last_anchor_pos=motion_arrays["body_pos"][last][0],
+                last_anchor_quat=motion_arrays["body_quat"][last][0],
+                base_quat=d.qpos[3:7], pause=playhead.paused)
+        obs = CO.make_obs(con, view, last_action=last_action, command=cmd,
+                          motion_ref=motion_ref)
         if "pre" in plans:
             obs = run_plan(core, plans["pre"], obs)
         sess = sessions[mode_key]
@@ -252,17 +297,29 @@ def main() -> int:
             act = run_plan(core, plans["post"], raw)
         else:
             act = raw
+        if playhead is not None and in_active_mode:
+            playhead.advance()
+        if playhead is not None and ref_angles is not None and in_active_mode:
+            # WBC 的目标基准是 referenceJointPositions（不是 default），
+            # post 已按 default 算好，这里补上差值即可（缩放不变）
+            act = np.asarray(act, dtype=np.float64) + (np.asarray(ref_angles, np.float64)
+                                                       - np.asarray(preset.get("defaultJointPositions"), np.float64))
         if torque_mode:
             # **每个物理子步都重算 PD**（不是每个控制步算一次）。
             # 实测：控制步算一次只能撑 20 步，子步重算能撑 104 步——
             # 这也正是 MuJoCo 位置执行器的语义（它每个子步按 kp/kv 算力矩）。
             import actuators as _A
             gains = _with_gains(preset, len(driven))
+            # 注意：`act` 已经是 **目标角**（post 里做过 default + scale×action），
+            # 不能再走 ctrl_from_action（那会把 action 当原始动作再缩放一次）。
+            target_deg = np.asarray(act, dtype=np.float64)
             for _ in range(decim):
                 q_now = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
                 qd_now = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)
-                ctrl, _tgt = _A.ctrl_from_action(act, gains, qpos=q_now, qvel=qd_now)
-                d.ctrl[:] = ctrl
+                tau = _A.torque_from_target(target_deg, q_now, qd_now,
+                                            kp=gains["kp"], kd=gains["kd"],
+                                            effort_limit=gains["effortLimit"] or None)
+                d.ctrl[:] = tau
                 mujoco.mj_step(m, d)
         else:
             d.ctrl[:] = act
