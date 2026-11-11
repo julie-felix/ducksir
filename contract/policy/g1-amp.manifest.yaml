@@ -1,0 +1,44 @@
+# G1 的 AMP（mode 4）：obs 384 = 4 帧 × 96，action 29。
+# 逐项对齐 botlab 模板 `g1-wbc` 的 wbc_policy.policies()：
+#   amp: {history_frames: 4, fields: state_fields(reference)}   ← q 减 reference、策略序
+# 注意：AMP 的观测里**没有**参考段 67 维，只是 4 帧机器人状态；参考只用来算目标角。
+kind: ducksir-policy-manifest
+version: 1
+policy_id: g1-amp
+
+model:
+  file: build/models/g1-amp.onnx
+  input: {name: obs, shape: [1, 384]}
+  output: {name: actions, shape: [1, 29]}
+
+policies:
+  - {key: g1-amp, mode: 4, file: build/models/g1-amp.onnx}
+
+# 单帧 96：角速度 3 + 投影重力 3 + 速度指令 3 + q29 + qd29 + last29
+obs:
+  - {slot: body_angvel, len: 3, target: pelvis}
+  - {slot: projected_gravity, len: 3, target: pelvis}
+  - {slot: velocity_command, len: 3}
+  - {slot: joint_pos, len: 29, minus: reference, order: policy, scale: 1.0}
+  - {slot: joint_vel, len: 29, order: policy, scale: 1.0}
+  - {slot: last_action, len: 29, scale: 1.0}
+
+# 整个 96 维块展开成 4 帧 → 384
+obs_history: {offset: 0, length: 96, frames: 4}
+
+history: {length: 0, layout: by-frame}
+
+action:
+  # 目标 = referenceJointPositions + 0.25 × action（mode 4 与 mode 3 同一条公式）
+  mapping: default_plus_scale
+  order: policy
+  clip: ctrlrange
+
+rates: {control_hz: 50, physics_hz: 200, inference_decimation: 4}
+
+provenance:
+  source: botlab 模板 g1-wbc · assets/models/amp_0309_1.onnx（2026-11-12 取）
+  upstream: https://botlab.enkeebot.com/templates/g1-wbc/
+  obs_layout: wbc_policy.policies() 的 amp 条目 —— state_fields(reference) × history 4 帧 = 384
+  action_scale: 0.25（统一值，见 wbc_policy.joint_control 的 0.25 * action[motor_order]）
+  note: 上游无根 LICENSE；仅本地兼容性对照用，不对外分发。

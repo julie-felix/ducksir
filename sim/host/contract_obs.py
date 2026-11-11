@@ -107,6 +107,9 @@ def make_obs(doc: dict, view: dict, *, last_action=None, command=None, vx: float
         elif src == "last_action":
             if last_action is not None:
                 obs[off:off + length] = last_action
+        elif src == "command:velocity":
+            c = command if command is not None else np.zeros(13)
+            obs[off:off + 3] = np.asarray(c[:3], dtype=np.float32)
         elif src == "motion_ref":
             # 动作参考（WBC/AMP）：67 维，由 run_bundle 用 wbc_obs 按播放头算好传进来
             if motion_ref is None:

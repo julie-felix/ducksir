@@ -62,6 +62,8 @@ SOURCE_BY_SLOT = {
     "contact": lambda o: f"contact:{o.get('target', 'trunk')}",
     "base_height": lambda o: "base:z",
     "motion_ref": lambda o: "motion_ref",
+    # 速度指令 3 维（vx, vy, yaw_rate）——loco / AMP / MJAMP 的观测里有它
+    "velocity_command": lambda o: "command:velocity",
 }
 
 
@@ -198,7 +200,11 @@ def main() -> int:
     os.makedirs(out, exist_ok=True)
 
     pre_blob, pre_slots = build_pre(man)
-    post_blob, post_slots = build_post(preset, n, lo, hi)
+    # action.order=motor 的策略（mjamp）输出已经是电机序，**不能**再做 reorder
+    post_preset = preset
+    if (man.get("action") or {}).get("order") == "motor":
+        post_preset = dict(preset, motorJointOrder=list(range(n)))
+    post_blob, post_slots = build_post(post_preset, n, lo, hi)
     fsm_blob, fsm_slots = build_fsm()
     for name, blob in (("pre", pre_blob), ("post", post_blob), ("fsm", fsm_blob)):
         with open(os.path.join(out, f"{name}.blob"), "wb") as f:

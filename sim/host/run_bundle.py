@@ -115,7 +115,9 @@ def main() -> int:
         preset = _yaml.safe_load(open(preset_path, encoding="utf-8")) or {}
     torque_mode = str(preset.get("actuatorMode") or "").lower() == "torque"
     # 动作参考（WBC / AMP）：契约里有 robot.motion 才启用；播放头 + 参考目标角
-    motion_cfg = (con.get("robot") or {}).get("motion")
+    # 只有 WBC(3)/AMP(4) 用动作参考；loco(2)/mjamp(5) 不读参考段，也不该把目标基准换掉
+    use_reference = any(int(p.get("mode", 0)) in (3, 4) for p in (con.get("policies") or []))
+    motion_cfg = (con.get("robot") or {}).get("motion") if use_reference else None
     ref_angles = (con.get("robot") or {}).get("reference_joint_positions")
     motion_arrays = motion_meta = playhead = None
     if motion_cfg and motion_cfg.get("path"):
@@ -157,6 +159,7 @@ def main() -> int:
         raise SystemExit("契约里没有策略")
     mode_to_key = {int(p["mode"]): p["key"] for p in policies}
     sessions = {}
+    rnn_state = {}      # 多输入模型（loco 的 h/c）跨步保持
     for p in policies:
         path = os.path.join(bdir, p["file"])
         if not os.path.exists(path):
@@ -296,8 +299,23 @@ def main() -> int:
         if "pre" in plans:
             obs = run_plan(core, plans["pre"], obs)
         sess = sessions[mode_key]
-        feed = {sess.get_inputs()[0].name: obs.reshape(1, -1).astype(np.float32)}
-        raw = np.asarray(sess.run(None, feed)[0]).reshape(-1).astype(np.float32)
+        # 多输入模型（loco 的 h_in/c_in）要跨步保持递归状态；其余输入喂 0 初始化
+        in_names = [i.name for i in sess.get_inputs()]
+        feed = {in_names[0]: obs.reshape(1, -1).astype(np.float32)}
+        if len(in_names) > 1:
+            st = rnn_state.setdefault(mode_key, {})
+            for name, meta_in in zip(in_names[1:], sess.get_inputs()[1:]):
+                if name not in st:
+                    shape = [d if isinstance(d, int) else 1 for d in meta_in.shape]
+                    st[name] = np.zeros(shape, dtype=np.float32)
+                feed[name] = st[name]
+        out_names = [o.name for o in sess.get_outputs()]
+        results = sess.run(None, feed)
+        raw = np.asarray(results[0]).reshape(-1).astype(np.float32)
+        if len(out_names) > 1:
+            st = rnn_state.setdefault(mode_key, {})
+            for name, value in zip(out_names[1:], results[1:]):
+                st[name] = np.asarray(value, dtype=np.float32)
         # botlab 的控制器对动作做 ±100 截断（`policy_bank(...).clip(-100, 100)`），
         # 少了这一步，扭矩模式会把超界的动作直接放大成力矩。
         raw = np.clip(raw, -100.0, 100.0)

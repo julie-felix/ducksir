@@ -188,6 +188,9 @@ export function makeObs(duck, { lastAction, vx, command, motionRef: motionRefVal
       throw new Error(`浏览器端暂不支持 ${src}（contact 仅在宿主端点可用）`);
     } else if (src === 'base:z') {
       obs[off] = read(data.qpos, 2);
+    } else if (src === 'command:velocity') {
+      const c = command || [];
+      for (let k = 0; k < 3; k++) obs[off + k] = c[k] || 0;
     } else if (src === 'motion_ref') {
       if (!motionRefValue) throw new Error('观测配方需要 motion_ref，但调用方没给');
       for (let k = 0; k < len; k++) obs[off + k] = motionRefValue[k] || 0;

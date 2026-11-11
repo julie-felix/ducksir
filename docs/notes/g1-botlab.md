@@ -491,3 +491,39 @@ bundle 里没有手搓的 GLB 索引（那是鸭子专用），所以 `play.js` 
 「我们 600 步不倒、他们 native 那次 120 步就倒」不能直接当结论：他们的 native 路径是我们在
 本地拼的（换了模型、改了 controller 的 initial mode），不等于产品站里的浏览器 target。
 浏览器 target 才是真正的基准，而它录不出来（见 §7 的反代尝试）。
+
+## 16. 把另外三个模型也接进来：AMP / MJAMP 通了，loco 还差一步
+
+botlab 的 `g1-wbc` 模板一共 4 个策略，现在都有 bundle 了：
+
+| bundle | mode | 观测 | 动作 | 目标 | 增益 | 状态 |
+|---|---|---|---|---|---|---|
+| `g1-wbc` | 3 | 439（参考 67 + 4×93） | 29 | `reference` + 0.25×a | `kp/kd` | ✅ 站稳 |
+| `g1-amp` | 4 | 384（4×96，无参考段） | 29 | `reference` + 0.25×a | `kp/kd` | ✅ 站稳 |
+| `g1-mjamp` | 5 | 384（4×96，关节**电机序**） | 29 | `reference` + **逐关节 actionScale**×a | `kp/kd` | ✅ 站稳 |
+| `g1-loco` | 2 | 96（含速度指令，无历史） | 29 | `default` + 0.25×a | **balanceStiffness/Damping** | ❌ 会倒 |
+
+三处新语义（都是从 botlab 的 plan / trace 里读出来的，不是猜的）：
+
+1. **AMP/MJAMP 的观测里没有参考段**，只是 4 帧机器人状态；参考只用来算目标角；
+2. **MJAMP 用逐关节 `actionScale`**（0.29/0.35/0.44/0.55），不是统一 0.25——用它我才站稳；
+3. **MJAMP 的 action 已经是电机序**（`action.order: motor`），post 里不能再 reorder；
+   而 WBC/AMP 是策略序，必须 reorder（gather 要传逆置换）。
+
+MJAMP 的定位过程：先按「统一 0.25 + reorder」跑（倒）→ 录 botlab 自己的 mode 5 trace →
+用他们的状态/动作做**一步重放**，网格搜 target 公式（4 种组合），
+`actionScale(逐关节) + 动作电机序` 一步差 **1.06e-06**，其余组合 1e-1 量级。
+
+### loco 为什么还差
+
+loco 的 plan 我 dump 出来了（`patch_plan.py`），公式看着很清楚：
+
+```
+proc-reorder(motorJointOrder) → affine(scale=0.25, offset=default_joint_positions)
+kps = mode_select([balanceStiffness(2), kp(3,4,5)])   kds = mode_select([balanceDamping(2), kd(3,4,5)])
+proc-pd(target, q_native, v_native, kps, kds, effortLimit)
+```
+
+按这个公式做一步重放，残差还有 **3.2e-2**（其它三个模型是 1e-6 量级）；把 kp/kd 置换、
+去掉 effort 截断、换基准都试过，最好也只有 3.2e-2。**说明还有一处没读到**（怀疑 PD 用的
+q/qd 采样时刻或 `proc-mode-select` 的默认值）。loco 的 manifest 留着了，接上只差这一处。
