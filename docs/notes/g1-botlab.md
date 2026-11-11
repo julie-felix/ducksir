@@ -132,3 +132,35 @@ loco 这个策略单独从 preset 给的那个初始位形起跑、没有 WBC �
 
 **结论**：我们不该再调自己的探针。要做 G1 运控，得先确认「哪个策略、从哪个初始状态、在什么模式下」
 才真的能站——这一步在 botlab 的语义里就是「WBC 模板整体的一个 mode」，不是单拿 loco 就能跑。
+
+## 8. 又一个结构性发现：G1 的执行器是「扭矩 + 引擎侧 PD」，不是「位置执行器」
+
+站点共享的 G1 模型 `models/g1/g1_29dof.xml` 用的是 **`<motor>` 执行器**：
+
+```xml
+<motor name="left_hip_pitch" joint="left_hip_pitch_joint" ctrlrange="-88 88" />
+```
+
+而模板里那份（Instinct 用的 `assets/robot/bare.xml`）用的是 **`<position kp= kv=>`**。
+
+这两者语义完全不同：
+
+| | botlab 的 G1（站点共享） | 我们现在的导出 |
+|---|---|---|
+| MJCF 执行器 | `<motor ctrlrange="±88">`（**扭矩**） | `<position kp kv>`（位置） |
+| PD 在哪算 | **引擎算**：`tau = kp*(target−q) − kd*qd`，再用 `effortLimit` 截断 | MuJoCo 内部算 |
+| 策略输出怎么用 | `target = default + 0.25*action`，再走 PD | 直接当位置目标 |
+
+我们的 `export_mjcf.py` 只会导 `<position>`，等于在 MuJoCo 里又套了一层 PD。
+对鸭子没问题（它的策略就是位置增量），但**对 G1 这类扭矩策略就不等价**：
+它的 `effortLimit` 截断、以及 PD 的采样率（每个控制步一次，不是每个物理子步）都没了。
+
+**要做的事**（下一轮）：契约里表达「执行器模式」——`position` 还是 `torque+PD`，
+pcrest 时把 `kp/kd/effortLimit` 写进 preset，宿主/浏览器各自按同一套公式算扭矩。
+这是「接口对齐了、物理还没对齐」里剩下的那一半。
+
+### 顺带：他们 native 路径本身也不可靠
+
+用站点扭矩模型跑他们的 native 运行时，机器人直接**穿过地面**（z → −42）——共享场景里没有地面。
+换成 Instinct 那份带地面的场景，loco 也照样倒（z 0.79 → 0.19）。
+所以「在 botlab 里能不能站住」这件事，目前只有**浏览器 target** 能作数；native 路径的结论不能当基准。
