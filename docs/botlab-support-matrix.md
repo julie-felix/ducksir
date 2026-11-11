@@ -54,10 +54,10 @@
 | 投影重力 | `projected_gravity()` | ✅ `gravity:body:<name>` |
 | 关节位置/速度 | `joint_position()`、`joint_velocity()`、`qpos()`、`qvel()` | ✅ `qpos:joints`、`qvel:joints` |
 | 上一帧动作 | `last_action()` | ✅ `last_action` |
-| 基座高度 | `base_height()` | ⚠️ 只在报告里，未进观测配方 |
-| body 位姿 | `body_position()`、`body_quaternion()` | ❌ |
-| body 线/角速度 | `body_linear_velocity()`、`body_angular_velocity()` | ❌ |
-| 接触 | `contact(targets, kind)` | ❌ |
+| 基座高度 | `base_height()` | ✅ `base:z`（观测配方可用） |
+| body 位姿 | `body_position()`、`body_quaternion()` | ✅ `body:pos:<body>`、`body:quat:<body>`（2026-11-11） |
+| body 线/角速度 | `body_linear_velocity()`、`body_angular_velocity()` | ✅ `body:vel:<body>`、`body:angvel:<body>` |
+| 接触 | `contact(targets, kind)` | ⚠️ `contact:<body>` **仅宿主**；浏览器侧待核对 mjContact 偏移 |
 | 高度扫描（地形感知） | `height_scan(points, geom_groups, …)` | ❌ |
 | 任意 MuJoCo 量 | `mujoco(query, size, scale, start, target)`、`read(query, …)` | ❌（我们故意不开放任意查询，见 §4） |
 | 命名传感器 | `sensor_data(name, size)` | ✅ 同 `sensor:` |
@@ -99,7 +99,8 @@
 
 | 优先级 | 能力 | 为什么 | 工作量（粗估） |
 |---|---|---|---|
-| **P0** | 观测源补 `body_*`、`contact`、`base_height` | 现有四足/双足策略大量用到接触与基座高度；缺了无法接别人的策略 | 小：扩 `contract_obs` 的 source 词表 + `contract.json` 生成 + 浏览器 `play-core` 同款 |
+| ~~P0~~ | ~~观测源补 `body_*`、`base_height`~~ | 已完成（2026-11-11）：宿主 + 浏览器都有，`sim/test/test_obs_sources.py` 钉住语义 | ✅ |
+| **P0** | `contact` 的浏览器侧 | 宿主已有；浏览器端要核对 mjContact 的字段偏移（不猜） | 小 |
 | **P0** | 通用化到「任意 MJCF 机器人」验收一遍（用 Go2 当样本） | 这是 botlab 模板库的第二个模板；能跑通它才叫「支持项目」 | 中：canonical 导入器 + preset + obs 配方各来一份 |
 | **P1** | `height_scan` | 地形/楼梯类策略的前提 | 中 |
 | **P1** | `Motion`（重定向动作采样） | 跳舞/表演类项目 | 中 |
