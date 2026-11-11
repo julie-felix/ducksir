@@ -23,6 +23,11 @@ const mobile = args.includes('--mobile');
 const waitMs = Number(opt('--wait', '8000'));
 const shot = opt('--shot', null);
 const evalJs = opt('--eval', null);
+const clicks = (opt('--clicks', '') || '').split(';').filter(Boolean).map((pair) => {
+  const [x, y] = pair.split(',').map(Number);
+  return { x, y };
+});
+const clickWait = Number(opt('--click-wait', '900'));
 
 const PORT = Number(process.env.CDP_PORT || 9333);
 const userDir = process.env.CDP_PROFILE || '/tmp/cdp-profile';
@@ -99,6 +104,16 @@ const main = async () => {
     });
   }
   await sleep(waitMs);
+
+  for (const pt of clicks) {
+    for (const type of ['mousePressed', 'mouseReleased']) {
+      await c.send('Input.dispatchMouseEvent', {
+        type, x: pt.x, y: pt.y, button: 'left', clickCount: 1,
+      });
+    }
+    console.log(`[click] ${pt.x},${pt.y}`);
+    await sleep(clickWait);
+  }
 
   const logs = c.events
     .filter((e) => e.method === 'Runtime.consoleAPICalled' || e.method === 'Log.entryAdded'

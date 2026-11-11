@@ -28,8 +28,9 @@
 | `public/templates/microduck` | `tests/test_native_run.py:201`、`tests/e2e/*` | 双足小鸭（我们正在做的那只） |
 | `public/templates/go2w-lab2mj` | `tests/fixtures/README.md:9` | Unitree **Go2** 四足，模型来自 `lab2mj` 导出链 |
 
-> 完整模板列表在它们的 web 应用仓（`public/templates/`）里，那个仓不公开——
-> **未确认**到底还有哪些（我没有证据就不编）。但从能力面看，加一个机器人 = 加一份 MJCF + 一份 preset + 一个策略，不需要改引擎。
+> **2026-11-11 更正**：模板清单不是「未确认」，可以直接看到——产品站 `https://botlab.enkeebot.com/` 的
+> **文件 → 打开示例** 就是项目列表（9 项：空白 + 8 个模板），而且每个模板的文件按
+> `https://botlab.enkeebot.com/templates/<id>/<路径>` 直接可取。逐项见 §6。
 
 ---
 
@@ -124,3 +125,54 @@ botlab 有 `Robot.mujoco(query, …)` / `read(…)`：允许在声明里写任�
 - 现在「能跑别人的项目」的本钱：契约驱动（contract.json）+ 一套 15 节点图 + 浏览器/宿主两个 target + 三路对拍；
 - 差的第一块是**观测源**（body/contact/height）和第二块是**第二个机器人模板（Go2）**——这两块做完，
   才能说「botlab 的模板我们也能跑」。
+
+
+---
+
+
+---
+
+## 6. botlab 项目清单（文件 → 打开示例，2026-11-11 实测）
+
+在 `https://botlab.enkeebot.com/` 里点 **文件 → 打开示例**，得到 9 项（空白 + 8 个模板）。
+每个模板的文件按 `/templates/<id>/<相对路径>` 直接可取（实测全部 200），因此下面这些数据都是从
+各模板的 `controller.py` 与 `config/runtime.yaml` 里读出来的，不是猜的。
+
+| # | 示例（菜单文案） | 模板 id | 机器人 | 频率 | 策略/模型 | 关键能力 |
+|---|---|---|---|---|---|---|
+| 1 | 空白项目 | — | — | — | — | 从零开始 |
+| 2 | Unitree G1 GMTrack 跟踪 | `g1-gmtrack` | G1（`assets/robot/scene.xml`） | 50/200 | 1 个 ONNX（`stage2_actor.onnx`）+ 1 段动作 `current.npz` | `Motion` / `motion_reference`、`clock`、`history`、`rotate` |
+| 3 | G1 Hiking Parkour 策略 | `g1-hiking-parkour` | G1 29DOF（instinctmj 场景 + 鞋） | 50/200 | 2 个 ONNX（深度编码器 + actor） | `history`、**深度感知** |
+| 4 | Instinct-SuperMimic | `g1-instinct-supermimic` | G1（`assets/robot/scene.xml`） | 50 | 1 个 ONNX | `clock`、`history`、`mode_select`、相对位置/姿态 |
+| 5 | G1 PHP Parkour 策略 | `g1-php-parkour` | G1（带地形场景） | **50/500** | 2 个 ONNX（深度 backbone + actor） | 感知跑酷、深度 |
+| 6 | UniSuperMimic | `g1-unisupermimic` | G1 | 50 | 1 个 ONNX | 99D history + 730D goal、四元数运算、`rotation_6d` |
+| 7 | WBC 模板 | `g1-wbc` | G1 29DOF | 50/200 | **4 个 ONNX** + 动作 `dance12` | `policy_bank` + `mode_switch`、`motion_reference` |
+| 8 | Go2W Lab2MJ 策略 | `go2w-lab2mj` | Go2W 轮足四足（`scene_parkour.xml`） | 50/200 | **8 个 ONNX**（motion_tracking、vtm、vtm_lstm_sru×3、vtm_gru_sru…） | `PolicyController`、`policy_bank`、`history`、`mode_select/switch`、地形 |
+| 9 | MicroDuck 多策略 | `microduck` | MicroDuck | 50/200 | 7 个 ONNX（walking/sitstand/kick×2/roll/ground-pick/stand） | 项目内 `microduck.py` 自管观测 + 状态机（**我们已对标**） |
+
+**机器人只有三类**：MicroDuck（双足小鸭）、Go2W（轮足四足）、Unitree G1（人形 29DOF）。
+
+## 7. 这 8 个项目要用到的 SDK 能力（我们逐项对照）
+
+| 能力 | 出现模板 | 我们 |
+|---|---|---|
+`Model(...)` 多模型资源 | 除 microduck 外全部 | ⚠️ 有 model 节点，但一份图只能挂一个会话（`mode` 选一个） |
+`policy_bank` + `mode_switch` / `mode_select` | go2w、g1-wbc、instinct、unisuper | ✅ 等价（`fsm.blob` 的 `out:mode` + 多会话） |
+`Motion` / `motion_reference`（npz 动作采样） | gmtrack、g1-wbc | ❌ 未做 |
+`history(n, dim)` | 多数 G1 项目 | ✅ `history` 节点 |
+`clock()`（相位/时间输入） | gmtrack、instinct、unisuper | ✅ `phase_clock` |
+四元数信号：`quaternion_inverse/heading`、`relative_position/quaternion`、`rotate`、`rotation_6d` | unisuper、instinct、gmtrack | ❌ 未做（只有投影重力） |
+`Sensor` 深度/RGB | hiking、php（深度编码器） | ❌ 未做（浏览器与宿主都没有相机） |
+`delay` / `where` / `constant` / `concat` | go2w、instinct | ✅ `where`/`constant`/`concat` 有；**`delay` 没有** |
+`read_config` / `resource_config` / 项目内 Python 库（`microduck.py`、`go2w_policy.py`） | 全部 | ⚠️ 我们有 manifest+preset，但没有「项目内 Python 模块」这一层 |
+
+**结论**：我们已对标的是 **MicroDuck 模板**（9 个里的第 9 个）。要「都能跑」，缺的顺序是：
+① `Motion`（动作采样）→ ② 四元数信号族 → ③ 深度相机 → ④ `delay` → ⑤ 项目内 Python 模块层。
+其中 ① 和 ② 是纯图能力，跨端可复现，符合我们「能进图才进图」的判据；③ 是渲染/传感器，成本最大。
+
+## 8. 附：同名但无关的另一个 BotLab
+
+`Davidhidalgo/BotLab` 是一个**积木式教学编辑器**（Scratch 积木、React/Nx、`examples/` 20 个 `.botlab.json`、
+机器人 Jumper/MicroDuck/StackChan、界面西班牙语），和我们参考的 `botlab.enkeebot.com`（Python DSL + MuJoCo + ONNX）
+**不是同一个产品**，两者都叫 BotLab 但形态不同。它对我们的价值只有两条：
+**按距离/到障碍停的闭环动作**、**面向人的积木 UI**。不要把它当成模板来源。
