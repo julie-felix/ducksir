@@ -121,9 +121,10 @@ class Graph:
     # ── 动作映射 ────────────────────────────────────────────
     def motion(self, time, frames, *, fps: float, loop: bool = False) -> "Graph":
         """加一路动作参考采样（`ir.Plan.motion`）：时间→当前帧，线性插值。"""
-        import numpy as _np
-        arr = _np.asarray(frames, dtype=_np.float32)
-        self._action_ref = self._plan.motion(time, arr, arr.shape[1], fps, loop)
+        rows = frames.tolist() if hasattr(frames, "tolist") else list(frames)
+        if not rows:
+            raise ValueError("motion 至少一帧")
+        self._action_ref = self._plan.motion(time, rows, len(rows[0]), fps, loop)
         return self
 
     def action(self, *, scale="preset", clip="ctrlrange", ctrl_lo=None, ctrl_hi=None) -> "Graph":

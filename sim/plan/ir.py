@@ -24,8 +24,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-
-import numpy as np
 import struct
 
 MAGIC = b"DSIM"
@@ -266,17 +264,18 @@ class Plan:
         为什么做成节点而不是在宿主里算：动作参考是**跨端**的输入（浏览器与宿主必须一致），
         放进图里才能被同一份 blob 两端复现。
         """
-        arr = np.asarray(frames, dtype=np.float32)
-        if arr.ndim != 2 or arr.shape[1] != dim:
-            raise ValueError(f"motion 数据形状 {arr.shape} 与 dim={dim} 不符")
-        if arr.shape[0] < 1:
-            raise ValueError("motion 至少一帧")
+        # 不用 numpy：这个模块要保持「零第三方依赖」，CI 里没有 numpy 也要能 import
+        rows = frames.tolist() if hasattr(frames, "tolist") else list(frames)
+        rows = [[float(x) for x in row] for row in rows]
+        if not rows or any(len(row) != dim for row in rows):
+            shapes = sorted({len(row) for row in rows})
+            raise ValueError(f"motion 数据每行宽度必须都是 {dim}（实际 {shapes}）")
         if fps <= 0:
             raise ValueError("motion fps 必须为正")
         if time.length != 1:
             raise ValueError("motion 的时间输入必须是 1 维")
-        params = [float(arr.shape[0]), float(dim), float(fps), 1.0 if loop else 0.0]
-        params += arr.reshape(-1).tolist()
+        params = [float(len(rows)), float(dim), float(fps), 1.0 if loop else 0.0]
+        params += [x for row in rows for x in row]
         return self._add("motion", [time], dim, params)
 
     def compare(self, a: NodeRef, op: str, b: NodeRef) -> NodeRef:
