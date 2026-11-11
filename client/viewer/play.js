@@ -13,6 +13,7 @@ import { loadDuck, makeObs, stepPhysics, read, setContract, getContract, slot, r
          checkPlanAgainstContract, obsDim, upright } from './play-core.mjs';
 import { planPath, policyPath } from './assets-map.mjs';
 import { tensorLens, splitPacked, concatOutputs, isSingleTensor } from './model-io.mjs';
+import { isTorque, ctrlFromAction } from './actuators.mjs';
 
 const $ = (id) => document.getElementById(id);
 
@@ -350,7 +351,24 @@ async function main() {
           : Array.from(res[sess.outputNames[0]].data);
       }
       const ctrlOut = runPlan(post, action);
-      for (let j = 0; j < model.nu; j++) data.ctrl[j] = ctrlOut[j];
+      if (isTorque(getContract())) {
+        // 扭矩模型：**每个物理子步**重算 PD（控制步算一次会很快倒，见 actuators.mjs 顶部说明）
+        for (let sub = 0; sub < DECIM; sub += 1) {
+          const q = new Float64Array(model.nu);
+          const qd = new Float64Array(model.nu);
+          for (let j = 0; j < model.nu; j += 1) {
+            const jid = duck.jointId(getContract().robot.joints[j]);
+            q[j] = read(data.qpos, read(model.jnt_qposadr, jid));
+            qd[j] = read(data.qvel, read(model.jnt_dofadr, jid));
+          }
+          const { ctrl } = ctrlFromAction(getContract(), ctrlOut, q, qd);
+          for (let j = 0; j < model.nu; j += 1) data.ctrl[j] = ctrl[j];
+          mj.mj_step(model, data);
+        }
+      } else {
+        for (let j = 0; j < model.nu; j++) data.ctrl[j] = ctrlOut[j];
+        stepPhysics(mj, model, data, DECIM);
+      }
       state.lastAction.set(action);
 
       // 3) 恰好 DECIM 步物理

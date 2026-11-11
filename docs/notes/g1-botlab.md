@@ -205,8 +205,14 @@ PASS：扭矩模型 + 子步 PD + loco（判据：≥60 步；botlab native 自�
 2. **策略序 ≠ 电机序必须显式映射**。botlab 的 JSON preset 里 `policyJointOrder/motorJointOrder`
    都是恒等，真正的映射在 `ccrpRepo/wbc_fsm` 的 `dof_mapping` 里。不映射 → 35 步就倒；映射后 82 步。
 
+### 浏览器侧也补上了
+
+- `client/viewer/actuators.mjs`：与宿主 `sim/host/actuators.py` **同一套公式**（策略序→电机序、目标角、扭矩 + 截断）；
+- `client/viewer/play.js`：扭矩模式下**每个物理子步**重算 PD（与宿主对齐）；
+- `contract.json` 的 `robot` 段新增 `actuator_mode` / `kp` / `kd` / `effort_limit` / `motor_order`，两端都从契约读；
+- `sim/test/test_actuators_parity.mjs`：同一组随机输入分别喂给两端实现，**逐元素一致（0.00e+0）**。
+
 ### 还差
 
-- 浏览器侧（`play.js`）的扭矩 PD——现在只支持位置执行器；
-- loco 单独跑本来就站不久（botlab native 自己也是 80–120 步）；要真站住得接需要
-  `motion_reference` 的 WBC/AMP mode，那是 `Motion` + 多策略的下一个台阶。
+loco 单独跑本来就站不久（botlab native 自己也是 80–120 步）；要真站住得接需要
+`motion_reference` 的 WBC/AMP mode，那是 `Motion` + 多策略的下一个台阶。

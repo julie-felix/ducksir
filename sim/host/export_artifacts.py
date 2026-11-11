@@ -184,6 +184,12 @@ def main() -> int:
             "action_scale": preset["actionScale"],
             "ctrlrange": [[lo[i], hi[i]] for i in range(n)],
             "commands": {"forward_max": 0.25, "back_max": -0.2, "yaw_max": 1.0},
+            # 执行器语义：position = MuJoCo 自己算 PD；torque = 消费者每个物理子步按 kp/kd 算
+            "actuator_mode": preset.get("actuatorMode", "position"),
+            "kp": preset.get("kp") or [],
+            "kd": preset.get("kd") or [],
+            "effort_limit": preset.get("effortLimit") or [],
+            "motor_order": preset.get("motorJointOrder") or list(range(n)),
         },
     )
     with open(os.path.join(out, "contract.json"), "w", encoding="utf-8") as f:
