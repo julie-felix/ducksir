@@ -12,6 +12,7 @@ import { GLTFLoader } from './vendor/three/loaders/GLTFLoader.js';
 import { loadDuck, makeObs, stepPhysics, read, setContract, getContract, slot, readSlot,
          checkPlanAgainstContract, obsDim, upright } from './play-core.mjs';
 import { planPath, policyPath } from './assets-map.mjs';
+import { tensorLens, splitPacked, concatOutputs, isSingleTensor } from './model-io.mjs';
 
 const $ = (id) => document.getElementById(id);
 
@@ -193,9 +194,22 @@ async function main() {
       if (sessions[key]) return sessions[key];
       stage(`创建 ORT Web 会话（${key}）`);
       const buf = await bytes(policyPath(contract, key, DATA));
-      sessions[key] = await ort.InferenceSession.create(buf,
+      const sess = await ort.InferenceSession.create(buf,
         { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
-      return sessions[key];
+      // 模型可能是「一进一出」，也可能是递归策略那种「obs+h+c → action+h+c」。
+      // 核只认单张量，所以先算好每个张量的宽度，跑的时候按它切分/合并。
+      // metadata 在某些 ORT Web 版本上拿不到：拿不到就退回「一进一出」的老路径，
+      // 不因为元数据缺失把整页弄挂（老模型本来也是一进一出）。
+      try {
+        sess.duckInLens = tensorLens(sess.inputMetadata, sess.inputNames);
+        sess.duckOutLens = tensorLens(sess.outputMetadata, sess.outputNames);
+      } catch (e) {
+        sess.duckInLens = null;
+        sess.duckOutLens = null;
+        stage('（取不到张量元数据，按单张量处理）');
+      }
+      sessions[key] = sess;
+      return sess;
     }
     const modeToKey = {};
     for (const pol of policyList) modeToKey[pol.mode] = pol.key;
@@ -316,9 +330,25 @@ async function main() {
       const obs = makeObs(duck, { lastAction: state.lastAction, vx: state.vx, command: cmd13 });
       const policyInput = runPlan(pre, obs);
       const sess = await getSession(active);
-      const res = await sess.run({ [sess.inputNames[0]]:
-        new ort.Tensor('float32', Float32Array.from(policyInput), [1, policyInput.length]) });
-      const action = Array.from(res[sess.outputNames[0]].data);
+      const packed = Float32Array.from(policyInput);
+      let action;
+      if (!sess.duckInLens || isSingleTensor(sess.duckInLens)) {
+        const res = await sess.run({ [sess.inputNames[0]]:
+          new ort.Tensor('float32', packed, [1, packed.length]) });
+        action = sess.duckOutLens
+          ? Array.from(concatOutputs(res, sess.duckOutLens))
+          : Array.from(res[sess.outputNames[0]].data);
+      } else {
+        // 多张量（递归策略）：按模型声明切分打包输入，跑完按输出顺序拼回一条
+        const feed = {};
+        for (const t of splitPacked(packed, sess.duckInLens)) {
+          feed[t.name] = new ort.Tensor('float32', Float32Array.from(t.data), t.shape);
+        }
+        const res = await sess.run(feed);
+        action = sess.duckOutLens
+          ? Array.from(concatOutputs(res, sess.duckOutLens))
+          : Array.from(res[sess.outputNames[0]].data);
+      }
       const ctrlOut = runPlan(post, action);
       for (let j = 0; j < model.nu; j++) data.ctrl[j] = ctrlOut[j];
       state.lastAction.set(action);

@@ -230,5 +230,8 @@ action = actor(state, latent).clip(-100, 100).action()   # [1,896] → [1,29]
 用真实的 `loco_0731.onnx`（96+256+256 → 29+256+256）端到端验过：跑通、状态跨步、连跑 50 步无 NaN、
 `ds_reset` 后第一步与最初**逐位相同**（0.00e+00）。
 
-**浏览器侧还差**：`play.js` 里的 ORT Web 需要同样的多张量适配（把三个输入压成一个 `Tensor`、
-输出拆三个）。在补上之前，递归模型只能在宿主 target 跑。
+**浏览器侧已补**（同日）：`client/viewer/model-io.mjs`（纯函数：按 metadata 切分打包输入、按声明顺序合并输出）
++ `play.js` 里的多张量分支；拿不到 metadata 时回落到「一进一出」老路径。
+wasm 核也重新编过了（`make wasm`，emsdk 在 `~/emsdk`），`test_wasm_parity` 仍是 **0.000e+00**。
+还没跑过真实的递归 bundle（我们还没有这样的包），节点与适配层的单测有：
+`test_model_io.mjs`、`test_rnn_host_model.py`。
