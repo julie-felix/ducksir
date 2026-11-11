@@ -22,6 +22,7 @@
 - [`docs/node-parity.md`](node-parity.md) — botlab 56 个节点与本仓集成情况的对照表（✅25 / ⇄2 / ⏳2 / ❌27）。
 - [`docs/botlab-diff.md`](botlab-diff.md) — **与 botlab 的子系统级差异**（SDK 门面/CLI/golden/部署/场景/项目模型），三档标注行为等价·形态不等价·真缺口。
 - [`docs/botlab-support-matrix.md`](botlab-support-matrix.md) — **botlab 支持哪些项目 / 能力面对照**：项目=目录+声明、模板（microduck、go2w-lab2mj）、观测源/相机/Motion/场景/HIL 的逐项差距与优先级。
+- [`docs/notes/botlab-templates-inventory.md`](notes/botlab-templates-inventory.md) — **8 个 botlab 模板的全量清点**：包已下载（220 MB 在 `third_party/`）、逐项目文件结构/模型 IO 维度/配置/动作素材，末尾 5 个缺口与推荐顺序。
 - [`docs/plans/2026-11-09-parallel-mechanism.md`](plans/2026-11-09-parallel-mechanism.md) — 并联机构：G1 踝/腰实物并联、模型串联；PR/AB 两套坐标 + coupling；官方 CAD 7 实体判读表。
 - [`docs/plans/2026-11-08-digital-description.md`](plans/2026-11-08-digital-description.md) — 长期路线（M1–M4）：鸭子只有 MJCF 没有 URDF，canonical 自定 schema。前一段已被 11-09 取代。
 - [`docs/out-of-scope/`](out-of-scope/README.md) — 讨论过但否掉的提案，提之前先读。
