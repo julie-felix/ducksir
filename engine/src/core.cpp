@@ -66,6 +66,35 @@ struct ds_plan {
     HistState* hists = nullptr;
     uint32_t hist_count = 0;
 
+    // delay 节点的环形缓冲：输出 N 步之前的值（首 N 步输出 fill）。
+    // 递归策略（LSTM/GRU）的 h/c 就是这么接回图的：模型输出 h_new → delay → 下一步的 h_in。
+    struct DelayState {
+        uint16_t node_index;
+        uint16_t frames;
+        uint16_t width;
+        uint16_t head;
+        float* buf;   // frames * width
+        float* fill;  // width
+    };
+    DelayState* delays = nullptr;
+    uint32_t delay_count = 0;
+
+    // model_rnn：后端只认「一个输入张量、一个输出张量」，所以核把 obs+h+c 拼成一个张量送进去，
+    // 再把输出拆回 action/h_new/c_new。后端（宿主/wasm）只需按同一约定包一层。
+    struct RnnState {
+        uint16_t node_index;
+        uint16_t h_len;
+        uint16_t c_len;
+        uint16_t in_len;    // obs + h + c
+        uint16_t out_len;   // action + h + c
+        float* h;
+        float* c;
+        float* scratch_in;
+        float* scratch_out;
+    };
+    RnnState* rnns = nullptr;
+    uint32_t rnn_count = 0;
+
     // 状态机：每个节点一份 {state, steps}，在 ds_reset 里回到 initial
     struct SmState {
         uint16_t node_index;
@@ -99,7 +128,7 @@ uint64_t fnv1a64(const uint8_t* data, size_t len) {
     return h;
 }
 
-bool known_type(uint16_t t) { return t >= DS_NODE_OBS && t <= DS_NODE_MOTION; }
+bool known_type(uint16_t t) { return t >= DS_NODE_OBS && t <= DS_NODE_MODEL_RNN; }
 
 void set_err(char* err, size_t err_len, const char* msg) {
     if (!err || err_len == 0) return;
@@ -270,6 +299,23 @@ ds_plan* ds_load(const void* blob, size_t len, char* err, size_t err_len) {
                 return nullptr;
             }
         }
+        if (n.type == DS_NODE_MODEL_RNN) {
+            if (n.param_len < 3) {
+                ds_free(p);
+                set_err(err, err_len, "model_rnn 参数表要 [model_id, h_len, c_len]");
+                return nullptr;
+            }
+            if (n.n_in != 1) {
+                ds_free(p);
+                set_err(err, err_len, "model_rnn 只吃 1 个输入（obs）");
+                return nullptr;
+            }
+        }
+        if (n.type == DS_NODE_DELAY && n.param_len < 1) {
+            ds_free(p);
+            set_err(err, err_len, "delay 参数表至少要 [frames]");
+            return nullptr;
+        }
         if (n.type == DS_NODE_STATE_MACHINE && n.out_len != 2) {
             ds_free(p);
             set_err(err, err_len, "state_machine 输出必须是 2 维 [state, steps]");
@@ -336,6 +382,99 @@ ds_plan* ds_load(const void* blob, size_t len, char* err, size_t err_len) {
             ++k;
         }
     }
+    // delay 状态
+    uint32_t nd = 0;
+    for (uint16_t i = 0; i < node_count; ++i) {
+        if (p->nodes[i].type == DS_NODE_DELAY) ++nd;
+    }
+    p->delay_count = nd;
+    if (nd) {
+        p->delays = new (std::nothrow) ds_plan::DelayState[nd]();
+        if (!p->delays) {
+            ds_free(p);
+            set_err(err, err_len, "分配 delay 状态失败");
+            return nullptr;
+        }
+        uint32_t k = 0;
+        for (uint16_t i = 0; i < node_count; ++i) {
+            const Node& n = p->nodes[i];
+            if (n.type != DS_NODE_DELAY) continue;
+            const int frames = static_cast<int>(p->params[n.param_off]);
+            if (frames < 1 || frames > 1024) {
+                ds_free(p);
+                set_err(err, err_len, "delay frames 非法（1..1024）");
+                return nullptr;
+            }
+            if (n.param_len < static_cast<uint32_t>(1 + n.out_len)) {
+                ds_free(p);
+                set_err(err, err_len, "delay 参数表缺 fill 值");
+                return nullptr;
+            }
+            ds_plan::DelayState& d = p->delays[k];
+            d.node_index = i;
+            d.frames = static_cast<uint16_t>(frames);
+            d.width = n.out_len;
+            d.head = 0;
+            d.buf = new (std::nothrow) float[static_cast<size_t>(frames) * d.width]();
+            d.fill = new (std::nothrow) float[d.width]();
+            if (!d.buf || !d.fill) {
+                ds_free(p);
+                set_err(err, err_len, "分配 delay 缓冲失败");
+                return nullptr;
+            }
+            for (uint16_t w = 0; w < d.width; ++w) d.fill[w] = p->params[n.param_off + 1 + w];
+            for (int f = 0; f < frames; ++f) {
+                for (uint16_t w = 0; w < d.width; ++w) {
+                    d.buf[static_cast<size_t>(f) * d.width + w] = d.fill[w];
+                }
+            }
+            ++k;
+        }
+    }
+
+    // model_rnn 状态
+    uint32_t nr = 0;
+    for (uint16_t i = 0; i < node_count; ++i) {
+        if (p->nodes[i].type == DS_NODE_MODEL_RNN) ++nr;
+    }
+    p->rnn_count = nr;
+    if (nr) {
+        p->rnns = new (std::nothrow) ds_plan::RnnState[nr]();
+        if (!p->rnns) {
+            ds_free(p);
+            set_err(err, err_len, "分配 model_rnn 状态失败");
+            return nullptr;
+        }
+        uint32_t k = 0;
+        for (uint16_t i = 0; i < node_count; ++i) {
+            const Node& n = p->nodes[i];
+            if (n.type != DS_NODE_MODEL_RNN) continue;
+            const int h_len = static_cast<int>(p->params[n.param_off + 1]);
+            const int c_len = static_cast<int>(p->params[n.param_off + 2]);
+            if (h_len < 0 || c_len < 0 || h_len > 4096 || c_len > 4096) {
+                ds_free(p);
+                set_err(err, err_len, "model_rnn 状态维度非法");
+                return nullptr;
+            }
+            ds_plan::RnnState& r = p->rnns[k];
+            r.node_index = i;
+            r.h_len = static_cast<uint16_t>(h_len);
+            r.c_len = static_cast<uint16_t>(c_len);
+            r.in_len = static_cast<uint16_t>(n.in[0].len + h_len + c_len);
+            r.out_len = static_cast<uint16_t>(n.out_len + h_len + c_len);
+            r.h = new (std::nothrow) float[h_len ? h_len : 1]();
+            r.c = new (std::nothrow) float[c_len ? c_len : 1]();
+            r.scratch_in = new (std::nothrow) float[r.in_len ? r.in_len : 1]();
+            r.scratch_out = new (std::nothrow) float[r.out_len ? r.out_len : 1]();
+            if (!r.h || !r.c || !r.scratch_in || !r.scratch_out) {
+                ds_free(p);
+                set_err(err, err_len, "分配 model_rnn 缓冲失败");
+                return nullptr;
+            }
+            ++k;
+        }
+    }
+
     // 状态机状态
     uint32_t ns = 0;
     for (uint16_t i = 0; i < node_count; ++i) {
@@ -376,6 +515,27 @@ void ds_free(ds_plan* p) {
         for (uint32_t i = 0; i < p->hist_count; ++i) delete[] p->hists[i].buf;
         delete[] p->hists;
     }
+    if (p->rnns) {
+        for (uint32_t i = 0; i < p->rnn_count; ++i) {
+            delete[] p->rnns[i].h;
+            delete[] p->rnns[i].c;
+            delete[] p->rnns[i].scratch_in;
+            delete[] p->rnns[i].scratch_out;
+        }
+        delete[] p->rnns;
+    }
+    if (p->delays) {
+        for (uint32_t i = 0; i < p->rnn_count; ++i) {
+        ds_plan::RnnState& r = p->rnns[i];
+        std::memset(r.h, 0, sizeof(float) * (r.h_len ? r.h_len : 1));
+        std::memset(r.c, 0, sizeof(float) * (r.c_len ? r.c_len : 1));
+    }
+    for (uint32_t i = 0; i < p->delay_count; ++i) {
+            delete[] p->delays[i].buf;
+            delete[] p->delays[i].fill;
+        }
+        delete[] p->delays;
+    }
     delete[] p->sms;
     delete[] p->nodes;
     delete[] p->params;
@@ -402,6 +562,14 @@ int ds_reset(ds_plan* p) {
         const size_t n = static_cast<size_t>(p->hists[i].frames) * p->hists[i].frame_len;
         std::memset(p->hists[i].buf, 0, n * sizeof(float));
         p->hists[i].head = 0;
+    }
+    for (uint32_t i = 0; i < p->delay_count; ++i) {
+        ds_plan::DelayState& d = p->delays[i];
+        for (uint32_t f = 0; f < d.frames; ++f) {
+            std::memcpy(d.buf + static_cast<size_t>(f) * d.width, d.fill,
+                        sizeof(float) * d.width);
+        }
+        d.head = 0;
     }
     for (uint32_t i = 0; i < p->sm_count; ++i) {
         p->sms[i].state = p->sms[i].initial;
@@ -439,6 +607,8 @@ int ds_step(ds_plan* p, const float* obs, float* action, const ds_backend* backe
 
     uint32_t hist_cursor = 0;
     uint32_t sm_cursor = 0;
+    uint32_t delay_cursor = 0;
+    uint32_t rnn_cursor = 0;
     for (uint16_t i = 0; i < p->node_count; ++i) {
         const Node& n = p->nodes[i];
         float* out = p->arena + n.out_off;
@@ -500,6 +670,45 @@ int ds_step(ds_plan* p, const float* obs, float* action, const ds_backend* backe
                 ds_plan::HistState& h = p->hists[hist_cursor++];
                 hist_push(h, in0);
                 hist_read(h, out);
+                break;
+            }
+            case DS_NODE_DELAY: {
+                if (delay_cursor >= p->delay_count) return DS_ERR_GRAPH;
+                ds_plan::DelayState& d = p->delays[delay_cursor++];
+                const size_t base = static_cast<size_t>(d.head) * d.width;
+                // 先读出「N 步之前」的那一个槽（即将被覆盖），再把当前值写进去
+                std::memcpy(out, d.buf + base, sizeof(float) * d.width);
+                std::memcpy(d.buf + base, in0, sizeof(float) * d.width);
+                d.head = static_cast<uint16_t>((d.head + 1) % d.frames);
+                break;
+            }
+            case DS_NODE_MODEL_RNN: {
+                if (rnn_cursor >= p->rnn_count) return DS_ERR_GRAPH;
+                ds_plan::RnnState& r = p->rnns[rnn_cursor++];
+                if (!backend || !backend->onnx_run) return DS_ERR_NO_BACKEND;
+                const int model_id = static_cast<int>(prm[0]);
+                // in = [obs, h, c]
+                std::memcpy(r.scratch_in, in0, sizeof(float) * n.in[0].len);
+                if (r.h_len) {
+                    std::memcpy(r.scratch_in + n.in[0].len, r.h, sizeof(float) * r.h_len);
+                }
+                if (r.c_len) {
+                    std::memcpy(r.scratch_in + n.in[0].len + r.h_len, r.c,
+                                sizeof(float) * r.c_len);
+                }
+                const int rc = backend->onnx_run(backend->ctx, model_id, r.scratch_in,
+                                                 static_cast<int>(r.in_len), r.scratch_out,
+                                                 static_cast<int>(r.out_len));
+                if (rc != 0) return DS_ERR_GRAPH;
+                // out = [action, h_next, c_next]
+                std::memcpy(out, r.scratch_out, sizeof(float) * n.out_len);
+                if (r.h_len) {
+                    std::memcpy(r.h, r.scratch_out + n.out_len, sizeof(float) * r.h_len);
+                }
+                if (r.c_len) {
+                    std::memcpy(r.c, r.scratch_out + n.out_len + r.h_len,
+                                sizeof(float) * r.c_len);
+                }
                 break;
             }
             case DS_NODE_MODEL: {

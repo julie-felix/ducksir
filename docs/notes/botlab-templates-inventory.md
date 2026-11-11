@@ -209,3 +209,22 @@ action = actor(state, latent).clip(-100, 100).action()   # [1,896] → [1,29]
 
 还没接线：`contract.json` 里还没有「动作参考」这一槽位，`fsm.blob` 也还没用到这个节点。
 真正用起来要等「动作跟踪类」项目（GMTrack / UniSuper）接入。
+
+## 12. 递归状态（2026-11-11 夜）
+
+`model_rnn`（第 18 种节点）与 `delay`（第 17 种）已落地：
+
+| 节点 | 语义 | 用途 |
+|---|---|---|
+| `delay` | N 步延迟，前 N 步输出 fill | botlab `delay(mode, 1)` 这种信号级用法；只能延迟**前序**节点的值 |
+| `model_rnn` | `in=[obs,h,c]` → `out=[action,h_new,c_new]`，h/c 存 plan、跨步保持、`ds_reset` 清零 | LSTM/GRU 策略（Go2W 的 VTM、G1-WBC 的 loco） |
+
+为什么不是「用 `delay` 把模型输出接回去」：图是 DAG，`h_new` 要在同一时间步喂给 `model` 就是环。
+把状态放进节点（`model_rnn`）是唯一不破坏 DAG 的做法；`delay` 只能延迟更早的值。
+
+**验证**：`sim/test/test_rnn_node.py` 用假后端实现 `h_new = 0.5h + obs`，
+核与 numpy 参考逐点一致、`ds_reset` 重放逐位相同、没后端时明确返回 `DS_ERR_NO_BACKEND`。
+
+**还差一步**：宿主侧要把多张量 ONNX（`obs` + `h_in` + `c_in` 三个输入）包成
+「一个输入张量、一个输出张量」的适配层——核只认单张量。这层不做，
+真实 LSTM 模型还接不进来（节点本身已经可用）。

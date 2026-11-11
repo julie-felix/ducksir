@@ -42,6 +42,8 @@ enum ds_node_type {
     DS_NODE_STATE_MACHINE = 14,
     DS_NODE_COMPARE = 15,
     DS_NODE_MOTION = 16, /* 动作参考采样（botlab 的 Motion.sample / motion_reference） */
+    DS_NODE_DELAY = 17,  /* N 步延迟（botlab 的 delay）：把上一帧的值还给下一帧 */
+    DS_NODE_MODEL_RNN = 18, /* 带状态槽的模型（LSTM/GRU）：h/c 存在 plan 里，跨步保持 */
 };
 
 /* 节点 flag */

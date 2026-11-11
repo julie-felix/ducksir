@@ -63,7 +63,7 @@ required 表：required_count × 4B  { u16 type, u16 min_version }
 
 **所有 `off/len` 都是 float 下标**，指向同一个 arena 或参数表。arena 在 `ds_load` 时一次性分配，`ds_step` 里一次 malloc 都没有。
 
-## 3. 十六个节点（W4 起；W12d 加 `motion`）
+## 3. 十八个节点（W4 起；W12d 加 `motion`，W12e 加 `delay` / `model_rnn`）
 
 | id | 名字 | 语义 | 参数 |
 |---|---|---|---|
@@ -83,11 +83,18 @@ required 表：required_count × 4B  { u16 type, u16 min_version }
 | 14 | `state_machine` | 状态机，输出 2 维 `[state, steps]`；转移按「command 脉冲 / after_steps / when」三类，同类按声明顺序取首个命中 | 表长、初始态、条件数 + 每条转移 6 个数 |
 | 15 | `compare` | 两路 1 维比较，输出 0/1（`gt/gte/lt/lte/eq`） | `[op]` |
 | 16 | `motion` | 动作参考采样（botlab 的 `Motion.sample` / `motion_reference`）：输入 1 维秒数，按 `t*fps` 取相邻两帧线性插值 | `[n_frames, dim, fps, loop]` + `n_frames*dim` 个值 |
+| 17 | `delay` | N 步延迟（botlab 的 `delay`）：输出 `frames` 步前的值，前 `frames` 步输出 `fill` | `[frames, fill…]` |
+| 18 | `model_rnn` | 带状态槽的模型（LSTM/GRU）：`in = [obs, h, c]`，`out = [action, h_new, c_new]`；h/c 存在 plan 里跨步保持，`ds_reset` 清零 | `[model_id, h_len, c_len]` |
 
 两条容易踩的：
 
 1. **`history` 首步是「前面全零」**：缓冲在 `ds_reset`（以及加载后）清零，首步输出 = `[0 … 0, x]`。这条必须两端一致，否则策略看到的历史会差一截。
 2. **`model` 不自己推理**：核里没有 onnxruntime，只有一个 C 函数指针（`ds_backend.onnx_run`）。`pass-through` flag 只给测试用（不调后端、直接拷贝），出产物前必须清掉。
+
+**递归状态怎么表达**：图是 DAG，同一个时间步内不能成环。LSTM/GRU 的
+「上一步的 h 喂给这一步」因此有两条路：`delay`（只能延迟**前序**节点的值）和 `model_rnn`
+（状态槽在 plan 里，核负责拼接 `[obs,h,c]` 与拆分 `[action,h_new,c_new]`）。
+真机策略（Go2W 的 VTM、G1-WBC 的 loco）走后者；`delay` 留给 `delay(mode, 1)` 这种信号级用法。
 
 `motion` 是**唯一带数据表的节点**：动作参考（npz 的帧序列）直接编进 blob 的参数表，
 于是两端吃同一份数据、同一套插值——不需要运行时文件 IO，也不会出现「宿主和浏览器读到的动作不一样」。
