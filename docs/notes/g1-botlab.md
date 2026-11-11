@@ -278,3 +278,35 @@ int last_idx = idx - _frame_interval;             // 锚点回看 _frame_interva
 - 锚点 `last_refer_anchor_*` 的更新规则（前 5 步对上、第 10 步偏）；
 - 439 维 obs 还没进 bundle 的观测配方（`contract.json` 没有「动作参考 + 4 帧历史」组合槽位）；
 - `contract_obs` 还没有 `motion_ref` 这个 source。
+
+## 11. WBC 模式在我们自己的链路里跑起来了（12 秒不倒）
+
+`tools/dev/g1_wbc_smoke.py`：439 观测 + 参考动作播放 + 扭矩 PD，复刻 botlab `g1-wbc` 的 mode 3。
+
+```
+$ WBC_STEPS=600 WBC_UNPAUSE=10 python3 tools/dev/g1_wbc_smoke.py
+模型输入 ['obs']（第一维 439），输出 ['actions']
+z 起 0.793 → 0.659（最低 0.649），直立 0.995，共 600 步
+跟踪误差：前 20 步均值 0.287 rad，后 20 步均值 0.127 rad
+PASS
+```
+
+600 控制步 = **12 秒**，基座高度在 0.65–0.79 m 之间，直立度 0.995，跟踪误差从 0.287 rad
+降到 0.127 rad（越跟越准）。**这是 G1 第一次在我们自己的核里真正站稳并跟动作。**
+
+### 复刻到的三处语义（都和 loco 不同）
+
+| 项 | loco（mode 2） | WBC（mode 3） |
+|---|---|---|
+| 观测 | 96 | **439**（参考 67 + 状态 4×93） |
+| 目标基准 | `defaultJointPositions` | **`referenceJointPositions`**（preset 里那组，不是默认角） |
+| 增益 | `balanceStiffness/Damping` | `robot.kp/kd` |
+| 动作参考 | 无 | 每控制步 +1 帧、锚点回看 5 帧、进 mode 前暂停 |
+
+动作缩放仍然是 **0.25 统一**：`target = reference + 0.25 × action[motor_order]`。
+
+### 还没做
+
+- 这是宿主侧（Python + MuJoCo）跑通；**浏览器侧还没接**（要 model_rnn 之外再加「动作参考 + 4 帧历史」的图）；
+- 动作参考还没进 `contract.json`（现在是冒烟脚本里直接装配的）；
+- mode 切换（loco ↔ WBC）还没接 `state_machine`。
