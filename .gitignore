@@ -26,3 +26,6 @@ client/viewer/vendor/mujoco/
 client/viewer/data/live/*.onnx
 # 浏览器物理用的 STL（21 MB），用 tools/vendor_mujoco_web.py 抓
 client/viewer/assets/mjcf/
+
+# botlab 上游模板包（220MB，用 tools/dev/grab_botlab_templates.mjs 可重新拉）
+third_party/botlab-templates/*.zip
