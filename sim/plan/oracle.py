@@ -28,6 +28,16 @@ def initial_state(doc: dict) -> dict:
             frames = int(doc["params"][nd["param"]["off"]])
             n = nd["out"]["len"] // frames
             state[i] = np.zeros((frames, n), dtype=F32)
+        if nd["name"] == "model_rnn":
+            p = doc["params"][nd["param"]["off"]:nd["param"]["off"] + nd["param"]["len"]]
+            h_len, c_len = int(p[1]), int(p[2])
+            state[i] = {"h": np.zeros(h_len, dtype=F32), "c": np.zeros(c_len, dtype=F32)}
+        if nd["name"] == "delay":
+            p = doc["params"][nd["param"]["off"]:nd["param"]["off"] + nd["param"]["len"]]
+            frames = int(p[0])
+            width = nd["out"]["len"]
+            fill = np.array(p[1:1 + width], dtype=F32)
+            state[i] = {"head": 0, "buf": np.tile(fill, (frames, 1)).astype(F32)}
     return state
 
 
@@ -120,6 +130,26 @@ def step(doc: dict, obs, state: dict | None = None, backend=None):
                     i0, frac = frames - 1, 0.0
                 i1 = i0 + 1 if i0 + 1 < frames else i0
             value = table[i0] * (1 - frac) + table[i1] * frac
+        elif name == "model_rnn":
+            st = state[i]
+            packed = np.concatenate([ins[0], st["h"], st["c"]]).astype(F32)
+            if backend is None:
+                raise ValueError("model_rnn 需要 backend")
+            res = np.asarray(backend(packed), dtype=F32)
+            value = res[:out["len"]]
+            h_len, c_len = len(st["h"]), len(st["c"])
+            if h_len:
+                st["h"] = res[out["len"]:out["len"] + h_len].copy()
+            if c_len:
+                st["c"] = res[out["len"] + h_len:out["len"] + h_len + c_len].copy()
+        elif name == "delay":
+            frames = int(p[0])
+            width = out["len"]
+            st = state[i]
+            head = st["head"]
+            value = st["buf"][head].copy()
+            st["buf"][head] = ins[0]
+            st["head"] = (head + 1) % frames
         elif name == "add":
             value = np.zeros(out["len"], dtype=F32)
             for x in ins:

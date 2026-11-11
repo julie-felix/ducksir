@@ -51,6 +51,8 @@ NODE_TYPES = {
     "state_machine": (14, 1),
     "compare": (15, 1),
     "motion": (16, 1),
+    "delay": (17, 1),
+    "model_rnn": (18, 1),
 }
 TYPE_BY_ID = {tid: name for name, (tid, _) in NODE_TYPES.items()}
 NODE_VERSION = {name: ver for name, (_, ver) in NODE_TYPES.items()}
@@ -277,6 +279,46 @@ class Plan:
         params = [float(len(rows)), float(dim), float(fps), 1.0 if loop else 0.0]
         params += [x for row in rows for x in row]
         return self._add("motion", [time], dim, params)
+
+    def model_rnn(self, ref: NodeRef, action_len: int, *, h_len: int = 0, c_len: int = 0,
+                  model_id: int = 0, flags: int = 0) -> NodeRef:
+        """带状态槽的模型（LSTM/GRU）：h/c 存在 plan 里，跨步保持，`ds_reset` 清零。
+
+        约定（核与后端双方都要遵守）：
+
+            in  = [obs, h, c]          （obs 是本节点输入，h/c 是上一步的状态）
+            out = [action, h_new, c_new]
+
+        后端只认「一个输入张量、一个输出张量」，所以这台机器把拼接/拆分放在核里做；
+        宿主/wasm 侧只要按同一约定包一层 onnxruntime 会话（多输入模型 → 拼成一个）。
+        这让同一个 h_new 在下一步自然成为 h，不需要在同一时间步内成环。
+        """
+        if action_len < 1:
+            raise ValueError("model_rnn 的 action_len 至少 1")
+        if h_len < 0 or c_len < 0:
+            raise ValueError("model_rnn 的状态维度不能为负")
+        return self._add("model_rnn", [ref], action_len,
+                         [float(model_id), float(h_len), float(c_len)], flags=flags)
+
+    def delay(self, ref: NodeRef, frames: int = 1, fill=None) -> NodeRef:
+        """N 步延迟（botlab 的 `delay`）：输出 `frames` 步之前的值，头 `frames` 步输出 `fill`。
+
+        为什么需要它：递归模型（LSTM/GRU）要把它上一步的输出 `h_new/c_new` 接回下一步的输入。
+        图是 DAG，不能在一个时间步内成环，所以用「延迟一步」把环拆开：
+
+            concat(obs, h_prev, c_prev) → model → [action, h_new, c_new]
+                                                     │
+                                       delay(h_new) ─┘ → 下一步的 h_prev
+
+        `ds_reset` 会把延迟线重新填成 `fill`，因此「从第 0 步重放」是确定的。
+        """
+        if frames < 1:
+            raise ValueError("delay 的 frames 至少 1")
+        fill_vals = fill if fill is not None else [0.0] * ref.length
+        fill_vals = list(fill_vals)
+        if len(fill_vals) != ref.length:
+            raise ValueError(f"delay 的 fill 长度 {len(fill_vals)} != 输入宽度 {ref.length}")
+        return self._add("delay", [ref], ref.length, [float(frames)] + [float(v) for v in fill_vals])
 
     def compare(self, a: NodeRef, op: str, b: NodeRef) -> NodeRef:
         """比较两路 1 维信号，输出 0/1。op: gt / gte / lt / lte / eq。"""
