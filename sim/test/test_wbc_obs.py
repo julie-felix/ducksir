@@ -112,9 +112,41 @@ ok("推进到第 12 帧", ph.current()[0] == 12, str(ph.current()))
 
 ph2 = W.Playhead(20, start=100, frame_interval=5)
 ok("越界起点被夹到 end", ph2.current()[0] == 19, str(ph2.current()))
+# frame_interval 只管锚点回看，不管推进步长（真值反推出来的）
 ph3 = W.Playhead(20, start=2, frame_interval=5)
 ph3.advance()
-ok("frame_interval=5 → (7,2)", ph3.current() == (7, 2), str(ph3.current()))
+ok("推进一步只 +1 → (3,1)（回看 5 帧被夹到 1）", ph3.current() == (3, 1), str(ph3.current()))
+ph4 = W.Playhead(20, start=10, frame_interval=5)
+ok("回看：idx=10 → (10,5)", ph4.current() == (10, 5), str(ph4.current()))
+ph5 = W.Playhead(20, start=3, frame_interval=5)
+ok("回看被夹：idx=3 → (3,1)", ph5.current() == (3, 1), str(ph5.current()))
+
+# 5b) 锚点回看距离：从真值反解出来的是 frame_interval=5（推 1 帧、回看 5 帧）
+if os.path.exists(TRACE) and os.path.isdir(MOTION):
+    meta = json.load(open(os.path.join(MOTION, "metadata.json"), encoding="utf-8"))
+    names = meta["body_names"]
+    bp = motion.load_motion(MOTION, "body_pos_w")["data"].reshape(-1, len(names), 3)
+    bq = motion.load_motion(MOTION, "body_quat_w")["data"].reshape(-1, len(names), 4)
+    jp_all = motion.load_motion(MOTION, "joint_pos")["data"]
+    jv_all = motion.load_motion(MOTION, "joint_vel")["data"]
+    line = [json.loads(x) for x in open(TRACE, encoding="utf-8") if x.strip()][10]
+    obs10 = np.asarray(line["in"]["obs"], dtype=np.float32)
+    base_q = np.asarray(line["quat"], dtype=np.float64)
+    idx10, last10 = 11, 6      # 第 10 步：推 1 帧、回看 5
+    ref10 = W.reference_block(joint_pos=jp_all[idx10], joint_vel=jv_all[idx10],
+                              anchor_pos=bp[idx10][0], anchor_quat=bq[idx10][0],
+                              last_anchor_pos=bp[last10][0], last_anchor_quat=bq[last10][0],
+                              base_quat=base_q)
+    d10 = float(np.abs(ref10 - obs10[:67]).max())
+    ok("第 10 步：推 1 帧 + 回看 5 帧 → 参考段对齐", d10 < 1e-4, f"max|Δ|={d10:.2e}")
+
+    # 反例：用「上一帧」当锚点（回看 1 帧）会明显偏
+    ref1 = W.reference_block(joint_pos=jp_all[idx10], joint_vel=jv_all[idx10],
+                             anchor_pos=bp[idx10][0], anchor_quat=bq[idx10][0],
+                             last_anchor_pos=bp[idx10 - 1][0], last_anchor_quat=bq[idx10 - 1][0],
+                             base_quat=base_q)
+    d1 = float(np.abs(ref1 - obs10[:67]).max())
+    ok("反例：回看 1 帧明显不符（证明确实是 5）", d1 > 5 * d10, f"max|Δ|={d1:.2e}")
 
 # 6) 真值里的播放头：逐步匹配 motion 帧号
 if os.path.exists(TRACE):
@@ -125,6 +157,26 @@ if os.path.exists(TRACE):
         o = np.asarray(json.loads(line)["in"]["obs"][:29], dtype=np.float32)
         seq.append(int(np.abs(jp_all - o).max(axis=1).argmin()))
     ok("真值播放头 = 1,2,3…（每步 1 帧）", seq == list(range(1, 13)), str(seq))
+
+# 7) 一步完整的 439 维观测：assemble_observation
+if os.path.exists(TRACE) and os.path.isdir(MOTION):
+    meta = json.load(open(os.path.join(MOTION, "metadata.json"), encoding="utf-8"))
+    names = meta["body_names"]
+    bundle_arrays = {
+        "joint_pos": motion.load_motion(MOTION, "joint_pos")["data"],
+        "joint_vel": motion.load_motion(MOTION, "joint_vel")["data"],
+        "body_pos": motion.load_motion(MOTION, "body_pos_w")["data"].reshape(-1, len(names), 3),
+        "body_quat": motion.load_motion(MOTION, "body_quat_w")["data"].reshape(-1, len(names), 4),
+    }
+    line = [json.loads(x) for x in open(TRACE, encoding="utf-8") if x.strip()][10]
+    obs10 = np.asarray(line["in"]["obs"], dtype=np.float32)
+    hist = obs10[67:].reshape(4, 93)     # 直接用真值里的状态历史
+    ph = W.Playhead(bundle_arrays["joint_pos"].shape[0], start=11, frame_interval=5)
+    full = W.assemble_observation(motion=bundle_arrays, playhead=ph,
+                                  robot_state_history=hist,
+                                  base_quat=np.asarray(line["quat"], dtype=np.float64))
+    d_full = float(np.abs(full - obs10).max())
+    ok("完整 439 观测（含状态历史）与真值一致", d_full < 1e-4, f"max|Δ|={d_full:.2e}")
 
 print()
 if fails:

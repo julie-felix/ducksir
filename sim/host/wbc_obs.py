@@ -118,12 +118,14 @@ class Playhead:
     - 进入 mode 时从 `start` 开始（参考实现 `start=0`，实际用之前夹到 1）。
     """
 
-    def __init__(self, frame_count: int, *, start: int = 0, frame_interval: int = 1,
+    def __init__(self, frame_count: int, *, start: int = 0, frame_interval: int = 5,
                  end: int | None = None):
         if frame_count < 2:
             raise ValueError("动作参考至少 2 帧")
         self.frame_count = int(frame_count)
         self.end = int(end) if end is not None else self.frame_count - 1
+        # `frame_interval` 只用于算锚点的「上一帧」（参考实现里 last_idx = idx - _frame_interval），
+        # **不**决定推进步长：播放头每个控制步 +1（真值反推：obs 的关节位置每步前进 1 帧）。
         self.frame_interval = max(1, int(frame_interval))
         self.refer_idx = max(1, int(start))   # 第 0 帧不用（参考实现也夹到 >=1）
         self.paused = False
@@ -143,11 +145,35 @@ class Playhead:
         return idx, self._clamp(idx - self.frame_interval)
 
     def advance(self) -> None:
+        """每控制步前进 **1 帧**（锚点的回看距离由 `frame_interval` 决定，见 current()）。"""
         if not self.paused:
-            self.refer_idx += self.frame_interval
+            self.refer_idx += 1
 
     def pause(self, flag: bool = True) -> None:
         self.paused = bool(flag)
 
     def at_end(self) -> bool:
         return self.refer_idx >= self.end
+
+
+def assemble_observation(*, motion, playhead: "Playhead", robot_state_history,
+                         base_quat, anchor: int = 0,
+                         joint_pos=None, joint_vel=None,
+                         body_pos=None, body_quat=None) -> np.ndarray:
+    """一步完整的 439 维观测：参考 67 + 机器人状态 4×93。
+
+    `motion` 是 `sim/plan/motion.load_motion` 出来的原始数组（通道 → data）；
+    也可以直接传 `joint_pos` / `joint_vel` / `body_pos` / `body_quat` 覆盖。
+    `robot_state_history` 是 `(4, 93)` 的缓冲区（最老在前），由调用方滚动维护。
+    """
+    jp = joint_pos if joint_pos is not None else motion["joint_pos"]
+    jv = joint_vel if joint_vel is not None else motion["joint_vel"]
+    bp = body_pos if body_pos is not None else motion["body_pos"]
+    bq = body_quat if body_quat is not None else motion["body_quat"]
+    idx, last = playhead.current()
+    ref = reference_block(
+        joint_pos=jp[idx], joint_vel=jv[idx],
+        anchor_pos=bp[idx][anchor], anchor_quat=bq[idx][anchor],
+        last_anchor_pos=bp[last][anchor], last_anchor_quat=bq[last][anchor],
+        base_quat=base_quat, pause=playhead.paused)
+    return assemble(reference67=ref, history4=robot_state_history)
