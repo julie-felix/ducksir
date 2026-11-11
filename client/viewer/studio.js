@@ -279,14 +279,52 @@ async function wireBundles() {
   if (isPhone && list.length) runInBrowser(list[0].base);
   $('btn-browser-run').onclick = () => runInBrowser(sel.value);
 
-  function runInBrowser(base) {
+  const msg = $('view-msg');
+
+  function showMsg(text) {
+    if (!msg) return;
+    msg.textContent = text;
+    msg.style.display = text ? 'grid' : 'none';
+  }
+
+  async function runInBrowser(base) {
     if (!base) return;
-    // play.html 已经是「wasm 核 + ORT Web + MuJoCo wasm + 状态机」那套，这里只给它 bundle 路径
+    showMsg('');
+    // 先探一次产物：bundle 目录能不能读、有没有 contract.json。
+    // 失败就把原因写在画面上，而不是留一块黑屏（手机上看不到控制台）。
+    try {
+      const probe = await fetch(base + 'contract.json');
+      if (!probe.ok) {
+        showMsg(`bundle 读不到：${base}contract.json（HTTP ${probe.status}）`);
+        $('conn').textContent = 'bundle 不可用';
+        return;
+      }
+    } catch (e) {
+      showMsg('bundle 探测失败：' + (e?.message || e));
+      return;
+    }
     frame.src = `/ducksir-static/client/viewer/play.html?bundle=${encodeURIComponent(base)}&embed=1`;
     frame.style.display = 'block';
     canvas.style.display = 'none';
     document.body.classList.add('browser-mode');   // 收起 host 专属控件
     $('conn').textContent = '浏览器内执行';
+
+    // 起来之后把 iframe 里那页的自报状态（HUD 第一行）转述到顶栏，
+    // 这样「跑没跑起来」不用猜。
+    frame.onload = () => {
+      setTimeout(() => {
+        try {
+          const doc = frame.contentDocument;
+          const stat = doc && doc.getElementById('stat');
+          const busy = doc && doc.getElementById('busy');
+          if (busy && busy.style.display !== 'none' && busy.textContent) {
+            $('conn').textContent = '载入中：' + busy.textContent.slice(0, 28);
+          } else if (stat && stat.textContent) {
+            $('conn').textContent = stat.textContent.slice(0, 32);
+          }
+        } catch { /* 跨源就跳过 */ }
+      }, 2500);
+    };
   }
   $('btn-back').onclick = () => {
     frame.style.display = 'none';
@@ -298,6 +336,7 @@ async function wireBundles() {
 
 // ── 启动 / 停止（面板里用插件代理；直开时调 runner 自己的根路径）──
 async function refreshConn() {
+  if (document.body.classList.contains('browser-mode')) return false;   // 浏览器模式不关心宿主动态
   try {
     const st = await (await fetch(`${API}/status`)).json();
     $('conn').textContent = st.running ? `运行中 :${st.port}` : '未运行';
@@ -351,7 +390,7 @@ async function main() {
   };
 
   try {
-    const running = await refreshConn();
+    const running = document.body.classList.contains('browser-mode') ? false : await refreshConn();
     const sc = await (await fetch(`${API}/scene`)).json();
     (sc.bodies || []).forEach((n, i) => bodyIndex.set(n, i));
     if (running) startStream();
