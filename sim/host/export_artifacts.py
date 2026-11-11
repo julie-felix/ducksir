@@ -174,6 +174,7 @@ def main() -> int:
     ap.add_argument("--out", default="client/viewer/data/live")
     ap.add_argument("--entity", default="contract/robot/types/g1-29dof-torque.yaml",
                     help="实体 yaml（preset 的 generated.from 不是实体时用它）")
+    ap.add_argument("--mjcf", help="物理模型（给了就把 robot.xml + 网格一起打进 bundle，浏览器要用）")
     args = ap.parse_args()
 
     with open(os.path.join(ROOT, args.preset), encoding="utf-8") as f:
@@ -204,6 +205,21 @@ def main() -> int:
             f.write(blob)
     # preset 也要进 bundle：运行期靠它判断执行器模式（位置/扭矩）与 PD 增益
     shutil.copyfile(os.path.join(ROOT, args.preset), os.path.join(out, "preset.yaml"))
+
+    # 动作参考（WBC/AMP）连同素材一起进 bundle：浏览器和宿主都按 `motion/` 相对路径读
+    motion_cfg = preset.get("motion")
+    if motion_cfg and motion_cfg.get("path"):
+        src = motion_cfg["path"]
+        if not os.path.isabs(src):
+            src = os.path.join(ROOT, src)
+        dst = os.path.join(out, "motion")
+        if os.path.isdir(src):
+            if os.path.isdir(dst):
+                shutil.rmtree(dst)
+            shutil.copytree(src, dst)
+            motion_cfg = dict(motion_cfg, path="motion/")
+            preset["motion"] = motion_cfg        # 契约与 bundle 内的 preset 都用相对路径
+            print(f"  动作参考 {os.path.basename(src)} → motion/")
 
     # 策略清单：manifest 里声明了 `policies`（多模式）就用它，否则用鸭子那 7 个动作模型
     spec = man.get("policies") or [{"key": k, "mode": m, "file": f"build/models/{k}.onnx"}
@@ -257,6 +273,29 @@ def main() -> int:
     for name, p in doc_contract["plans"].items():
         print(f"  {name:<5} {p['nodes']:>3} 节点 {p['input_dim']:>3} → {p['output_dim']:>3}"
               f"｜{p['bytes']} B｜digest {p['digest'][:12]}")
+    # 物理模型 + 网格进 bundle：浏览器侧 MjVFS 需要（meshdir="."），宿主可以直接用同一份
+    if args.mjcf:
+        import re
+        src = os.path.join(ROOT, args.mjcf)
+        xml = open(src, encoding="utf-8").read()
+        mesh_dir = re.search(r'meshdir="([^"]+)"', xml)
+        assets_dir = os.path.join(os.path.dirname(src), mesh_dir.group(1)) if mesh_dir else os.path.dirname(src)
+        xml = re.sub(r'meshdir="[^"]+"', 'meshdir="."', xml)
+        with open(os.path.join(out, "robot.xml"), "w", encoding="utf-8") as f:
+            f.write(xml)
+        meshes = sorted({m for m in re.findall(r'file="([^"]+\.(?:stl|STL|obj|OBJ))"', xml)})
+        mesh_out = os.path.join(out, "meshes")
+        os.makedirs(mesh_out, exist_ok=True)
+        copied = 0
+        for name in meshes:
+            path = os.path.join(assets_dir, name)
+            if os.path.exists(path):
+                shutil.copyfile(path, os.path.join(mesh_out, name))
+                copied += 1
+        with open(os.path.join(out, "meshes.json"), "w", encoding="utf-8") as f:
+            json.dump([n for n in meshes if os.path.exists(os.path.join(mesh_out, n))], f)
+        print(f"  物理模型 robot.xml + {copied} 个网格 → meshes/")
+
     print(f"  策略 {len(policies)} 个｜契约 contract.json")
     return 0
 

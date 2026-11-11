@@ -13,7 +13,8 @@ import { loadDuck, makeObs, stepPhysics, read, setContract, getContract, slot, r
          checkPlanAgainstContract, obsDim, upright } from './play-core.mjs';
 import { planPath, policyPath } from './assets-map.mjs';
 import { tensorLens, splitPacked, concatOutputs, isSingleTensor } from './model-io.mjs';
-import { isTorque, ctrlFromAction } from './actuators.mjs';
+import { isTorque, ctrlFromAction, torqueFromTarget } from './actuators.mjs';
+import { loadMotion, Playhead, motionRef } from './motion.mjs';
 
 const $ = (id) => document.getElementById(id);
 
@@ -105,7 +106,9 @@ async function main() {
       import('./vendor/ort/ort.wasm.min.mjs'),
       json(DATA + 'contract.json'),
       json('./data/duck-hd1910.json'),
-      fetch('./data/mjcf-browser/duck.xml').then((r) => r.text()),
+      // bundle 自带 robot.xml + meshes/（G1 这种），否则退回手搓素材的 duck.xml
+      fetch(BUNDLE ? DATA + 'robot.xml' : './data/mjcf-browser/duck.xml')
+        .then((r) => (r.ok ? r.text() : fetch('./data/mjcf-browser/duck.xml').then((x) => x.text()))),
     ]), 30000);
     setContract(contract);
     const meta = contract.robot;
@@ -121,11 +124,14 @@ async function main() {
     const stlNames = [...new Set(xml.match(/\b[a-zA-Z0-9_]+\.stl\b/g) || [])];
     const assets = {};
     let done = 0;
-    await step(`下载 ${stlNames.length} 个 STL（约 21 MB）`, Promise.all(stlNames.map(async (n) => {
-      assets[n] = await bytes('./assets/mjcf/' + n);
+    // bundle 里网格在 DATA + 'meshes/'，手搓素材在 ./assets/mjcf/
+    const meshBase = BUNDLE ? DATA + 'meshes/' : './assets/mjcf/';
+    const needFetch = BUNDLE ? await json(DATA + 'meshes.json') : stlNames;
+    await step(`下载 ${needFetch.length} 个 STL`, Promise.all(needFetch.map(async (n) => {
+      assets[n] = await bytes(meshBase + n);
       done += 1;
-      stage(`下载 STL ${done}/${stlNames.length}`);
-    })), 120000);
+      stage(`下载 STL ${done}/${needFetch.length}`);
+    })), 180000);
 
     const duck = await step('MuJoCo 解析 MJCF + 网格（这步最慢，十几秒正常）',
       loadDuck({ loadMujoco, xml, assets }), 60000);
@@ -145,7 +151,33 @@ async function main() {
       robotGroup.add(group);
       bodyOf[name] = { group, bid };
     }
-    const geoms = viewData.links.reduce((acc, l) => acc + (l.geoms || []).length, 0);
+    // bundle 里没有手搓的 GLB 索引（G1 这种）：直接用 MuJoCo 自带的网格数据建 mesh
+    const useMujocoMeshes = bodies.some((n) => mj.mj_name2id(model, duck.objId('mjOBJ_BODY'), n) < 0)
+      || !viewData.links || viewData.links.length === 0;
+    if (useMujocoMeshes) {
+      const built = renderFromModel({ THREE, mj, model, data, duck, robotGroup, scene });
+      // 让渲染循环沿用同一套 bodyOf：每个 body 一个 group，直接读 xpos/xquat
+      for (let b = 1; b < model.nbody; b += 1) {
+        const nm = mj.mj_id2name(model, duck.objId('mjOBJ_BODY'), b);
+        if (nm) bodyOf[nm] = { group: built.groups[b], bid: b };
+      }
+      // 相机按模型大小取景：body 原点在 Z-up 系里，先换到世界系（robotGroup 有 -90° 绕 X）
+      const bbox = new THREE.Box3();
+      for (let b = 1; b < model.nbody; b += 1) {
+        bbox.expandByPoint(new THREE.Vector3(
+          read(data.xpos, b * 3), read(data.xpos, b * 3 + 1), read(data.xpos, b * 3 + 2)));
+      }
+      const zSpan = Math.max(0.6, bbox.getSize(new THREE.Vector3()).length() * 1.15);
+      const localCenter = bbox.isEmpty() ? new THREE.Vector3(0, 0, 0.5) : bbox.getCenter(new THREE.Vector3());
+      localCenter.z = Math.max(localCenter.z, zSpan * 0.45);
+      const worldCenter = robotGroup.localToWorld(localCenter.clone());
+      controls.target.copy(worldCenter);
+      camera.position.set(worldCenter.x + zSpan * 1.5, worldCenter.y + zSpan * 0.85, worldCenter.z + zSpan * 2.0);
+      camera.updateProjectionMatrix();
+      controls.update();
+      stage('渲染：用 MuJoCo 网格');
+    }
+    const geoms = useMujocoMeshes ? 0 : viewData.links.reduce((acc, l) => acc + (l.geoms || []).length, 0);
     let gdone = 0;
     const loadGeoms = Promise.all(viewData.links.flatMap((link) => (link.geoms || []).map(async (g) => {
       const entry = bodyOf[link.name];
@@ -180,6 +212,26 @@ async function main() {
     };
     // plan 的形状全部来自契约：文件、维度、具名槽位。加载后立刻对一次维度——
     // 不一致就报错，而不是用旧偏移去读新 blob。
+    // 动作参考（WBC/AMP）：契约里有 robot.motion 就从 bundle 的 motion/ 读
+    let motion = null;
+    let playhead = null;
+    const motionCfg = contract.robot && contract.robot.motion;
+    if (motionCfg && motionCfg.path) {
+      try {
+        const base = motionCfg.path.startsWith('/') ? motionCfg.path : DATA + motionCfg.path.replace(/\/?$/, '/');
+        motion = await loadMotion(base);
+        playhead = new Playhead(motion.jointPos.frames,
+          { start: 0, frameInterval: motionCfg.frame_interval || 5 });
+        playhead.pause(true);   // 进 WBC 前参考停在起点
+        state.motion = motion;
+        state.playhead = playhead;
+      } catch (err) {
+        console.warn('[motion] 动作参考加载失败：', err && err.message);
+        motion = null;
+        playhead = null;
+      }
+    }
+
     const pre = loadPlan(await bytes(planPath(contract, 'pre', DATA)));
     const post = loadPlan(await bytes(planPath(contract, 'post', DATA)));
     const fsm = loadPlan(await bytes(planPath(contract, 'fsm', DATA)));
@@ -328,7 +380,16 @@ async function main() {
       if (!manual) active = modeToKey[mode] || active;
 
       // 2) obs（61 维）：指令段用状态机给的 command
-      const obs = makeObs(duck, { lastAction: state.lastAction, vx: state.vx, command: cmd13 });
+      // 动作参考：进入 WBC 后播放（起步先停几帧让机器人站住，和宿主一致）
+      let motionRefValue = null;
+      if (motion && playhead) {
+        if (playhead.paused && state.ctrl >= 10) playhead.pause(false);
+        const baseQuat = [0, 1, 2, 3].map((k) => read(duck.data.qpos, 3 + k));
+        motionRefValue = motionRef(motion, playhead, baseQuat);
+        playhead.advance();
+      }
+      const obs = makeObs(duck, { lastAction: state.lastAction, vx: state.vx, command: cmd13,
+                                  motionRef: motionRefValue });
       const policyInput = runPlan(pre, obs);
       const sess = await getSession(active);
       const packed = Float32Array.from(policyInput);
@@ -351,28 +412,30 @@ async function main() {
           : Array.from(res[sess.outputNames[0]].data);
       }
       const ctrlOut = runPlan(post, action);
-      if (isTorque(getContract())) {
-        // 扭矩模型：**每个物理子步**重算 PD（控制步算一次会很快倒，见 actuators.mjs 顶部说明）
-        for (let sub = 0; sub < DECIM; sub += 1) {
+      const robotCfg = getContract().robot;
+      // 物理：两种执行器语义分开写，**每个控制步恰好 DECIM 个物理子步**（不多不少）
+      for (let sub = 0; sub < DECIM; sub += 1) {
+        if (isTorque(getContract())) {
+          // 扭矩：每个子步用最新 q/qd 重新算 PD（控制步算一次会很快倒）
           const q = new Float64Array(model.nu);
           const qd = new Float64Array(model.nu);
           for (let j = 0; j < model.nu; j += 1) {
-            const jid = duck.jointId(getContract().robot.joints[j]);
+            const jid = duck.jointId(robotCfg.joints[j]);
             q[j] = read(data.qpos, read(model.jnt_qposadr, jid));
             qd[j] = read(data.qvel, read(model.jnt_dofadr, jid));
           }
-          const { ctrl } = ctrlFromAction(getContract(), ctrlOut, q, qd);
+          // ctrlOut 已经是目标角（post 里做过 default + scale×action），不能再缩放一次
+          const ctrl = torqueFromTarget(ctrlOut, q, qd, {
+            kp: robotCfg.kp, kd: robotCfg.kd, effortLimit: robotCfg.effort_limit,
+          });
           for (let j = 0; j < model.nu; j += 1) data.ctrl[j] = ctrl[j];
-          mj.mj_step(model, data);
+        } else {
+          for (let j = 0; j < model.nu; j += 1) data.ctrl[j] = ctrlOut[j];
         }
-      } else {
-        for (let j = 0; j < model.nu; j++) data.ctrl[j] = ctrlOut[j];
-        stepPhysics(mj, model, data, DECIM);
+        stepPhysics(mj, model, data, 1);
       }
       state.lastAction.set(action);
 
-      // 3) 恰好 DECIM 步物理
-      stepPhysics(mj, model, data, DECIM);
       state.simTime += STEP_DT;
       ctrl += 1;
     }
@@ -447,3 +510,71 @@ async function main() {
 }
 
 main();
+
+/**
+ * 兜底渲染：把 MuJoCo 的网格几何体直接建成 three.js Mesh（bundle 里没有手搓 GLB 索引时用）。
+ * 数据都在 model 里：geom_type / geom_dataid / mesh_vertadr / mesh_vertnum / mesh_faceadr / mesh_facenum。
+ */
+function renderFromModel({ THREE, mj, model, data, duck, robotGroup, scene }) {
+  const objId = duck.objId;
+  const bodyCount = model.nbody;
+  const groups = [];
+  for (let b = 0; b < bodyCount; b += 1) {
+    const g = new THREE.Group();
+    const nm = mj.mj_id2name(model, objId('mjOBJ_BODY'), b);
+    g.name = nm || `body_${b}`;
+    robotGroup.add(g);
+    groups.push(g);
+  }
+  const meshCache = new Map();
+  const mjGEOM_MESH = mj.mjtGeom.mjGEOM_MESH.value ?? 7;
+  for (let gi = 0; gi < model.ngeom; gi += 1) {
+    const type = model.geom_type[gi];
+    const bodyId = model.geom_bodyid[gi];
+    const group = groups[bodyId];
+    if (!group) continue;
+    let geometry = null;
+    if (type === mjGEOM_MESH) {
+      const mid = model.geom_dataid[gi];
+      if (mid >= 0) {
+        if (!meshCache.has(mid)) {
+          const vAdr = model.mesh_vertadr[mid];
+          const vNum = model.mesh_vertnum[mid];
+          const fAdr = model.mesh_faceadr[mid];
+          const fNum = model.mesh_facenum[mid];
+          const pos = new Float32Array(vNum * 3);
+          for (let i = 0; i < vNum * 3; i += 1) pos[i] = model.mesh_vert[vAdr * 3 + i];
+          const idx = new Uint32Array(fNum * 3);
+          for (let i = 0; i < fNum * 3; i += 1) idx[i] = model.mesh_face[fAdr * 3 + i];
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+          geo.setIndex(new THREE.BufferAttribute(idx, 1));
+          geo.computeVertexNormals();
+          meshCache.set(mid, geo);
+        }
+        geometry = meshCache.get(mid);
+      }
+    } else if (type === (mj.mjtGeom.mjGEOM_SPHERE.value ?? 2)) {
+      geometry = new THREE.SphereGeometry(model.geom_size[gi * 3], 12, 8);
+    } else if (type === (mj.mjtGeom.mjGEOM_CAPSULE.value ?? 3)) {
+      geometry = new THREE.CapsuleGeometry(model.geom_size[gi * 3], model.geom_size[gi * 3 + 1], 6, 12);
+    } else if (type === (mj.mjtGeom.mjGEOM_BOX.value ?? 6)) {
+      geometry = new THREE.BoxGeometry(model.geom_size[gi * 3] * 2,
+        model.geom_size[gi * 3 + 1] * 2, model.geom_size[gi * 3 + 2] * 2);
+    }
+    if (!geometry) continue;
+    const rgba = [0, 1, 2, 3].map((k) => model.geom_rgba[gi * 4 + k]);
+    const mat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(rgba[0], rgba[1], rgba[2]),
+      transparent: rgba[3] < 0.99, opacity: rgba[3],
+      metalness: 0.15, roughness: 0.65,
+    });
+    const mesh = new THREE.Mesh(geometry, mat);
+    // 几何体在 body 系里的位姿（geom_pos / geom_quat）
+    mesh.position.set(model.geom_pos[gi * 3], model.geom_pos[gi * 3 + 1], model.geom_pos[gi * 3 + 2]);
+    mesh.quaternion.set(model.geom_quat[gi * 4 + 1], model.geom_quat[gi * 4 + 2],
+      model.geom_quat[gi * 4 + 3], model.geom_quat[gi * 4]);
+    group.add(mesh);
+  }
+  return { groups, count: meshCache.size };
+}

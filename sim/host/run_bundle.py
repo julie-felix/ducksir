@@ -124,7 +124,7 @@ def main() -> int:
         import wbc_obs as _W
         base = motion_cfg["path"]
         if not os.path.isabs(base):
-            base = os.path.join(os.path.dirname(os.path.abspath(bdir)), base)
+            base = os.path.join(bdir, base)   # bundle 里的相对路径（导出时写成 motion/）
         meta_path = os.path.join(base, "metadata.json")
         names = (json.load(open(meta_path, encoding="utf-8")).get("body_names")
                  if os.path.exists(meta_path) else None)

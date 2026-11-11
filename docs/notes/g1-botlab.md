@@ -352,3 +352,40 @@ bundle g1-wbc｜600/600 步｜28.5× 实时
 - `sim/test/test_g1_wbc_bundle.py`：300 步、基座 ≥0.55 m、直立 >0.9（新）；
 - `test_golden` / `test_pre_history` / `test_project_run` / `test_actuators` 全绿（鸭子不受影响：它的
   preset 没有非恒等 `motorJointOrder`，post 不插 reorder）。
+
+## 13. 浏览器里也能跑了（工作台点开即可）
+
+![浏览器里跑 G1 WBC](../images/viewer-g1-wbc-browser.png)
+
+`client/viewer/play.html?bundle=/build/release/g1-wbc/`：439 观测、动作参考播放、扭矩 PD 全在浏览器里跑，
+基座 0.74 m、控制 ~50 Hz、1.0× 实时。工作台的 bundle 列表会自动列出 `build/release/*`，点开即是这一页。
+
+### 这一轮补的四件浏览器侧能力
+
+| 能力 | 位置 | 验证 |
+|---|---|---|
+| `.bin` 动作容器解析（头长度唯一化） | `client/viewer/motion.mjs` | 与宿主逐值一致（≤1e-6） |
+| 播放头（推 1 帧 / 看 5 帧 / 暂停 / 夹取） | `motion.mjs` `Playhead` | 与宿主同语义 |
+| 参考段 67 维（锚点 6D + 偏航对齐） | `motion.mjs` `referenceBlock` | 与宿主差 **1.46e-11** |
+| `motion_ref` 观测 + `body:angvel` 机体系 | `play-core.mjs` | 三处 bug 修完后站稳 |
+
+跨端一致性测试：`node sim/test/test_motion_parity.mjs`。
+
+### 又抓到三个 bug（都在浏览器侧）
+
+1. **扭矩分支把目标角当原始动作又缩放了一次** → 相当于 `default + 0.25×(default+0.25a)`，机器人 20 步内倒；
+2. **每个控制步推进了 8 个物理子步**（扭矩分支自己 4 步 + 公共逻辑又 4 步）→ 时间轴对不上；
+3. **观测的关节量没按 `order: policy` 重排** → 策略看到错姿态。
+
+修完：`node tools/dev/browser_bundle_check.mjs` → 基座 0.743 m，PASS。
+
+### 渲染兜底
+
+bundle 里没有手搓的 GLB 索引（那是鸭子专用），所以 `play.js` 新增了
+`renderFromModel()`：直接用 MuJoCo 的 `mesh_vert/mesh_face` 建 three.js 几何体，
+按 `geom_rgba` 上色，相机按机器人自身包围盒取景（鸭子 ~0.2 m、G1 ~1.3 m 差一个数量级）。
+
+### 还差
+
+- 浏览器侧的 `fsm` 模式切换（现在单策略 bundle 默认常开 WBC；多 mode bundle 还没接）；
+- 工作台里如果 bundle 很大（G1 带网格 31 MB），首次加载要几十秒，可以再压网格。
