@@ -28,6 +28,8 @@ def main() -> int:
     ap.add_argument("botlab_preset")
     ap.add_argument("--mjcf", required=True)
     ap.add_argument("-o", "--output", required=True)
+    ap.add_argument("--motor-order", help="策略序 → 电机序（逗号分隔）。botlab 的 JSON 里没有这条，"
+                                        "它写在参考实现的 dof_mapping 里（如 G1 的 State_Loco.h）")
     ap.add_argument("--control-hz", type=float, default=50.0)
     ap.add_argument("--physics-hz", type=float, default=200.0)
     args = ap.parse_args()
@@ -73,7 +75,8 @@ def main() -> int:
         "jointQposOffset": [7],
         "jointQvelOffset": [6],
         "actuatorJointOrder": list(range(n_act)),
-        "motorJointOrder": ints("motorJointOrder"),
+        "motorJointOrder": ([int(x) for x in args.motor_order.split(",")] if args.motor_order
+                            else ints("motorJointOrder")),
         "policyJointOrder": ints("policyJointOrder"),
         "defaultJointPositions": joints,
         "kp": arr("kp") or [0.0] * n_act,

@@ -98,9 +98,19 @@ def build_pre(man: dict) -> tuple[bytes, dict]:
 
 
 def build_post(preset: dict, n: int, lo, hi) -> tuple[bytes, dict]:
+    """动作 → ctrl（扭矩模式下是目标角）。
+
+    策略输出是**策略序**，而 default / scale / ctrlrange 都是**电机序**。
+    两者不同时（G1 的 dof_mapping 就不是恒等），必须先 reorder 再 affine——
+    否则默认角与缩放会张冠李戴，看起来能跑但姿态全错。
+    """
     p = ir.Plan(input_dim=n, output_dim=n, name="post")
     raw = p.obs(0, n)
-    s = p.affine(raw, preset["actionScale"], preset["defaultJointPositions"])
+    action = raw
+    order = preset.get("policyJointOrder")
+    if order and list(order) != list(range(n)):
+        action = p.reorder(raw, [int(x) for x in order])
+    s = p.affine(action, preset["actionScale"], preset["defaultJointPositions"])
     p.out_action(p.clip(s, lo, hi))
     return ir.compile_blob(p.to_json()), {"in:action": (0, n), "out:ctrl": (0, n)}
 

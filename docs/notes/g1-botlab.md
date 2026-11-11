@@ -191,8 +191,22 @@ step10: 差(直接)             = 58.26   ｜  差(映射)          = 0.58
 | `sim/host/run_bundle.py` | `preset.actuatorMode == "torque"` 时按 PD 算 ctrl |
 | `sim/test/test_actuators.py` | 13 条断言（映射/截断/两种模式/真实 G1 preset） |
 
-### 还没做
+### 端到端已经跑通（`tools/dev/g1_bundle_smoke.py`）
+
+```
+z 起 0.793 → 0.293（最低 0.293），直立 0.524，共 82 步
+PASS：扭矩模型 + 子步 PD + loco（判据：≥60 步；botlab native 自身约 80–120 步）
+```
+
+两个关键结论都是实测出来的：
+
+1. **PD 必须每个物理子步重算**。控制步算一次、4 个子步保持不变 → 只能撑 20 步；
+   子步重算 → 82 步。这也解释了 MuJoCo 的 `<position>` 为什么更稳：它本来就是子步算的。
+2. **策略序 ≠ 电机序必须显式映射**。botlab 的 JSON preset 里 `policyJointOrder/motorJointOrder`
+   都是恒等，真正的映射在 `ccrpRepo/wbc_fsm` 的 `dof_mapping` 里。不映射 → 35 步就倒；映射后 82 步。
+
+### 还差
 
 - 浏览器侧（`play.js`）的扭矩 PD——现在只支持位置执行器；
-- bundle 里还没有「策略序 ≠ 电机序」的表达（`post.blob` 假设同序），G1 要接 `reorder`；
-- 扭矩模型 + 地面 + 完整 PD 跑我们的 `run_bundle` 还没端到端验（差这一步）。
+- loco 单独跑本来就站不久（botlab native 自己也是 80–120 步）；要真站住得接需要
+  `motion_reference` 的 WBC/AMP mode，那是 `Motion` + 多策略的下一个台阶。

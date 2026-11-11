@@ -253,16 +253,21 @@ def main() -> int:
         else:
             act = raw
         if torque_mode:
+            # **每个物理子步都重算 PD**（不是每个控制步算一次）。
+            # 实测：控制步算一次只能撑 20 步，子步重算能撑 104 步——
+            # 这也正是 MuJoCo 位置执行器的语义（它每个子步按 kp/kv 算力矩）。
             import actuators as _A
-            q_now = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
-            qd_now = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)
-            ctrl, _tgt = _A.ctrl_from_action(act, _with_gains(preset, len(driven)),
-                                             qpos=q_now, qvel=qd_now)
-            d.ctrl[:] = ctrl
+            gains = _with_gains(preset, len(driven))
+            for _ in range(decim):
+                q_now = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
+                qd_now = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)
+                ctrl, _tgt = _A.ctrl_from_action(act, gains, qpos=q_now, qvel=qd_now)
+                d.ctrl[:] = ctrl
+                mujoco.mj_step(m, d)
         else:
             d.ctrl[:] = act
-        for _ in range(decim):
-            mujoco.mj_step(m, d)
+            for _ in range(decim):
+                mujoco.mj_step(m, d)
         if not np.isfinite(d.qpos).all():
             dead = True
             break
