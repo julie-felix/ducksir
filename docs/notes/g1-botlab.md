@@ -216,3 +216,27 @@ PASS：扭矩模型 + 子步 PD + loco（判据：≥60 步；botlab native 自�
 
 loco 单独跑本来就站不久（botlab native 自己也是 80–120 步）；要真站住得接需要
 `motion_reference` 的 WBC/AMP mode，那是 `Motion` + 多策略的下一个台阶。
+
+## 10. WBC mode 的观测（439）拆开了，并用真值逐段核对
+
+规格来自 `ccrpRepo/wbc_fsm` 的 `State_WBC.{h,cpp}`；数据用 botlab 运行时录的真值
+（`/tmp/cap-wbc-mode3.jsonl`，初始 mode=3）逐段对过：
+
+| 段 | 长度 | 内容 | 核对 |
+|---|---|---|---|
+| 参考·关节位置 | 29 | 动作参考当前帧 `joint_pos` | 与 motion 第 1 帧逐位相同 |
+| 参考·关节速度 | 29 | 同帧 `joint_vel` | 逐位相同（max diff 0.000） |
+| 参考·锚点位移（机体系） | 3 | 相对上一参考帧 | 首步 `[0,0,0]` ✓ |
+| 参考·锚点朝向 6D | 6 | 相对旋转矩阵 `[m00,m01,m10,m11,m20,m21]` | 首步 `[1,0,0,1,0,0]` ✓ |
+| 机器人状态 | 93×4 | `[角速度3, 投影重力3, q29, qd29, 上一步动作29]` | 4 帧各一个 `[0,0,-1]`，位置 72/165/258/351 ✓ |
+
+我们自己装配的参考段与真值差 **5.0e-06**（float32 精度内一致）。
+
+实现：`sim/host/wbc_obs.py`（`reference_block` / `robot_state_frame` / `assemble`），
+测试：`sim/test/test_wbc_obs.py`。参考帧索引按参考实现夹到 `[1, end]`，暂停时参考速度强制为 0。
+
+### 还差
+
+- 锚点的**偏航对齐 + 相对变换**目前只校验了「首步恒等」这一种情形，运动中（有位移/旋转）还没对上真值；
+- 播放头（`refer_idx` 推进 / `pause` / `frame_interval`）还没接到运行器；
+- 439 维 obs 还没进 bundle 的观测配方（`contract.json` 里没有「动作参考 + 4 帧历史」组合槽位）。

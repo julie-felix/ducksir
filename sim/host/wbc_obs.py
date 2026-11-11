@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+"""WBC（mimic）模式的观测装配：439 = 动作参考 67 + 机器人状态 4×93。
+
+规格不是猜的——来自 `ccrpRepo/wbc_fsm` 的 `State_WBC.{h,cpp}`，并用 botlab 运行时录下的
+真值逐段核对过（2026-11-12）：
+
+| 段 | 长度 | 内容 | 核对结果 |
+|---|---|---|---|
+| 参考：关节位置 | 29 | 动作参考当前帧的 `joint_pos` | 与 motion 第 1 帧逐位相同 |
+| 参考：关节速度 | 29 | 同一帧的 `joint_vel` | 逐位相同（max diff 0.000） |
+| 参考：锚点位置（机体系） | 3 | 相对上一参考帧的锚点位移，转到机体系 | 首步为 [0,0,0] ✓ |
+| 参考：锚点朝向 6D | 6 | 相对旋转矩阵的 `[m00,m01,m10,m11,m20,m21]` | 首步为 [1,0,0,1,0,0] ✓ |
+| 机器人状态 | 93×4 | 每帧 `[角速度3, 投影重力3, q29, qd29, 上一步动作29]`，最老在前 | 段边界与真值一致 |
+
+参考实现里的常量：`_actor_state_history_length = 4`、`_robot_state_dim = 93`、
+`_reference_dim = 67`、`_mimic_obs_predictive_horizon = 1`（只取当前参考帧，不做前瞻）。
+
+参考帧索引：`idx = refer_idx + i*frame_interval`，夹在 `[1, end_refer_idx]`；
+暂停时 `idx = last_idx = refer_idx`，且参考关节速度强制为 0。
+"""
+from __future__ import annotations
+
+import numpy as np
+
+GRAVITY = np.array([0.0, 0.0, -1.0])
+ROBOT_STATE_DIM = 93
+REFERENCE_DIM = 67
+HISTORY_FRAMES = 4
+
+
+def quat_mul(a, b):
+    aw, ax, ay, az = a
+    bw, bx, by, bz = b
+    return np.array([
+        aw * bw - ax * bx - ay * by - az * bz,
+        aw * bx + ax * bw + ay * bz - az * by,
+        aw * by - ax * bz + ay * bw + az * bx,
+        aw * bz + ax * by - ay * bx + az * bw,
+    ])
+
+
+def quat_conj(q):
+    return np.array([q[0], -q[1], -q[2], -q[3]])
+
+
+def quat_to_mat(q):
+    w, x, y, z = q
+    return np.array([
+        [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+        [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+        [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+    ])
+
+
+def yaw_quat(q):
+    """只保留绕 z 的偏航分量。"""
+    w, x, y, z = q
+    yaw = np.arctan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z))
+    return np.array([np.cos(yaw / 2), 0.0, 0.0, np.sin(yaw / 2)])
+
+
+def quat_apply_inverse(q, v):
+    return quat_to_mat(q).T @ np.asarray(v, dtype=float)
+
+
+def six_d(m):
+    return np.array([m[0, 0], m[0, 1], m[1, 0], m[1, 1], m[2, 0], m[2, 1]], dtype=np.float32)
+
+
+def reference_block(*, joint_pos, joint_vel, anchor_pos, anchor_quat,
+                    last_anchor_pos, last_anchor_quat, base_quat, pause=False) -> np.ndarray:
+    """动作参考 67 维：关节位置/速度 + 锚点相对位姿（偏航对齐基座后转到机体系）。"""
+    if pause:
+        joint_vel = np.zeros_like(np.asarray(joint_vel, float))
+    ref_yaw = yaw_quat(anchor_quat)
+    base_yaw = yaw_quat(base_quat)
+    yaw_delta = quat_mul(base_yaw, quat_conj(ref_yaw))
+    aligned = quat_mul(yaw_delta, anchor_quat)
+    last_rot = quat_to_mat(quat_mul(yaw_delta, last_anchor_quat))
+    rel_pos = last_rot.T @ (np.asarray(anchor_pos, float) - np.asarray(last_anchor_pos, float))
+    rel_rot_mat = last_rot.T @ quat_to_mat(aligned)
+    return np.concatenate([
+        np.asarray(joint_pos, np.float32),
+        np.asarray(joint_vel, np.float32),
+        rel_pos.astype(np.float32),
+        six_d(rel_rot_mat),
+    ]).astype(np.float32)
+
+
+def robot_state_frame(*, ang_vel, gravity_b, q, qd, last_action) -> np.ndarray:
+    """单帧机器人状态 93 维。"""
+    return np.concatenate([
+        np.asarray(ang_vel, np.float32),
+        np.asarray(gravity_b, np.float32),
+        np.asarray(q, np.float32),
+        np.asarray(qd, np.float32),
+        np.asarray(last_action, np.float32),
+    ]).astype(np.float32)
+
+
+def assemble(*, reference67, history4) -> np.ndarray:
+    """拼成 439：参考在前，机器人状态 4 帧在后（缓冲区由调用方维护，最老在前）。"""
+    hist = np.asarray(history4, dtype=np.float32)
+    if hist.shape != (HISTORY_FRAMES, ROBOT_STATE_DIM):
+        raise ValueError(f"history 形状 {hist.shape} != ({HISTORY_FRAMES}, {ROBOT_STATE_DIM})")
+    ref = np.asarray(reference67, dtype=np.float32)
+    if ref.shape != (REFERENCE_DIM,):
+        raise ValueError(f"reference 形状 {ref.shape} != ({REFERENCE_DIM},)")
+    return np.concatenate([ref, hist.reshape(-1)]).astype(np.float32)
