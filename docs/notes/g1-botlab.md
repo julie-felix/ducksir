@@ -385,7 +385,18 @@ bundle 里没有手搓的 GLB 索引（那是鸭子专用），所以 `play.js` 
 `renderFromModel()`：直接用 MuJoCo 的 `mesh_vert/mesh_face` 建 three.js 几何体，
 按 `geom_rgba` 上色，相机按机器人自身包围盒取景（鸭子 ~0.2 m、G1 ~1.3 m 差一个数量级）。
 
+### 三个「看起来像渲染问题」的问题，根因都不是渲染
+
+1. **脚一直像垫着、动作不走**：`play.js` 里判断「起步 10 步后放参考」写成了 `state.ctrl >= 10`，
+   而 `state` 上没有 `ctrl` 这个字段 → 恒为 `undefined >= 10`（false）→ **播放头永远暂停**，
+   机器人一直保持第一帧的姿态，看起来就是「垫着脚不动」。改成循环里的 `ctrl` 就好了。
+2. **脚形状怪（薄壳/方块）**：`renderFromModel()` 把**碰撞 geom 也画了出来**（G1 的碰撞体是
+   30 个薄壳 contour 网格）。现在只画视觉 geom（`contype = conaffinity = 0`，正好 36 个）。
+3. **机器人跑出画面**：相机只在加载时取景一次，机器人跳着跳着就出画。现在相机跟随
+   pelvis（保持用户当前的观察偏移，只平移目标点），并且取景前先 `mj_forward` +
+   `updateMatrixWorld`（否则矩阵是过期的，取景会偏）。
+
 ### 还差
 
 - 浏览器侧的 `fsm` 模式切换（现在单策略 bundle 默认常开 WBC；多 mode bundle 还没接）；
-- 工作台里如果 bundle 很大（G1 带网格 31 MB），首次加载要几十秒，可以再压网格。
+- G1 bundle 31 MB（36 个 STL），首次加载几十秒，网格可以再压。

@@ -125,7 +125,7 @@ async function main() {
     const assets = {};
     let done = 0;
     // bundle 里网格在 DATA + 'meshes/'，手搓素材在 ./assets/mjcf/
-    const meshBase = BUNDLE ? DATA + 'meshes/' : './assets/mjcf/';
+    const meshBase = BUNDLE ? DATA : './assets/mjcf/';
     const needFetch = BUNDLE ? await json(DATA + 'meshes.json') : stlNames;
     await step(`下载 ${needFetch.length} 个 STL`, Promise.all(needFetch.map(async (n) => {
       assets[n] = await bytes(meshBase + n);
@@ -162,17 +162,21 @@ async function main() {
         if (nm) bodyOf[nm] = { group: built.groups[b], bid: b };
       }
       // 相机按模型大小取景：body 原点在 Z-up 系里，先换到世界系（robotGroup 有 -90° 绕 X）
+      mj.mj_forward(model, data);   // 取景前先刷一次前向，geom_xpos 才是有效值
       const bbox = new THREE.Box3();
-      for (let b = 1; b < model.nbody; b += 1) {
+      for (let gi = 0; gi < model.ngeom; gi += 1) {
+        if (model.geom_contype[gi] !== 0 || model.geom_conaffinity[gi] !== 0) continue;
         bbox.expandByPoint(new THREE.Vector3(
-          read(data.xpos, b * 3), read(data.xpos, b * 3 + 1), read(data.xpos, b * 3 + 2)));
+          read(data.geom_xpos, gi * 3), read(data.geom_xpos, gi * 3 + 1), read(data.geom_xpos, gi * 3 + 2)));
       }
-      const zSpan = Math.max(0.6, bbox.getSize(new THREE.Vector3()).length() * 1.15);
-      const localCenter = bbox.isEmpty() ? new THREE.Vector3(0, 0, 0.5) : bbox.getCenter(new THREE.Vector3());
-      localCenter.z = Math.max(localCenter.z, zSpan * 0.45);
+      const size3 = bbox.isEmpty() ? new THREE.Vector3(0.4, 0.4, 1.3) : bbox.getSize(new THREE.Vector3());
+      const zSpan = Math.max(0.9, Math.max(size3.x, size3.y, size3.z));
+      const localCenter = bbox.isEmpty() ? new THREE.Vector3(0, 0, 0.7) : bbox.getCenter(new THREE.Vector3());
+      robotGroup.updateMatrixWorld(true);          // 不刷新的话 localToWorld 用的是过期矩阵
       const worldCenter = robotGroup.localToWorld(localCenter.clone());
       controls.target.copy(worldCenter);
-      camera.position.set(worldCenter.x + zSpan * 1.5, worldCenter.y + zSpan * 0.85, worldCenter.z + zSpan * 2.0);
+      const dist = zSpan * 1.9;
+      camera.position.set(worldCenter.x + dist * 0.85, worldCenter.y + dist * 0.42, worldCenter.z + dist * 1.15);
       camera.updateProjectionMatrix();
       controls.update();
       stage('渲染：用 MuJoCo 网格');
@@ -383,7 +387,8 @@ async function main() {
       // 动作参考：进入 WBC 后播放（起步先停几帧让机器人站住，和宿主一致）
       let motionRefValue = null;
       if (motion && playhead) {
-        if (playhead.paused && state.ctrl >= 10) playhead.pause(false);
+        // 起步先停 10 个控制步让机器人站稳，再放参考（和宿主 DUCK_WBC_SETTLE 一致）
+        if (playhead.paused && ctrl >= 10) playhead.pause(false);
         const baseQuat = [0, 1, 2, 3].map((k) => read(duck.data.qpos, 3 + k));
         motionRefValue = motionRef(motion, playhead, baseQuat);
         playhead.advance();
@@ -440,12 +445,24 @@ async function main() {
       ctrl += 1;
     }
 
+    // 相机跟随：机器人会跳/走，静止相机很快就出画。保持用户当前的观察偏移，只平移目标点。
+    const pelvisId = mj.mj_name2id(model, duck.objId('mjOBJ_BODY'), 'pelvis');
+    const followTarget = new THREE.Vector3();
     function render() {
       for (const name of Object.keys(bodyOf)) {
         const { group, bid } = bodyOf[name];
         group.position.set(read(data.xpos, bid * 3), read(data.xpos, bid * 3 + 1), read(data.xpos, bid * 3 + 2));
         group.quaternion.set(read(data.xquat, bid * 4 + 1), read(data.xquat, bid * 4 + 2),
                              read(data.xquat, bid * 4 + 3), read(data.xquat, bid * 4));
+      }
+      if (pelvisId >= 0) {
+        robotGroup.updateMatrixWorld(true);
+        followTarget.set(read(data.xpos, pelvisId * 3), read(data.xpos, pelvisId * 3 + 1),
+                         read(data.xpos, pelvisId * 3 + 2));
+        robotGroup.localToWorld(followTarget);
+        const offset = camera.position.clone().sub(controls.target);
+        controls.target.lerp(followTarget, 0.08);
+        camera.position.copy(controls.target).add(offset);
       }
       resize();
       controls.update();
@@ -529,6 +546,8 @@ function renderFromModel({ THREE, mj, model, data, duck, robotGroup, scene }) {
   const meshCache = new Map();
   const mjGEOM_MESH = mj.mjtGeom.mjGEOM_MESH.value ?? 7;
   for (let gi = 0; gi < model.ngeom; gi += 1) {
+    // 只画视觉 geom（contype = conaffinity = 0）。碰撞体会把「脚」画成薄壳/方块，看着像残影。
+    if (model.geom_contype[gi] !== 0 || model.geom_conaffinity[gi] !== 0) continue;
     const type = model.geom_type[gi];
     const bodyId = model.geom_bodyid[gi];
     const group = groups[bodyId];

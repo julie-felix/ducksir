@@ -284,8 +284,7 @@ def main() -> int:
         with open(os.path.join(out, "robot.xml"), "w", encoding="utf-8") as f:
             f.write(xml)
         meshes = sorted({m for m in re.findall(r'file="([^"]+\.(?:stl|STL|obj|OBJ))"', xml)})
-        mesh_out = os.path.join(out, "meshes")
-        os.makedirs(mesh_out, exist_ok=True)
+        mesh_out = out          # 网格直接放 bundle 根：meshdir="." 对宿主和浏览器都成立
         copied = 0
         for name in meshes:
             path = os.path.join(assets_dir, name)
@@ -294,7 +293,7 @@ def main() -> int:
                 copied += 1
         with open(os.path.join(out, "meshes.json"), "w", encoding="utf-8") as f:
             json.dump([n for n in meshes if os.path.exists(os.path.join(mesh_out, n))], f)
-        print(f"  物理模型 robot.xml + {copied} 个网格 → meshes/")
+        print(f"  物理模型 robot.xml + {copied} 个网格（bundle 根）")
 
     print(f"  策略 {len(policies)} 个｜契约 contract.json")
     return 0
