@@ -140,9 +140,16 @@ def build_post(preset: dict, n: int, lo, hi) -> tuple[bytes, dict]:
     p = ir.Plan(input_dim=n, output_dim=n, name="post")
     raw = p.obs(0, n)
     action = raw
-    order = preset.get("policyJointOrder")
+    # 策略序 → 电机序：**motorJointOrder** 才是那份置换（botlab JSON 里 policyJointOrder 是恒等，
+    # 真实映射来自参考实现的 dof_mapping）。用错的话动作会张冠李戴。
+    order = preset.get("motorJointOrder") or preset.get("policyJointOrder")
     if order and list(order) != list(range(n)):
-        action = p.reorder(raw, [int(x) for x in order])
+        # `reorder` 是 gather（out[i] = x[perm[i]]），而这里要的是 scatter
+        # （out[motor_order[i]] = action[i]），所以传**逆置换**。
+        inv = [0] * n
+        for i, m in enumerate(order):
+            inv[int(m)] = i
+        action = p.reorder(raw, inv)
     s = p.affine(action, preset["actionScale"], preset["defaultJointPositions"])
     p.out_action(p.clip(s, lo, hi))
     return ir.compile_blob(p.to_json()), {"in:action": (0, n), "out:ctrl": (0, n)}

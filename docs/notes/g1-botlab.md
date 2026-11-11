@@ -328,20 +328,27 @@ PASS
 
 `build/release/g1-wbc` 能导出：`pre 5 节点 160 → 439`、`post 5 节点 29 → 29`、`fsm 66 节点`。
 
-### 但端到端没站住（如实记录）
+### 三个 bug 修完，bundle 端到端站稳了
 
 ```
-$ python3 sim/host/run_bundle.py --bundle build/release/g1-wbc --mjcf build/mjcf/g1-29dof-torque.xml --steps 300
-bundle g1-wbc｜300/300 步｜18.5× 实时
-  基座 终 +0.093 最低 +0.073 m｜直立 -0.267
+$ python3 sim/host/run_bundle.py --bundle build/release/g1-wbc --mjcf build/mjcf/g1-29dof-torque.xml --steps 600
+bundle g1-wbc｜600/600 步｜28.5× 实时
+  基座 终 +0.682 最低 +0.645 m｜直立 +0.994
 ```
 
-同一套观测、同一个模型、同一个 PD，**直接装配**（`tools/dev/g1_wbc_smoke.py`）能站 600 步，
-走 bundle（`pre` 图里展开历史）却 ~20–40 步就倒。已经排除：
+同样是同一套观测/模型/PD，之前 20–40 步就倒。逐个定位出来的三个 bug：
 
-- 引擎的 `history` 节点语义（与 oracle 逐位相同，5 步 0.000e+00）；
-- 关节序三种约定（电机序 / 策略序 / 交叉索引），都在 20 步左右倒；
-- 历史缓冲预热（预热更差：12 步 vs 36 步）。
+| # | bug | 症状 | 修法 |
+|---|---|---|---|
+| 1 | `actionScale` 用了 botlab JSON 里的**逐关节值**（0.29/0.35/0.44/0.55） | 目标角整体偏大，越调越倒 | 参考实现是**统一 0.25**（`State_Loco/WBC` 里写死），导入时强制 0.25，JSON 原值留档在 `actionScaleFromPresetJson` |
+| 2 | `post` 的 `reorder` 传了正置换 | 动作张冠李戴（`t_b[1]=-0.725` vs 正确 `+0.649`） | `reorder` 节点是 **gather**（`out[i]=x[perm[i]]`），要 scatter 必须传**逆置换** |
+| 3 | 观测里的关节量用了电机序 | 历史段与真值差 8.4，策略看到错姿态 | 策略吃的是**策略序**（`obs[73:102]` 对应 policy order），动作输出再在 post 里换回电机序 |
 
-**下一步要定位的**：直接装配与 bundle 路径在「每步喂给策略的 439 维」上到底哪几维不同——
-把两条路径第 0 步的 obs 打出来逐维比对，比继续猜快。
+定位方法：把「直接装配」和「bundle 路径」在**同一初始状态下第 0 步的 160/439 维 obs 与 target** 打出来逐维比——
+差异 0 就说明两条路在起点等价，接着逐帧往后比。第 2 个 bug 就是这一步暴露的（target 差 1.37 rad）。
+
+### 回归
+
+- `sim/test/test_g1_wbc_bundle.py`：300 步、基座 ≥0.55 m、直立 >0.9（新）；
+- `test_golden` / `test_pre_history` / `test_project_run` / `test_actuators` 全绿（鸭子不受影响：它的
+  preset 没有非恒等 `motorJointOrder`，post 不插 reorder）。

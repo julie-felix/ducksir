@@ -272,8 +272,11 @@ def main() -> int:
             import wbc_obs as _W
             active = int(motion_meta.get("active_mode", 3))
             in_active_mode = (fsm is None) or (int(out[off_m]) == active)
-            if in_active_mode and playhead.paused:
-                playhead.pause(False)      # 进入 WBC：参考从头播放
+            # 起步先让参考停几帧（机器人从初始位形settle），再到点开播——
+            # 直接开播会让策略第 0 帧就吃到参考速度尖峰（实测会倒）。
+            settle = int(os.environ.get("DUCK_WBC_SETTLE", "10"))
+            if in_active_mode and playhead.paused and k >= settle:
+                playhead.pause(False)
             if not in_active_mode:
                 playhead.pause(True)
             idx, last = playhead.current()
@@ -292,6 +295,9 @@ def main() -> int:
         sess = sessions[mode_key]
         feed = {sess.get_inputs()[0].name: obs.reshape(1, -1).astype(np.float32)}
         raw = np.asarray(sess.run(None, feed)[0]).reshape(-1).astype(np.float32)
+        # botlab 的控制器对动作做 ±100 截断（`policy_bank(...).clip(-100, 100)`），
+        # 少了这一步，扭矩模式会把超界的动作直接放大成力矩。
+        raw = np.clip(raw, -100.0, 100.0)
         last_action = raw
         if "post" in plans:
             act = run_plan(core, plans["post"], raw)

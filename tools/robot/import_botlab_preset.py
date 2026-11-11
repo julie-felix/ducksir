@@ -36,6 +36,9 @@ def main() -> int:
     ap.add_argument("--frame-interval", type=int, default=5,
                     help="锚点回看间隔（参考实现 motion_reference(frame_interval=5)）")
     ap.add_argument("--active-mode", type=int, default=3, help="哪个 mode 播放这份参考")
+    ap.add_argument("--action-scale", type=float, default=0.25,
+                    help="动作缩放。botlab 的参考实现（State_Loco/WBC）用**统一 0.25**，"
+                         "而 preset JSON 里的 actionScale 是训练期的旧值（逐关节不同），不要用")
     ap.add_argument("--control-hz", type=float, default=50.0)
     ap.add_argument("--physics-hz", type=float, default=200.0)
     args = ap.parse_args()
@@ -88,7 +91,9 @@ def main() -> int:
         "kp": arr("kp") or [0.0] * n_act,
         "kd": arr("kd") or [0.0] * n_act,
         "effortLimit": arr("effortLimit") or [0.0] * n_act,
-        "actionScale": arr("actionScale") or [1.0] * n_act,
+        # 统一 0.25：参考实现 _action_compute 里是 `0.25 * action`，不读 JSON 的逐关节值
+        "actionScale": [args.action_scale] * n_act,
+        "actionScaleFromPresetJson": arr("actionScale"),
         "initialQpos": arr("initialQpos"),
         "referenceJointPositions": arr("referenceJointPositions"),
         "motion": ({"path": args.motion, "frames": args.motion_frames, "fps": args.motion_fps,
