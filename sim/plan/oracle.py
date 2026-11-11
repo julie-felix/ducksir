@@ -103,6 +103,23 @@ def step(doc: dict, obs, state: dict | None = None, backend=None):
             period = float(p[0])
             steps = float(ins[0][0])
             value = np.array([(steps % period) / period], dtype=F32)
+        elif name == "motion":
+            frames = int(p[0])
+            dim = int(p[1])
+            fps = float(p[2])
+            loop = p[3] != 0
+            table = np.asarray(p[4:4 + frames * dim], dtype=F32).reshape(frames, dim)
+            pos = max(0.0, float(ins[0][0]) * fps)
+            i0 = int(np.floor(pos))
+            frac = pos - i0
+            if loop:
+                i0 %= frames
+                i1 = (i0 + 1) % frames
+            else:
+                if i0 > frames - 1:
+                    i0, frac = frames - 1, 0.0
+                i1 = i0 + 1 if i0 + 1 < frames else i0
+            value = table[i0] * (1 - frac) + table[i1] * frac
         elif name == "add":
             value = np.zeros(out["len"], dtype=F32)
             for x in ins:

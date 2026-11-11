@@ -99,7 +99,7 @@ uint64_t fnv1a64(const uint8_t* data, size_t len) {
     return h;
 }
 
-bool known_type(uint16_t t) { return t >= DS_NODE_OBS && t <= DS_NODE_COMPARE; }
+bool known_type(uint16_t t) { return t >= DS_NODE_OBS && t <= DS_NODE_MOTION; }
 
 void set_err(char* err, size_t err_len, const char* msg) {
     if (!err || err_len == 0) return;
@@ -255,6 +255,20 @@ ds_plan* ds_load(const void* blob, size_t len, char* err, size_t err_len) {
                 return nullptr;
             }
             p->sink_index[0] = i;
+        }
+        if (n.type == DS_NODE_MOTION) {
+            // 参数表：[n_frames, dim, fps, loop] + n_frames*dim 个 float。
+            // 这里只查最小长度（内容在 ds_step 里 O(1) 校验，避免在加载期算乘积）。
+            if (n.param_len < 4) {
+                ds_free(p);
+                set_err(err, err_len, "motion 参数表至少要 4 个 float");
+                return nullptr;
+            }
+            if (n.n_in != 1) {
+                ds_free(p);
+                set_err(err, err_len, "motion 只吃 1 个输入（时间）");
+                return nullptr;
+            }
         }
         if (n.type == DS_NODE_STATE_MACHINE && n.out_len != 2) {
             ds_free(p);
@@ -551,6 +565,37 @@ int ds_step(ds_plan* p, const float* obs, float* action, const ds_backend* backe
                 float phase = std::fmod(steps, period);
                 if (phase < 0.0f) phase += period;
                 out[0] = phase / period;
+                break;
+            }
+            case DS_NODE_MOTION: {
+                // 输入是时间（秒）；按 fps 折算成帧号，取相邻两帧线性插值。
+                // loop=1 时环形回绕；否则夹在 [0, frames-1]。
+                if (n.param_len < 4) return DS_ERR_BAD_BLOB;
+                const int frames = static_cast<int>(prm[0]);
+                const int dim = static_cast<int>(prm[1]);
+                const float fps = prm[2];
+                const bool loop = prm[3] != 0.0f;
+                if (frames <= 0 || dim <= 0 || !(fps > 0.0f)) return DS_ERR_BAD_BLOB;
+                if (static_cast<uint32_t>(4 + frames * dim) > n.param_len) return DS_ERR_BAD_BLOB;
+                const float* table = prm + 4;
+                float pos = in0[0] * fps;
+                if (!(pos >= 0.0f)) pos = 0.0f;   // 也挡住 NaN
+                int i0 = static_cast<int>(std::floor(pos));
+                float frac = pos - static_cast<float>(i0);
+                int i1;
+                if (loop) {
+                    i0 %= frames;
+                    if (i0 < 0) i0 += frames;
+                    i1 = (i0 + 1) % frames;
+                } else {
+                    if (i0 > frames - 1) { i0 = frames - 1; frac = 0.0f; }
+                    i1 = i0 + 1 < frames ? i0 + 1 : i0;
+                }
+                const float* ra = table + static_cast<size_t>(i0) * dim;
+                const float* rb = table + static_cast<size_t>(i1) * dim;
+                for (int k = 0; k < dim; ++k) {
+                    out[k] = ra[k] * (1.0f - frac) + rb[k] * frac;
+                }
                 break;
             }
             case DS_NODE_COMPARE: {
