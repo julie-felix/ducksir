@@ -181,16 +181,21 @@ def export(doc: dict, mesh_dir: str | None = None, mesh_ext: str | None = None,
     if actuators:
         act = ET.SubElement(root, "actuator")
         for a in actuators:
+            # kind=motor（G1 站点模型那种）：MuJoCo 里是**扭矩**执行器，ctrl 就是力矩，
+            # PD 由宿主/浏览器在控制步里算（= botlab 的 position_pd 语义）。
+            # kind=position：MuJoCo 自己在物理子步里做 PD（鸭子那套）。
+            kind = "motor" if a.get("kind") == "motor" else "position"
             attrs = {"name": a["name"], "joint": a["joint"]}
-            if a.get("kp") is not None:
-                attrs["kp"] = _f(a["kp"])
-            if a.get("kv") is not None:
-                attrs["kv"] = _f(a["kv"])
+            if kind == "position":
+                if a.get("kp") is not None:
+                    attrs["kp"] = _f(a["kp"])
+                if a.get("kv") is not None:
+                    attrs["kv"] = _f(a["kv"])
             if a.get("forcerange"):
                 attrs["forcerange"] = _vec(a["forcerange"])
             if a.get("ctrlrange"):
                 attrs["ctrlrange"] = _vec(a["ctrlrange"])
-            ET.SubElement(act, "position", **attrs)
+            ET.SubElement(act, kind, **attrs)
     return ET.ElementTree(root)
 
 

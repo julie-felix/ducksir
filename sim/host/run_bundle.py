@@ -65,6 +65,17 @@ class Plan:
         return int(s[0]), int(s[1])
 
 
+def _with_gains(preset: dict, n: int) -> dict:
+    """把 preset 里可能缺的 kp/kd/effortLimit/actionScale/default 按 n 补齐。"""
+    out = dict(preset)
+    for key, default in (("kp", 0.0), ("kd", 0.0), ("effortLimit", 0.0),
+                         ("actionScale", 1.0), ("defaultJointPositions", 0.0)):
+        v = out.get(key) or []
+        if len(v) != n:
+            out[key] = [default] * n
+    return out
+
+
 def run_plan(core, plan: Plan, values) -> np.ndarray:
     n_in = plan.entry["input_dim"]
     n_out = plan.entry["output_dim"]
@@ -95,6 +106,13 @@ def main() -> int:
 
     bdir = os.path.join(ROOT, args.bundle) if not os.path.isabs(args.bundle) else args.bundle
     con = C.load(os.path.join(bdir, "contract.json"))
+    # preset 决定执行器语义：位置（MuJoCo 算 PD）还是扭矩（我们在控制步算 PD）
+    preset_path = os.path.join(bdir, "preset.yaml")
+    preset = {}
+    if os.path.exists(preset_path):
+        import yaml as _yaml
+        preset = _yaml.safe_load(open(preset_path, encoding="utf-8")) or {}
+    torque_mode = str(preset.get("actuatorMode") or "").lower() == "torque"
 
     mjcf = args.mjcf or (os.path.join(bdir, "duck.xml") if os.path.exists(os.path.join(bdir, "duck.xml"))
                          else "build/mjcf/duck-hd1910-all.xml")
@@ -234,7 +252,15 @@ def main() -> int:
             act = run_plan(core, plans["post"], raw)
         else:
             act = raw
-        d.ctrl[:] = act
+        if torque_mode:
+            import actuators as _A
+            q_now = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
+            qd_now = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)
+            ctrl, _tgt = _A.ctrl_from_action(act, _with_gains(preset, len(driven)),
+                                             qpos=q_now, qvel=qd_now)
+            d.ctrl[:] = ctrl
+        else:
+            d.ctrl[:] = act
         for _ in range(decim):
             mujoco.mj_step(m, d)
         if not np.isfinite(d.qpos).all():

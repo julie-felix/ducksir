@@ -164,3 +164,35 @@ pcrest 时把 `kp/kd/effortLimit` 写进 preset，宿主/浏览器各自按同�
 用站点扭矩模型跑他们的 native 运行时，机器人直接**穿过地面**（z → −42）——共享场景里没有地面。
 换成 Instinct 那份带地面的场景，loco 也照样倒（z 0.79 → 0.19）。
 所以「在 botlab 里能不能站住」这件事，目前只有**浏览器 target** 能作数；native 路径的结论不能当基准。
+
+## 9. 用 botlab 的真值把执行器链路钉死了
+
+录真值时顺手把 `d.ctrl` 也从 `mujoco.mj_step` 里抓了出来（`tools/dev/botlab_record_native.py` 的同源做法），
+于是可以直接对比「他们写进 ctrl 的值」和「我们按公式算的值」：
+
+```
+step2:  差(动作直接当电机序) = 34.63   ｜  差(按 dof_mapping) = 0.80
+step5:  差(直接)             = 33.35   ｜  差(映射)          = 0.75
+step10: 差(直接)             = 58.26   ｜  差(映射)          = 0.58
+```
+
+**结论：`tau = kp·(default + 0.25·action − q) − kd·qd`，动作按 `dof_mapping` 从策略序换到电机序，
+再按 `effortLimit` 截断**（G1 的 effortLimit 是逐关节的：5 / 25 / 50 / 88 / 139）。
+直接当电机序会差 30–58，映射后只差 0.6–0.8（残差来自我们取 q/qd 的时刻与它不同）。
+
+### 已经落地的部分
+
+| 东西 | 状态 |
+|---|---|
+| `tools/robot/import_botlab_preset.py` | 把 botlab preset（kp/kd/effortLimit/actionScale/默认角/初始位姿）转成我们的 preset，并标 `actuatorMode` |
+| `tools/robot/export_mjcf.py` | `kind=motor` 的实体导出 `<motor ctrlrange=…>`（扭矩），否则 `<position kp kv>` |
+| `contract/robot/types/g1-29dof-torque.yaml` | 站点共享的扭矩模型（29 `<motor>`） |
+| `sim/host/actuators.py` | 两端共用的执行器语义：策略序→电机序、目标角、扭矩公式 + 截断 |
+| `sim/host/run_bundle.py` | `preset.actuatorMode == "torque"` 时按 PD 算 ctrl |
+| `sim/test/test_actuators.py` | 13 条断言（映射/截断/两种模式/真实 G1 preset） |
+
+### 还没做
+
+- 浏览器侧（`play.js`）的扭矩 PD——现在只支持位置执行器；
+- bundle 里还没有「策略序 ≠ 电机序」的表达（`post.blob` 假设同序），G1 要接 `reorder`；
+- 扭矩模型 + 地面 + 完整 PD 跑我们的 `run_bundle` 还没端到端验（差这一步）。
