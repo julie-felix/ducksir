@@ -98,11 +98,17 @@ def export(doc: dict, mesh_dir: str | None = None, mesh_ext: str | None = None,
 
         if link.get("mass") is not None:
             inertia = link.get("inertia") or {}
-            ET.SubElement(body, "inertial",
-                          pos=_vec(link.get("com") or [0, 0, 0]),
-                          mass=_f(link["mass"]),
-                          fullinertia=" ".join(_f(inertia.get(k, 0.0)) for k in
-                                               ("ixx", "iyy", "izz", "ixy", "ixz", "iyz")))
+            ixx, iyy, izz = (inertia.get(k, 0.0) for k in ("ixx", "iyy", "izz"))
+            ixy, ixz, iyz = (inertia.get(k, 0.0) for k in ("ixy", "ixz", "iyz"))
+            attrs = {"pos": _vec(link.get("com") or [0, 0, 0]), "mass": _f(link["mass"])}
+            if ixy == 0.0 and ixz == 0.0 and iyz == 0.0:
+                # 纯对角：写 diaginertia。MuJoCo 对 fullinertia 会做特征值检查，
+                # 全零的 fullinertia 直接报「正特征值」错误；上游那些 1e-9 kg 的占位 body
+                # 就是 diaginertia="0 0 0"（G1 的 LL_FOOT/RL_FOOT 这种），必须原样保住。
+                attrs["diaginertia"] = _vec([ixx, iyy, izz])
+            else:
+                attrs["fullinertia"] = " ".join(_f(v) for v in (ixx, iyy, izz, ixy, ixz, iyz))
+            ET.SubElement(body, "inertial", **attrs)
 
         joint = joint_by_child.get(link["name"])
         if joint and joint["type"] in ("revolute", "prismatic"):

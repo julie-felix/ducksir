@@ -75,8 +75,15 @@ def load_posture(path: str, n: int) -> dict:
     base = post.get("base") or {}
     pos = [float(x) for x in (base.get("pos") or [0, 0, 0])]
     quat = [float(x) for x in (base.get("quat") or [1, 0, 0, 0])]
-    return {"joints": joints, "base": pos + quat, "provenance": post.get("provenance") or {},
-            "name": post.get("name")}
+    # 位形里可以给整段 initial_qpos（上游模板常常给「基座位姿 + 关节角」一整条）。
+    # 给了就用它，否则用 base + joints 拼出来。
+    verbatim = post.get("initial_qpos")
+    if verbatim is not None:
+        verbatim = [float(x) for x in verbatim]
+        if len(verbatim) != (7 + n):
+            raise SystemExit(f"位形 {path} 的 initial_qpos 有 {len(verbatim)} 项，应为 7+{n}")
+    return {"joints": joints, "base": pos + quat, "initial_qpos": verbatim,
+            "provenance": post.get("provenance") or {}, "name": post.get("name")}
 
 
 def build(entity_path: str, mjcf_path: str | None, posture_path: str | None = None) -> dict:
@@ -129,7 +136,10 @@ def build(entity_path: str, mjcf_path: str | None, posture_path: str | None = No
         "actuatorJointOrder": order,
         "motorJointOrder": order,
         "defaultJointPositions": _posture_joints,
-        "initialQpos": _posture_base + list(_posture_joints) if floating else list(_posture_joints),
+        "initialQpos": (
+            (posture["initial_qpos"] if posture and posture.get("initial_qpos")
+             else _posture_base + list(_posture_joints))
+            if floating else list(_posture_joints)),
         "kp": [a.get("kp") for a in acts],
         "kd": [a.get("kv") for a in acts],
         "effortLimit": forker,
