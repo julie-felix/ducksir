@@ -46,14 +46,26 @@ else:
     m = motion.load_motion(path, "joint_pos")
     ok("自造 npz：读出 10 帧 × 2", m["frames"] == 10 and m["dim"] == 2, str(m["dim"]))
 
-# .bin 私有容器：明确「不支持」而不是猜着读（fps 无法唯一确定）
-try:
-    motion.load_motion(BIN_DIR if os.path.isdir(BIN_DIR) else "/tmp/whatever", "joint_pos")
-    ok("bin 私有容器应该报 NotImplementedError", False)
-except NotImplementedError:
-    ok("bin 私有容器：显式不支持（有原因）", True)
-except Exception:
-    ok("bin 私有容器：显式不支持（有原因）", True)
+# .bin 容器（WBC 的 dance12）：头长度靠整除唯一确定，fps 靠「位置求导 = 速度」反推
+if os.path.isdir(BIN_DIR):
+    b = motion.load_motion(BIN_DIR, "joint_pos")
+    ok("bin：读出 joint_pos", b["dim"] == 29 and b["frames"] > 1000,
+       f"{b['frames']} 帧 × {b['dim']}")
+    ok("bin：fps 反推出 50", abs(b["fps"] - 50.0) < 1e-6, str(b["fps"]))
+    vel = motion.load_motion(BIN_DIR, "joint_vel")
+    cent = (b["data"][2:] - b["data"][:-2]) / 2.0 * b["fps"]
+    ref = vel["data"][1:-1]
+    err = float(np.abs(cent - ref).mean())
+    ok("bin：位置求导 = 速度（容器解码正确）", err < 1e-6, f"平均误差 {err:.2e}")
+    quat = motion.load_motion(BIN_DIR, "body_quat_w", indices=["pelvis"])
+    ok("bin：四元数 4 列且是单位四元数", quat["dim"] == 4
+       and abs(float(np.linalg.norm(quat["data"][0])) - 1.0) < 1e-3,
+       f"|q0|={float(np.linalg.norm(quat['data'][0])):.4f}")
+    pos = motion.load_motion(BIN_DIR, "body_pos_w", indices=["pelvis"])
+    ok("bin：pelvis 高度合理", 0.5 < float(pos["data"][0][2]) < 1.2,
+       f"z={float(pos['data'][0][2]):.3f}")
+else:
+    print("  跳过真实 bin 样例（未解压模板包）")
 
 try:
     motion.load_motion(NPZ if os.path.exists(NPZ) else "/nonexistent.npz", "not_a_channel")
