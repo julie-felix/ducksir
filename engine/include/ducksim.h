@@ -41,6 +41,7 @@ enum ds_node_type {
     DS_NODE_ADD = 13,
     DS_NODE_STATE_MACHINE = 14,
     DS_NODE_COMPARE = 15,
+    DS_NODE_MOTION = 16, /* 动作参考采样（botlab 的 Motion.sample / motion_reference） */
 };
 
 /* 节点 flag */

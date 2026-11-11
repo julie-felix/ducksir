@@ -169,7 +169,7 @@ action = actor(state, latent).clip(-100, 100).action()   # [1,896] → [1,29]
 
 | # | 缺口 | 出现在 | 性质 | 我们现状 |
 |---|---|---|---|---|
-| 1 | **动作参考 `Motion` / `motion_reference`**（npz/bin 采样、lookahead 窗口） | GMTrack、WBC、Instinct、UniSuper（4/8） | 纯数据 + 图 | ❌ 没有 |
+| 1 | **动作参考 `Motion` / `motion_reference`**（npz/bin 采样、lookahead 窗口） | GMTrack、WBC、Instinct、UniSuper（4/8） | 纯数据 + 图 | ✅ **节点已做**（`motion`，2026-11-11）：npz 形态可用；WBC 的私有 `.bin` 容器**显式不支持** |
 | 2 | **递归状态模型**（`h_in/c_in` → `h_out/c_out`，跨帧回灌） | Go2W（memory×2 套）、WBC（loco） | 图能力（有状态） | ❌ 没有；`history` 只是定长窗口 |
 | 3 | **四元数信号族**（inverse/heading/relative/rotate/rotation_6d） | UniSuper、Instinct、GMTrack | 纯数学，跨端可复现 | ❌ 只有投影重力 |
 | 4 | **深度相机**（`Sensor.depth` + `history(stride=5)`） | Hiking、PHP（2/8，但这 2 个是「感知」标杆） | 渲染/传感器 | ❌ 两端都没有 |
@@ -195,3 +195,17 @@ action = actor(state, latent).clip(-100, 100).action()   # [1,896] → [1,29]
 
 - `config/parameters.yaml` 的 `label/range/step/unit` → 我们工作台滑杆从契约生成，而不是写死；
 - `config/io.yaml` 的键位映射 → 我们的键位提示也从声明生成。
+
+## 11. 进度（2026-11-11 晚）
+
+`motion` 节点（第 16 种）已落地：
+
+- 语义：输入 1 维秒数 → `t*fps` 取相邻两帧线性插值，`loop` 控制回绕，越界夹住；
+- 数据编进 blob 参数表，**不需要运行时文件 IO**，宿主与浏览器吃同一份；
+- 实现：`engine/include/ducksim.h`（DS_NODE_MOTION=16）+ `engine/src/core.cpp` + `sim/plan/ir.py` + `sim/plan/oracle.py` + `sim/plan/graph.py`；
+- 素材加载：`sim/plan/motion.py`（npz 可用；WBC 的 `.bin` 私有容器按「不猜」原则显式拒绝，理由写在异常里）；
+- 测试：`sim/test/test_motion_node.py`（核 ↔ numpy 参考、整数帧/半帧/回绕/越界/参数校验）、
+  `sim/test/test_motion_load.py`（用下载下来的真实 npz 验 417 帧 × 29 维、fps=50）。
+
+还没接线：`contract.json` 里还没有「动作参考」这一槽位，`fsm.blob` 也还没用到这个节点。
+真正用起来要等「动作跟踪类」项目（GMTrack / UniSuper）接入。

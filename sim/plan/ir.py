@@ -24,6 +24,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+
+import numpy as np
 import struct
 
 MAGIC = b"DSIM"
@@ -50,6 +52,7 @@ NODE_TYPES = {
     "add": (13, 1),
     "state_machine": (14, 1),
     "compare": (15, 1),
+    "motion": (16, 1),
 }
 TYPE_BY_ID = {tid: name for name, (tid, _) in NODE_TYPES.items()}
 NODE_VERSION = {name: ver for name, (_, ver) in NODE_TYPES.items()}
@@ -251,6 +254,30 @@ class Plan:
             params += [float(t.get("from", -1)), float(t["to"]), float(kind), value, float(ci),
                        float(1 if t.get("reset_steps", True) else 0)]
         return self._add("state_machine", [command] + conds, 2, params)
+
+    def motion(self, time: NodeRef, frames, dim: int, fps: float, loop: bool = False) -> NodeRef:
+        """动作参考采样（botlab 的 `Motion.sample` / `motion_reference` 的引擎侧等价物）。
+
+        - 输入 `time` 是 1 维秒数（通常 `steps / control_hz`，可用 `scale`+`add` 拼出暂停/回绕）；
+        - `frames` 是 (n_frames, dim) 的 float 数据，逐帧行主序；
+        - 按 `t*fps` 取相邻两帧线性插值；`loop` 为真时环形回绕，否则夹在两端；
+        - 输出 dim 维。
+
+        为什么做成节点而不是在宿主里算：动作参考是**跨端**的输入（浏览器与宿主必须一致），
+        放进图里才能被同一份 blob 两端复现。
+        """
+        arr = np.asarray(frames, dtype=np.float32)
+        if arr.ndim != 2 or arr.shape[1] != dim:
+            raise ValueError(f"motion 数据形状 {arr.shape} 与 dim={dim} 不符")
+        if arr.shape[0] < 1:
+            raise ValueError("motion 至少一帧")
+        if fps <= 0:
+            raise ValueError("motion fps 必须为正")
+        if time.length != 1:
+            raise ValueError("motion 的时间输入必须是 1 维")
+        params = [float(arr.shape[0]), float(dim), float(fps), 1.0 if loop else 0.0]
+        params += arr.reshape(-1).tolist()
+        return self._add("motion", [time], dim, params)
 
     def compare(self, a: NodeRef, op: str, b: NodeRef) -> NodeRef:
         """比较两路 1 维信号，输出 0/1。op: gt / gte / lt / lte / eq。"""
