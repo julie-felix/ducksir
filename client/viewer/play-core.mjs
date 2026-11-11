@@ -111,7 +111,9 @@ export function checkPlanAgainstContract(planName, info) {
  * 按契约里的观测配方装配观测。
  *
  * 配方条目形如 `{name, slot:[off,len], source:"sensor:imu_ang_vel"}`，支持的 source：
- * `sensor:<名>`、`gravity:body:<名>`、`qpos:joints`、`qvel:joints`、`last_action`、`fsm_slot:<槽位名>`。
+ * `sensor:<名>`、`gravity:body:<名>`、`qpos:joints`、`qvel:joints`、`last_action`、`fsm_slot:<槽位名>`，
+ * 以及对齐 botlab `Robot.body_*` / `base_height` 的 `body:pos|quat|vel|angvel:<body>`、`base:z`。
+ * `contact:` 暂只在宿主端支持（浏览器侧要算 mjContact 的偏移，没核对前不猜）。
  */
 export function makeObs(duck, { lastAction, vx, command } = {}) {
   const { model, data, jointId, sensorId, bodyId } = duck;
@@ -147,6 +149,27 @@ export function makeObs(duck, { lastAction, vx, command } = {}) {
         const va = read(model.jnt_dofadr, jointId(robot.joints[k]));
         obs[off + k] = read(data.qvel, va);
       }
+    } else if (src.startsWith('body:')) {
+      // 与宿主 contract_obs 同语义：位置/四元数世界系，速度取 cvel（前 3 角、后 3 线）
+      const parts = src.split(':');
+      const kind = parts[1];
+      const bid = bodyId(parts[2]);
+      if (kind === 'pos') {
+        for (let k = 0; k < 3; k++) obs[off + k] = read(data.xpos, bid * 3 + k);
+      } else if (kind === 'quat') {
+        for (let k = 0; k < 4; k++) obs[off + k] = read(data.xquat, bid * 4 + k);
+      } else if (kind === 'vel') {
+        for (let k = 0; k < 3; k++) obs[off + k] = read(data.cvel, bid * 6 + 3 + k);
+      } else if (kind === 'angvel') {
+        for (let k = 0; k < 3; k++) obs[off + k] = read(data.cvel, bid * 6 + k);
+      } else {
+        throw new Error(`不认识的 body 观测：${src}`);
+      }
+    } else if (src.startsWith('contact:')) {
+      // 浏览器端还没核对 mjContact 的字段偏移，宁可不做也不给错数：显式报错，配方改走宿主。
+      throw new Error(`浏览器端暂不支持 ${src}（contact 仅在宿主端点可用）`);
+    } else if (src === 'base:z') {
+      obs[off] = read(data.qpos, 2);
     } else if (src === 'last_action') {
       for (let k = 0; k < len; k++) obs[off + k] = lastAction ? lastAction[k] || 0 : 0;
     } else if (src.startsWith('fsm_slot:')) {

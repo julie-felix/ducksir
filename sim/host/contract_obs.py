@@ -55,6 +55,13 @@ def quat_to_mat(q):
     ])
 
 
+BODY_SOURCES = ("body:pos:", "body:quat:", "body:vel:", "body:angvel:")
+
+
+def _body(name: str, view: dict):
+    return view["body"](name) if callable(view.get("body")) else None
+
+
 def make_obs(doc: dict, view: dict, *, last_action=None, command=None, vx: float = 0.0) -> np.ndarray:
     """按契约配方组 61 维观测。
 
@@ -83,6 +90,27 @@ def make_obs(doc: dict, view: dict, *, last_action=None, command=None, vx: float
         elif src == "last_action":
             if last_action is not None:
                 obs[off:off + length] = last_action
+        elif src.startswith("body:"):
+            # botlab 的 Robot.body_*：body 位姿/速度，全部世界系
+            parts = src.split(":")
+            kind, name = parts[1], parts[2]
+            b = view["body"](name)
+            if kind == "pos":
+                obs[off:off + 3] = b["xpos"]
+            elif kind == "quat":
+                obs[off:off + 4] = b["xquat"]
+            elif kind == "vel":
+                obs[off:off + 3] = b["cvel"][3:6]
+            elif kind == "angvel":
+                obs[off:off + 3] = b["cvel"][0:3]
+            else:
+                raise SystemExit(f"不认识的 body 观测：{src}")
+        elif src.startswith("contact:"):
+            # contact:<body>：该 body 有任一接触 → 1，否则 0
+            b = view["body"](src.split(":", 1)[1])
+            obs[off:off + 1] = 1.0 if b["contacts"] > 0 else 0.0
+        elif src == "base:z":
+            obs[off:off + 1] = float(data.qpos[2])
         elif src.startswith("fsm_slot:"):
             if command is None:
                 raise SystemExit(f"观测配方引用 {src}，但调用方没给 command")

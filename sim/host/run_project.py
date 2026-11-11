@@ -156,6 +156,19 @@ def main() -> int:
             raise SystemExit(f"MJCF 里没有传感器 {name}")
         return int(m.sensor_adr[sid])
 
+    def body_of(name: str):
+        """body 位姿/速度 + 接触数（对齐 botlab 的 Robot.body_*/contact）。"""
+        bid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, name)
+        if bid < 0:
+            raise SystemExit(f"MJCF 里没有 body {name}")
+        contacts = 0
+        for c in range(d.ncon):
+            con = d.contact[c]
+            if bid in (int(m.geom_bodyid[con.geom1]), int(m.geom_bodyid[con.geom2])):
+                contacts += 1
+        return {"xpos": d.xpos[bid], "xquat": d.xquat[bid],
+                "cvel": d.cvel[bid], "contacts": contacts}
+
     def quat_of(body: str):
         bid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, body)
         if bid < 0:
@@ -163,7 +176,7 @@ def main() -> int:
         return d.xquat[bid]
 
     view = {"data": d, "qpos_off": qpos_off, "dof_off": dof_off,
-            "sensor_adr": sensor_adr, "quat_of": quat_of}
+            "sensor_adr": sensor_adr, "quat_of": quat_of, "body": body_of}
 
     body_names = [mujoco.mj_id2name(m, mujoco.mjtObj.mjOBJ_BODY, i) or f"body{i}" for i in range(m.nbody)]
     scene = {"model": os.path.basename(args.mjcf), "bodies": body_names,

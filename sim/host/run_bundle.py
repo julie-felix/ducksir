@@ -156,8 +156,28 @@ def main() -> int:
             raise SystemExit(f"MJCF 里没有 body {body}")
         return d.xquat[bid]
 
+    def body_of(name: str):
+        """body 位姿/速度 + 接触数——给 contract_obs 的 body:*/contact:* 用。
+
+        语义对齐 botlab 的 Robot.body_position/body_quaternion/body_linear_velocity/
+        body_angular_velocity/contact：位置四元数取世界系，速度取 cvel（前 3 角速度、后 3 线速度）。
+        """
+        bid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, name)
+        if bid < 0:
+            raise SystemExit(f"MJCF 里没有 body {name}")
+        lo = int(m.body_dofadr[bid]) if m.body_dofnum[bid] else 0
+        contacts = 0
+        for c in range(d.ncon):
+            con = d.contact[c]
+            b1 = int(m.geom_bodyid[con.geom1])
+            b2 = int(m.geom_bodyid[con.geom2])
+            if bid in (b1, b2):
+                contacts += 1
+        return {"xpos": d.xpos[bid], "xquat": d.xquat[bid],
+                "cvel": d.cvel[bid], "contacts": contacts, "dofadr": lo}
+
     view = {"data": d, "qpos_off": qpos_off, "dof_off": dof_off,
-            "sensor_adr": sensor_adr, "quat_of": quat_of}
+            "sensor_adr": sensor_adr, "quat_of": quat_of, "body": body_of}
 
     pulses = {}
     for part in (args.pulses.split(",") if args.pulses else []):

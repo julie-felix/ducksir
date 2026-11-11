@@ -53,6 +53,14 @@ SOURCE_BY_SLOT = {
     "joint_vel": lambda o: "qvel:joints",
     "last_action": lambda o: "last_action",
     "command": lambda o: "fsm_slot:command",
+    # 以下与 botlab 的 Robot.body_*/contact/base_height 对位：
+    #   manifest 里写 {slot: "body_pos", target: "trunk", len: 3}
+    "body_pos": lambda o: f"body:pos:{o.get('target', 'trunk')}",
+    "body_quat": lambda o: f"body:quat:{o.get('target', 'trunk')}",
+    "body_vel": lambda o: f"body:vel:{o.get('target', 'trunk')}",
+    "body_angvel": lambda o: f"body:angvel:{o.get('target', 'trunk')}",
+    "contact": lambda o: f"contact:{o.get('target', 'trunk')}",
+    "base_height": lambda o: "base:z",
 }
 
 
