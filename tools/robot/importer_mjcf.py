@@ -165,14 +165,25 @@ def import_mjcf(path: str, *, entity_id: str, type_id: str, license_id: str,
             E.warn(warnings, "W001", f"links[{name}]", "body 没有 <inertial>，mass/com/inertia 为空")
 
         for geom in body.findall("geom"):
-            if geom.get("type") not in (None, "mesh"):
-                link["collision"].append({"type": geom.get("type"),
-                                          "size": E.numbers(geom.get("size")) if geom.get("size") else None,
-                                          "origin": {"xyz": E.vec3(geom.get("pos")),
-                                                     "quat": E.numbers(geom.get("quat")) if geom.get("quat") else [1, 0, 0, 0]}})
-                continue
             cls = geom.get("class") or childclass
             attrs = merged(cls, "geom", classes, None)
+            # 基本体（sphere/capsule/cylinder/box）：**type/size 可能来自 class 默认值**，
+            # 所以先合并 class 再判断，否则会当成「没有 type 的 mesh」丢掉。
+            geom_type = geom.get("type") or attrs.get("type")
+            # MJCF 里 `<geom size="..."/>` 不写 type 时默认就是 sphere（足底摩擦球就是这么写的）
+            if geom_type is None and not geom.get("mesh"):
+                geom_type = "sphere"
+            if geom_type and geom_type != "mesh":
+                raw_size = E.numbers(geom.get("size")) if geom.get("size") else None
+                if raw_size is None and attrs.get("size"):
+                    raw_size = E.numbers(attrs["size"])
+                link["collision"].append({
+                    "type": geom_type,
+                    "size": raw_size,
+                    "origin": {"xyz": E.vec3(geom.get("pos")),
+                               "quat": E.numbers(geom.get("quat")) if geom.get("quat") else [1, 0, 0, 0]},
+                })
+                continue
             contype = int(attrs.get("contype", geom.get("contype", 1)))
             conaffinity = int(attrs.get("conaffinity", geom.get("conaffinity", 1)))
             mesh_name = geom.get("mesh")

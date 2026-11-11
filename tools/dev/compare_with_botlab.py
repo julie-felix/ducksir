@@ -126,6 +126,44 @@ def main() -> int:
               f"｜相关 {np.corrcoef(tau, their)[0, 1]:.3f}")
     print()
 
+    # 3b) 一步闭环：从他们的状态 + 他们的 obs 走一步，看是否复现他们的下一步状态
+    import mujoco
+    spec = mujoco.MjSpec.from_file(os.path.join(ROOT, args.bundle, "robot.xml"))
+    plane = spec.worldbody.add_geom()
+    plane.type = mujoco.mjtGeom.mjGEOM_PLANE
+    plane.size = [6, 6, 0.1]
+    plane.condim = 3
+    model = spec.compile()
+    data = mujoco.MjData(model)
+    model.opt.timestep = 1.0 / preset.get("physicsHz", 200)
+    jnt = [mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, j) for j in contract["robot"]["joints"]]
+    qoff = [model.jnt_qposadr[k] for k in jnt]
+    doff = [model.jnt_dofadr[k] for k in jnt]
+    print("3b) 一步闭环（从他们的状态出发、用他们的 obs 走一个控制步）")
+    errs = []
+    for k in range(1, len(theirs) - 1):
+        a, b = theirs[k], theirs[k + 1]
+        if not a.get("qpos") or not b.get("qpos"):
+            continue
+        data.qpos[:] = a["qpos"]
+        data.qvel[:] = a["qvel"]
+        mujoco.mj_forward(model, data)
+        obs = np.asarray(a["in"]["obs"], dtype=np.float32).reshape(1, -1)
+        act = np.clip(np.asarray(sess.run(None, {name: obs})[0]).reshape(-1), -100, 100)
+        target = REF.copy()
+        for i in range(29):
+            target[MAP[i]] = REF[MAP[i]] + 0.25 * act[i]
+        for _ in range(4):
+            q = np.array([data.qpos[i] for i in qoff])
+            qv = np.array([data.qvel[i] for i in doff])
+            tau = np.clip(np.asarray(preset["kp"]) * (target - q) - np.asarray(preset["kd"]) * qv,
+                          -np.asarray(preset["effortLimit"]), np.asarray(preset["effortLimit"]))
+            data.ctrl[:] = tau
+            mujoco.mj_step(model, data)
+        errs.append(float(np.abs(data.qpos - np.asarray(b["qpos"])).max()))
+    if errs:
+        print(f"    {len(errs)} 步：平均 {float(np.mean(errs)):.2e}，最大 {max(errs):.2e}\n")
+
     # 4) 总览：obs / 动作 / qpos（注意两边记录时刻略有相位差）
     print("4) 逐步总览（obs439 / action / qpos）")
     print("    步 |  obs439  |   action  |   qpos   | 他们 z | 我们 z")

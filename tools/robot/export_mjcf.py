@@ -149,6 +149,10 @@ def export(doc: dict, mesh_dir: str | None = None, mesh_ext: str | None = None,
                 a = {"type": item["type"], "group": "3"}
                 if item.get("size"):
                     a["size"] = _vec(item["size"])
+                # 基本体也要带位姿，否则会全部塌到 link 原点（G1 的肩部圆柱、足底摩擦球都靠这个）
+                if item.get("origin"):
+                    a["pos"] = _vec(item["origin"].get("xyz") or [0, 0, 0])
+                    a["quat"] = _vec(item["origin"].get("quat") or [1, 0, 0, 0])
                 ET.SubElement(body, "geom", **a)
 
         for child in children.get(link["name"], []):

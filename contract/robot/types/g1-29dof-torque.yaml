@@ -4,7 +4,7 @@ robot:
   name: g1_29dof
   type: g1-29dof
   source_ref: https://botlab.enkeebot.com/models/g1/g1_29dof.xml
-  license: 来源见 source_ref（botlab 站点共享模型；上游 Unitree G1 BSD-3）
+  license: 来源见 source_ref
   generator:
     name: importer_mjcf
     version: 0.1.0
@@ -447,74 +447,58 @@ links:
     class: null
     vendored: false
   collision:
-  - mesh: null
-    mesh_name: null
-    source_file: null
+  - type: sphere
+    size:
+    - 0.005
     origin:
       xyz:
       - -0.05
       - 0.025
       - -0.03
       quat:
-      - 1.0
-      - 0.0
-      - 0.0
-      - 0.0
-    material: []
-    class: null
-    vendored: false
-    self_collision: false
-  - mesh: null
-    mesh_name: null
-    source_file: null
+      - 1
+      - 0
+      - 0
+      - 0
+  - type: sphere
+    size:
+    - 0.005
     origin:
       xyz:
       - -0.05
       - -0.025
       - -0.03
       quat:
-      - 1.0
-      - 0.0
-      - 0.0
-      - 0.0
-    material: []
-    class: null
-    vendored: false
-    self_collision: false
-  - mesh: null
-    mesh_name: null
-    source_file: null
+      - 1
+      - 0
+      - 0
+      - 0
+  - type: sphere
+    size:
+    - 0.005
     origin:
       xyz:
       - 0.12
       - 0.03
       - -0.03
       quat:
-      - 1.0
-      - 0.0
-      - 0.0
-      - 0.0
-    material: []
-    class: null
-    vendored: false
-    self_collision: false
-  - mesh: null
-    mesh_name: null
-    source_file: null
+      - 1
+      - 0
+      - 0
+      - 0
+  - type: sphere
+    size:
+    - 0.005
     origin:
       xyz:
       - 0.12
       - -0.03
       - -0.03
       quat:
-      - 1.0
-      - 0.0
-      - 0.0
-      - 0.0
-    material: []
-    class: null
-    vendored: false
-    self_collision: false
+      - 1
+      - 0
+      - 0
+      - 0
 - name: right_hip_pitch_link
   parent: pelvis
   transform:
@@ -852,74 +836,58 @@ links:
     class: null
     vendored: false
   collision:
-  - mesh: null
-    mesh_name: null
-    source_file: null
+  - type: sphere
+    size:
+    - 0.005
     origin:
       xyz:
       - -0.05
       - 0.025
       - -0.03
       quat:
-      - 1.0
-      - 0.0
-      - 0.0
-      - 0.0
-    material: []
-    class: null
-    vendored: false
-    self_collision: false
-  - mesh: null
-    mesh_name: null
-    source_file: null
+      - 1
+      - 0
+      - 0
+      - 0
+  - type: sphere
+    size:
+    - 0.005
     origin:
       xyz:
       - -0.05
       - -0.025
       - -0.03
       quat:
-      - 1.0
-      - 0.0
-      - 0.0
-      - 0.0
-    material: []
-    class: null
-    vendored: false
-    self_collision: false
-  - mesh: null
-    mesh_name: null
-    source_file: null
+      - 1
+      - 0
+      - 0
+      - 0
+  - type: sphere
+    size:
+    - 0.005
     origin:
       xyz:
       - 0.12
       - 0.03
       - -0.03
       quat:
-      - 1.0
-      - 0.0
-      - 0.0
-      - 0.0
-    material: []
-    class: null
-    vendored: false
-    self_collision: false
-  - mesh: null
-    mesh_name: null
-    source_file: null
+      - 1
+      - 0
+      - 0
+      - 0
+  - type: sphere
+    size:
+    - 0.005
     origin:
       xyz:
       - 0.12
       - -0.03
       - -0.03
       quat:
-      - 1.0
-      - 0.0
-      - 0.0
-      - 0.0
-    material: []
-    class: null
-    vendored: false
-    self_collision: false
+      - 1
+      - 0
+      - 0
+      - 0
 - name: waist_yaw_link
   parent: pelvis
   transform:
