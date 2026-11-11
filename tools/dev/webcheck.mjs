@@ -22,6 +22,7 @@ const opt = (name, def) => {
 const mobile = args.includes('--mobile');
 const waitMs = Number(opt('--wait', '8000'));
 const shot = opt('--shot', null);
+const save = opt('--save', null);
 const evalJs = opt('--eval', null);
 const clicks = (opt('--clicks', '') || '').split(';').filter(Boolean).map((pair) => {
   const [x, y] = pair.split(',').map(Number);
@@ -162,8 +163,15 @@ const main = async () => {
   console.log('== DOM/布局 ==');
   console.log(info.result.value);
   if (extra !== null) {
-    console.log('== eval ==');
-    console.log(typeof extra === 'string' ? extra : JSON.stringify(extra));
+    const text = typeof extra === 'string' ? extra : JSON.stringify(extra);
+    if (save) {
+      const { writeFileSync } = await import('node:fs');
+      writeFileSync(save, text);
+      console.log(`== eval == 已写入 ${save}（${text.length} 字符）`);
+    } else {
+      console.log('== eval ==');
+      console.log(text);
+    }
   }
   console.log('== 控制台/异常 ==');
   console.log(logs.length ? logs.slice(-30).join('\n') : '（无）');
