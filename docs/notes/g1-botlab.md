@@ -54,3 +54,44 @@ python3 sim/test/test_g1_physics.py
 
 第一档不需要 `motion`、不需要深度、也不需要四元数族——只有「历史 + 状态」，
 这正好是这一轮刚补上的 `history`（已有）+ `model_rnn`（新）。所以**先接 loco_0731**。
+
+## 5. 找到权威参考了：`ccrpRepo/wbc_fsm`
+
+botlab 的 WBC 预设里写了 provenance：`joint_order` 来自 `ccrpRepo/wbc_fsm include/FSM/State_WBC.h dof_mapping`。
+顺着这条线把参考实现读出来了（`include/FSM/State_Loco.h` + `src/FSM/State_Loco.cpp`）：
+
+| 项 | 参考值 |
+|---|---|
+| obs 顺序 | `[body_ang_vel(3), projected_gravity(3), cmd(3), q−default(29), qd(29), last_action(29)]` = 96 |
+| `last_action` | **上一步被 clip 过的原始动作**（策略序） |
+| 重力 | `QuatRotateInverse(base_quat, [0,0,-1])`（即 `R^T g`） |
+| `dof_mapping` | `[0,6,12, 1,7,13, 2,8,14, 3,9,15,22, 4,10,16,23, 5,11,17,24, 18,25, 19,26, 20,27, 21,28]`（策略序 → 电机序） |
+| `action_scale` | **0.25（统一值，不是 preset 里那组逐关节数）** |
+| 目标角 | `ctrl[mapping[i]] = action[i] * 0.25 + default[i]` |
+| Kp / Kd | `{200,150,150,200,20,20}×2, {200,200,200}, {100,100,50,50,40,40,40}×2` / `{5,5,5,5,2,2}×2, {5,5,5}, {2,…}` |
+| 默认角 | `{-0.2,0,0,0.42,-0.23,0}×2, {0,0,0}, {0.35,0.18,0,0.87,0,0,0}×2(左右镜像)` |
+| 指令范围 | vx ∈ [−0.6, 0.85]，vy ∈ [−0.4, 0.4]，wyaw ∈ [−1, 1]，`cmd_smoothes = 0.95` |
+| h/c | 全零初始化；`enter()` 里先跑 1 次观测再看结果 |
+
+## 6. 现在的状态：能跑，但站不住（未解决）
+
+用上面这套规格在 MuJoCo 里跑 `loco_0731.onnx`（我们的 G1 + 上游 gains）：
+
+```
+z 起 0.75 → 0.121（最低 0.069）
+直立度 0.019｜300 步（6 s）没报错，但倒了
+```
+
+按参考实现逐项对齐后仍然倒。已经排除的：obs 顺序、重力方向、`last_action` 语义（试过 raw/scaled/ctrl 三种）、
+关节映射（补上 `dof_mapping` 后）、`action_scale`（0.25 vs preset 逐关节）、Kp/Kd（用参考数组覆盖 MJCF）。
+
+**还没排除的**（按我判断的可能性排序）：
+
+1. **初始位形**：参考实现的 `enter()` 从「当前电机位置」起，并且先把目标设成默认角；
+   我们用 preset 的 `initialQpos`（z=0.793）起，两者不一定等价；
+2. **力矩限幅**：上游 joint 有 `actuatorfrcrange="-50 50"`，我们的导出没有（`effortLimit` 是 None）；
+3. **接触参数**：上游 geom 的 friction/condim 用默认，我们的导出从 URDF 来，可能不同；
+4. **`cmd_smoothes` 平滑**：参考里指令要一阶低通，我们是硬写 0。
+
+下一步要做得更省时间：把参考实现的 **obs/action 中间值**拿一份（或让 botlab 的模板在浏览器里跑一段录下来），
+逐帧对比就知道差在哪一项——盲扫已经试了 12 组，都不行。
