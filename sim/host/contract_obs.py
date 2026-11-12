@@ -107,6 +107,13 @@ def make_obs(doc: dict, view: dict, *, last_action=None, command=None, vx: float
         elif src == "last_action":
             if last_action is not None:
                 obs[off:off + length] = last_action
+        elif src == "mimic:instinct":
+            if mimic_obs is None:
+                raise SystemExit("契约里有 mimic:instinct 槽位，但调用方没给 mimic_obs 数组")
+            arr = np.asarray(mimic_obs, dtype=np.float32)
+            if arr.shape != (length,):
+                raise SystemExit(f"mimic_obs 长度 {arr.shape} != 槽位 {length}")
+            obs[off:off + length] = arr
         elif src == "mimic:uni":
             # UniSuperMimic 的 1720 维观测（99×历史 + 10×未来目标）由运行器用
             # sim/host/unisupermimic_obs.py 算好传进来

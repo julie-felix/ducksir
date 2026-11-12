@@ -754,3 +754,37 @@ Instinct 闭环 300 步：z 0.940 → 0.832（最低 0.553），直立 0.956 →
 ```
 
 （`tools/dev/instinct_smoke.py`、`sim/test/test_instinct_depth.py`）
+
+## 20. Instinct 打成 bundle 了（深度 + 地形都进包）
+
+`build/release/g1-instinct/` 现在可以直接跑：
+
+```
+bundle g1-instinct｜300/300 步｜1.11× 实时｜基座 0.832（最低 0.553）｜直立 0.956
+```
+
+### 过程中踩到的三个坑（都不是「算法」问题）
+
+1. **我们的 canonical 模型和他们的 scene 不是同一个**：
+   `g1-29dof-botlab` 是导入器生成的，**丢了关节默认值（damping 0.5、armature 0.01）和绝大部分碰撞几何**
+   （63 个 geom vs 他们的 960 个）。用 canonical 跑：300 步就倒（0.238）。
+   改成直接打包他们的 `scene.xml` + meshes，立刻站住。
+   → **结论：深度/接触敏感的模板，bundle 里要放上游原始 MJCF，别用导入结果。**
+2. **他们的场景里有一块地形**（`assets/terrain/0..3`，2.3 MB）摆在 x≈+500。
+   它不只是撑大了 `stat.extent`（757），**还会出现在深度图里**：
+   去掉地形后，深度段差 0.35，策略立刻倒。
+   → 导出器现在会把 MJCF 里 `../../terrain/...` 这类相对上级目录的资源一起搬进 bundle 并改写路径。
+3. **位置执行器**：`actuatorMode: position`，`d.ctrl[:] = default + scale×action` 直接写，
+   不要再走扭矩 PD（这条在 §19 已经记过，bundle 里同样成立）。
+
+### 打包内容
+
+```
+build/release/g1-instinct/
+  contract.json        obs: mimic:instinct 1990
+  robot.xml            = 他们的 scene.xml（meshdir 改 "."）
+  meshes/*.stl         35 个（robot 的视觉/碰撞网格）
+  terrain/0..3/*.obj   地形（深度相机看得到）
+  motion/case_08.npz   动作参考 + config（joint_names/default_angles/duration）与 camera spec 在契约里
+  g1-instinct.onnx
+```

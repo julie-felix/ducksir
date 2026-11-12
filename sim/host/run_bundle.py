@@ -119,12 +119,32 @@ def main() -> int:
     use_reference = any(int(p.get("mode", 0)) in (3, 4) for p in (con.get("policies") or []))
     _motion_all = (con.get("robot") or {}).get("motion")
     # UniSuperMimic：配方是单条目 mimic:uni，不走 reference，但要读动作
-    _is_uni = bool(_motion_all) and _motion_all.get("format") == "unisupermimic"
+    _is_uni = bool(_motion_all) and _motion_all.get("format") in ("unisupermimic", "instinct")
     motion_cfg = _motion_all if (use_reference or _is_uni) else None
     ref_angles = (con.get("robot") or {}).get("reference_joint_positions")
     motion_arrays = motion_meta = playhead = None
     uni_obs_mod = uni_motion = uni_hist = None
-    if motion_cfg and motion_cfg.get("format") == "unisupermimic":
+    inst_obs_mod = inst_motion = inst_hist = inst_cfg = inst_cam = None
+    if motion_cfg and motion_cfg.get("format") == "instinct":
+        import numpy as _np
+        import instinct_obs as _IN
+        import depth_camera as _DC
+        _DC_DepthCamera = _DC.DepthCamera
+        _mp = motion_cfg["path"]
+        if not os.path.isabs(_mp):
+            _mp = os.path.join(bdir, _mp)
+        _clip = motion_cfg["clip"]
+        z = _np.load(os.path.join(_mp, f"{_clip}.npz"), allow_pickle=True)
+        inst_motion = {k: z[k] for k in ("joint_pos", "joint_vel", "body_pos_w", "body_quat_w")}
+        inst_motion["fps"] = float(z["fps"][0])
+        _dof = [str(x) for x in z["dof_names"]]
+        inst_cfg = dict(motion_cfg["config"])
+        inst_cfg["joint_order"] = [_dof.index(n) for n in inst_cfg["joint_names"]]
+        inst_cfg["torso_index"] = [str(b) for b in z["body_names"]].index("torso_link")
+        inst_obs_mod = _IN
+        inst_hist = _IN.TermHistory()
+        # 模型要到后面才建（这里只解析动作），相机延迟到循环里创建
+    elif motion_cfg and motion_cfg.get("format") == "unisupermimic":
         import numpy as _np
         import unisupermimic_obs as _U
         _mp = motion_cfg["path"]
@@ -310,6 +330,28 @@ def main() -> int:
                 last_anchor_quat=motion_arrays["body_quat"][last][0],
                 base_quat=d.qpos[3:7], pause=playhead.paused)
         mimic_obs = None
+        if inst_obs_mod is not None:
+            if inst_cam is None:
+                inst_cam = _DC_DepthCamera(m, motion_cfg["camera"])
+            _bid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
+            _w, _x, _y, _z = d.xquat[_bid]
+            _R = np.array([
+                [1 - 2 * (_y * _y + _z * _z), 2 * (_x * _y - _z * _w), 2 * (_x * _z + _y * _w)],
+                [2 * (_x * _y + _z * _w), 1 - 2 * (_x * _x + _z * _z), 2 * (_y * _z - _x * _w)],
+                [2 * (_x * _z - _y * _w), 2 * (_y * _z + _x * _w), 1 - 2 * (_x * _x + _y * _y)]])
+            _q = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
+            _qd = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)
+            _block, _terms = inst_obs_mod.build_terms(
+                motion=inst_motion, t=k * 0.02, duration=float(inst_cfg["duration"]),
+                joint_order=inst_cfg["joint_order"],
+                config_defaults=np.asarray(inst_cfg["default_angles"]),
+                robot_joint_pos=_q - np.asarray(preset["defaultJointPositions"]),
+                robot_joint_vel=_qd, gravity_b=_R.T @ np.array([0, 0, -1.0]),
+                base_ang_vel=d.qvel[3:6], last_action=last_action,
+                torso_index=inst_cfg["torso_index"], robot_torso_quat=d.xquat[_bid].copy())
+            _hist990 = inst_hist.push(_terms)
+            _depth = inst_cam.process(inst_cam.render(d)).reshape(-1)
+            mimic_obs = np.concatenate([_block, _depth, _hist990]).astype(np.float32)
         if uni_obs_mod is not None:
             q_now = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
             qd_now = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)

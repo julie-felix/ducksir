@@ -65,6 +65,7 @@ SOURCE_BY_SLOT = {
     # 速度指令 3 维（vx, vy, yaw_rate）——loco / AMP / MJAMP 的观测里有它
     "velocity_command": lambda o: "command:velocity",
     "mimic_uni": lambda o: "mimic:uni",
+    "mimic_instinct": lambda o: "mimic:instinct",
 }
 
 
@@ -194,8 +195,9 @@ def main() -> int:
     n = len(driven)
     RP.check_manifest(man, preset, n)
     actuators = doc.get("actuators") or []
-    lo = [float(a["ctrlrange"][0]) for a in actuators]
-    hi = [float(a["ctrlrange"][1]) for a in actuators]
+    # 位置执行器（G1 botlab 模型）没有 ctrlrange，只有 forcerange；缺省就用 ±100 当动作夹紧
+    lo = [float(a["ctrlrange"][0]) if a.get("ctrlrange") else -100.0 for a in actuators]
+    hi = [float(a["ctrlrange"][1]) if a.get("ctrlrange") else 100.0 for a in actuators]
 
     out = os.path.join(ROOT, args.out)
     os.makedirs(out, exist_ok=True)
@@ -223,7 +225,11 @@ def main() -> int:
         if os.path.isdir(src):
             if os.path.isdir(dst):
                 shutil.rmtree(dst)
-            if motion_cfg.get("format") == "unisupermimic":
+            if motion_cfg.get("format") == "instinct":
+                os.makedirs(dst, exist_ok=True)
+                clip = motion_cfg.get("clip")
+                shutil.copyfile(os.path.join(src, f"{clip}.npz"), os.path.join(dst, f"{clip}.npz"))
+            elif motion_cfg.get("format") == "unisupermimic":
                 # 只拷当前 clip 的 npz，别把整个动作库搬进 bundle
                 os.makedirs(dst, exist_ok=True)
                 clip = motion_cfg.get("clip")
@@ -297,6 +303,27 @@ def main() -> int:
         mesh_dir = re.search(r'meshdir="([^"]+)"', xml)
         assets_dir = os.path.join(os.path.dirname(src), mesh_dir.group(1)) if mesh_dir else os.path.dirname(src)
         xml = re.sub(r'meshdir="[^"]+"', 'meshdir="."', xml)
+        # 相对上级目录的资源（Instinct 的 ../../terrain/*.obj，深度相机会看到它）一起搬进 bundle
+        up_dirs = set()
+        for rel in re.findall(r'file="((?:\.\./)+[^"]+)"', xml):
+            m2 = re.match(r'((?:\.\./)+)([^/]+)/', rel)
+            if not m2:
+                continue
+            ups, folder = m2.group(1), m2.group(2)
+            base = os.path.dirname(src)
+            for _ in range(ups.count("..")):
+                base = os.path.dirname(base)
+            src_dir = os.path.join(base, folder)
+            if not os.path.isdir(src_dir):
+                continue
+            target = os.path.join(out, folder)
+            if os.path.isdir(target):
+                shutil.rmtree(target)
+            shutil.copytree(src_dir, target)
+            up_dirs.add(ups)
+            print(f"  额外资源 {folder}/（被 MJCF 相对引用）")
+        for ups in up_dirs:
+            xml = xml.replace(ups, "")
         with open(os.path.join(out, "robot.xml"), "w", encoding="utf-8") as f:
             f.write(xml)
         meshes = sorted({m for m in re.findall(r'file="([^"]+\.(?:stl|STL|obj|OBJ))"', xml)})

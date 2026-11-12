@@ -92,6 +92,11 @@ class DepthCamera:
         self.fov = float(spec.get("fov", DEFAULT_FOV))
         self.horizontal_fov = spec.get("horizontalFov")
         self.groups = list(spec.get("raycastGeomGroups") or [])
+        # 他们场景里有一块地形摆在 x=+500，把 stat.extent 撑到 ~757；
+        # 深度线性化用 extent，所以这里允许显式覆盖，保证和他们的数值口径一致。
+        forced = spec.get("extentOverride")
+        if forced:
+            model.stat.extent = float(forced)
         self.crop_x = int(spec.get("cropX", 0))
         self.crop_y = int(spec.get("cropY", 0))
         self.renderer = Renderer(model, self.height, self.width)
