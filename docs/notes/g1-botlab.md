@@ -802,6 +802,12 @@ build/release/g1-instinct/
    （验证：暂停后 5 s，仿真时间一直停在 23.8 s）
 4. iframe 里键盘要焦点：`pointerdown` 时主动 `window.focus()`，工作台载入后也会提示一句
 
+**注意：提示不能做成遮罩。** 第一版我把提示塞进了 `showMsg()`——那是个
+`position:absolute; inset:0; background:rgba(11,15,20,.92); z-index:5` 的全屏遮罩，
+提示一出来就把机器人整个挡住（庆喆原话：「像是被这些字挡住了一样」）。
+现在改成 `#notice`：贴画面上方的**细条**（实测 34 px 高、459 px 宽、`pointer-events:none`），
+7 秒自动消失；`showMsg()` 只留给真正的错误。
+
 ### 附带发现：`build/release/` 会被清空
 
 这次进页面报「载入失败：Unexpected token '<'」，原因是 `build/release/` 下只剩 instinct 一个 bundle，

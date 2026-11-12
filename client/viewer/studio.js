@@ -254,6 +254,19 @@ function wireTabs() {
 
 // 3D 区的消息层：出错时把原因写在画面上（手机看不到控制台）。
 // 注意：它必须声明在**第一次使用之前**，否则会撞 TDZ（`Cannot access 'msg' before initialization`）。
+let noticeTimer = null;
+/** 轻提示：停在画面上方几秒自动消失，不挡画面（挡画面的是 showMsg，只给真正的错误用）。 */
+function notice(text, ms = 7000) {
+  const el = $('notice');
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = text ? 'block' : 'none';
+  if (noticeTimer) clearTimeout(noticeTimer);
+  if (text) noticeTimer = setTimeout(() => { el.style.display = 'none'; }, ms);
+}
+
+if (typeof window !== 'undefined') window.__ducksirNotice = notice;
+
 function showMsg(text) {
   const el = $('view-msg');
   if (!el) return;
@@ -304,8 +317,10 @@ async function wireBundles() {
       showMsg('bundle 探测失败：' + (e?.message || e));
       return;
     }
+    showMsg('');
     frame.src = `/ducksir-static/client/viewer/play.html?bundle=${encodeURIComponent(base)}&embed=1`;
-    showMsg('已载入：点一下画面 → 按 W/S 走、A/D 转向；没有键盘就点下面的「自动走」');
+    notice('已载入：点一下画面 → 按 W/S 走、A/D 转向；没有键盘就点下面的「自动走」');
+    showMsg('');   // 载入成功就把错误遮罩收掉，别挡住机器人
     frame.style.display = 'block';
     canvas.style.display = 'none';
     document.body.classList.add('browser-mode');   // 收起 host 专属控件
