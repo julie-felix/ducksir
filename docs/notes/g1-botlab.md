@@ -895,3 +895,33 @@ MUJOCO_GL=egl python3 sim/host/run_bundle.py --bundle build/release/g1-instinct 
 
 `g1-instinct` 跑长（3000 步）时会倒：`基座 终 0.071`，而 300 步时是 0.832。
 可能是动作片段结束后的行为，也可能和指令为 0 有关，先记下来。
+
+## 24. 「一直在连接宿主」：ws 在 https 面板里根本连不上
+
+原因有两层，都不是网络：
+
+1. 面板是 **https**，页面试图开 `ws://127.0.0.1:8899` → 浏览器按**混合内容**直接拦掉；
+2. 就算不拦，`127.0.0.1` 指的是**浏览器那台机器**，宿主在另一条命名空间里。
+
+所以「宿主直播」改成**同源 SSE**（不需要开端口，也不受 https 限制）：
+
+```
+POST /ducksir-live/bundle/start   {"bundle":"build/release/g1-loco","seconds":120}
+GET  /ducksir-live/bundle/stream  → text/event-stream
+```
+
+实现分三块：
+
+- `run_bundle.py --stdio --pace`：场景（含 base64 网格）一条、之后每帧一条 JSONL 打到 stdout；
+  `--pace` 按实时速度跑（不加的话宿主 20 秒就把 120 s 跑完，画面像快进）；
+- 插件宿主 `client/src/live.mjs`：spawn 上面这条命令，把 stdout 按行转成 SSE；
+  **场景和最后一帧会留给后连上来的页面**；子进程退出时发一条 `{"type":"done"}`；
+- 页面 `host.html/host.js`：默认走 SSE，选 bundle → 点「启动」；勾「循环」时跑完自动重来。
+
+实测（本地桩宿主，`/tmp/plugin_sim.mjs`）：
+
+```
+t=7.04 s · 第 352 步  →  t=15.20 s · 第 760 步     （实时推进）
+```
+
+**注意**：插件宿主这一半是 `client/src/*.mjs`，**改完要重启 dsh web** 才生效（agent 不能自己重启）。

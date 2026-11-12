@@ -273,6 +273,30 @@ export function apply(ctx) {
           handler: (req, res) => {
             const url = new URL(req.url ?? '/', 'http://localhost')
             const rest = url.pathname.slice(LIVE_ROUTE.length) + url.search
+
+            // bundle 直播走独立分支：POST /ducksir-live/bundle/start, GET /ducksir-live/bundle/stream
+            if (rest.startsWith('/bundle/')) {
+              const action = rest.slice('/bundle/'.length).split('?')[0]
+              if (action === 'start') {
+                let body = ''
+                req.on('data', (d) => { body += d })
+                req.on('end', async () => {
+                  try {
+                    const out = await live.startBundle(JSON.parse(body || '{}'))
+                    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' })
+                    res.end(JSON.stringify(out))
+                  } catch (err) {
+                    res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' })
+                    res.end(JSON.stringify({ ok: false, error: String(err) }))
+                  }
+                })
+                return
+              }
+              if (action === 'stream') { live.bundleStream(req, res); return }
+              if (action === 'stop') { live.stopBundle(); res.writeHead(200); res.end('{"ok":true}'); return }
+              res.writeHead(404); res.end('{}'); return
+            }
+
             live.handle(req, res, rest).catch((err) => {
               res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' })
               res.end(JSON.stringify({ error: String(err) }))

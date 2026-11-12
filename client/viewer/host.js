@@ -10,8 +10,9 @@ import { OrbitControls } from './vendor/three/controls/OrbitControls.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const WS_PORT = Number(params.get('ws') || 8899);
+const WS_PORT = params.get('ws') ? Number(params.get('ws')) : 0;
 const BUNDLE = params.get('bundle') || '';
+let loopEnabled = params.get('loop') !== '0';
 if (BUNDLE) $('bundle-name').textContent = BUNDLE.split('/').filter(Boolean).pop() || '';
 
 const scene = new THREE.Scene();
@@ -60,6 +61,13 @@ function makeGeometry(g, model, meshBytes) {
   if (g.kind === 3) return new THREE.CapsuleGeometry(g.size[0], g.size[1], 6, 14);
   if (g.kind === 6) return new THREE.BoxGeometry(g.size[0] * 2, g.size[1] * 2, g.size[2] * 2);
   return null;
+}
+
+function base64ToArrayBuffer(b64) {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
+  return out.buffer;
 }
 
 function buildScene(model, meshBytes) {
@@ -143,6 +151,12 @@ function connect() {
       const msg = JSON.parse(ev.data);
       if (msg.type === 'scene') {
         pendingScene = msg;
+        if (msg.meshBase64) {     // SSE 路径：场景和网格一起送
+          bodies = msg.bodies;
+          buildScene(msg, base64ToArrayBuffer(msg.meshBase64));
+          pendingScene = null;
+          $('busy').classList.add('gone');
+        }
       } else if (msg.type === 'pose') {
         if (pendingScene) $('busy').classList.add('gone');
         applyPose(msg);
@@ -171,5 +185,71 @@ addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight, false);
 });
 
-connect();
+async function startBundle() {
+  const bundle = $('bundle').value;
+  if (!bundle) { $('status').textContent = '先选一个 bundle'; return; }
+  $('status').textContent = '启动中…';
+  const r = await fetch('/ducksir-live/bundle/start', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ bundle, seconds: 120 }),
+  });
+  const out = await r.json().catch(() => ({ ok: false, error: '返回不是 JSON' }));
+  if (!out.ok) { $('status').textContent = '启动失败：' + (out.error || ''); return; }
+  $('status').textContent = '已启动，接流中…';
+  const es = new EventSource('/ducksir-live/bundle/stream');
+  es.onmessage = (ev) => {
+    try {
+      const msg = JSON.parse(ev.data);
+      if (msg.type === 'scene') {
+        bodies = msg.bodies;
+        buildScene(msg, msg.meshBase64 ? base64ToArrayBuffer(msg.meshBase64) : new ArrayBuffer(0));
+        $('busy').classList.add('gone');
+      } else if (msg.type === 'pose') {
+        $('busy').classList.add('gone');
+        applyPose(msg);
+      } else if (msg.type === 'done') {
+        es.close();
+        if (loopEnabled) {
+          $('status').textContent = '跑完一轮，重新开始…';
+          setTimeout(startBundle, 600);
+        } else {
+          $('status').textContent = '跑完了（勾上「循环」会自动重来）';
+        }
+      }
+    } catch (e) { console.warn('[host] 消息解析失败', e); }
+  };
+  es.onerror = () => {
+    es.close();
+    if (loopEnabled) {
+      // 一次跑完（默认 120 s）就自动重来：不循环的话，600 s 的仿真在宿主里 20 秒就跑完了
+      $('status').textContent = '跑完一轮，重新开始…';
+      setTimeout(startBundle, 600);
+    } else {
+      $('status').textContent = '跑完了（关掉「循环」就是单次）';
+    }
+  };
+}
+
+async function loadBundles() {
+  try {
+    const res = await (await fetch('/ducksir-live/bundles')).json();
+    const list = res.bundles || [];
+    const sel = $('bundle');
+    sel.innerHTML = list.map((b) => `<option value="${b.path || b.name}">${b.name}</option>`).join('')
+      || '<option value="">（没有 bundle，先导出）</option>';
+    $('status').textContent = list.length ? `找到 ${list.length} 个 bundle` : '没有 bundle';
+  } catch {
+    $('status').textContent = '读不到 bundle 列表（插件宿主没起？）';
+  }
+}
+
+// 有 ?ws= 就走本地 ws（调试用）；否则走同源 SSE（面板里用这个，https 也不会被拦）
+if (WS_PORT) {
+  connect();
+} else {
+  loadBundles();
+  const loopBox = $('loop');
+  if (loopBox) { loopBox.checked = loopEnabled; loopBox.onchange = () => { loopEnabled = loopBox.checked; }; }
+  $('start').onclick = startBundle;
+}
 tick();

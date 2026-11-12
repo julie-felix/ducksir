@@ -188,6 +188,13 @@ class HostStream:
             pass
 
 
+def build_scene_b64(model, mujoco) -> str:
+    """给 stdio/SSE 用：场景 + 网格一起 base64 成一行 JSON（浏览器不用再下 STL）。"""
+    scene, blob = build_scene(model, mujoco)
+    scene["meshBase64"] = base64.b64encode(blob).decode("ascii")
+    return json.dumps(scene, separators=(",", ":"))
+
+
 def build_scene(model, mujoco) -> tuple[dict, bytes]:
     """把模型里**视觉 geom** 抽成浏览器能直接建的场景（网格走二进制 blob）。"""
     bodies = []

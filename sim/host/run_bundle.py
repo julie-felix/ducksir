@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import ctypes
 import json
+import time as _time_mod
 import os
 import sys
 import time
@@ -93,6 +94,10 @@ def main() -> int:
     ap.add_argument("--mjcf", help="物理模型（默认 bundle/duck.xml，没有就用 build/mjcf/duck-hd1910-all.xml）")
     ap.add_argument("--seconds", type=float, default=20.0)
     ap.add_argument("--steps", type=int)
+    ap.add_argument("--pace", action="store_true",
+                    help="按实时速度跑（直播用；否则宿主会几十倍速跑完）")
+    ap.add_argument("--stdio", action="store_true",
+                    help="把场景和每帧位姿按 JSONL 打到 stdout（插件宿主用它转 SSE）")
     ap.add_argument("--stream", type=int, metavar="PORT",
                     help="把每帧位姿推给浏览器（0 = 随机端口）：ws://127.0.0.1:PORT/")
     ap.add_argument("--forward", type=float, default=0.0)
@@ -225,6 +230,14 @@ def main() -> int:
     mujoco.mj_forward(m, d)
 
     stream = None
+    stdio = bool(args.stdio)
+    _HS = None
+    if stdio or args.stream is not None:
+        import host_stream as _HS
+    if stdio:
+        sys.stdout.write(_HS.build_scene_b64(m, mujoco) + "\n")
+        sys.stdout.flush()
+        print("  直播（stdio）：场景已发", file=sys.stderr)
     if args.stream is not None:
         import host_stream as _HS
         stream = _HS.HostStream(args.stream)
@@ -295,6 +308,7 @@ def main() -> int:
     trace_fh = open(args.trace, "w", encoding="utf-8") if args.trace else None
     mode_key = policies[0]["key"]
 
+    _t_start = _time_mod.time() if args.pace else 0.0
     for k in range(steps):
         if k in pulses:
             pulse = pulses[k]
@@ -451,8 +465,18 @@ def main() -> int:
             d.ctrl[:] = act
             for _ in range(decim):
                 mujoco.mj_step(m, d)
-        if stream is not None and k % max(1, int(round(control_hz / 30))) == 0:
-            stream.send(_HS.pose_message(k, k / control_hz, d.xpos, d.xquat))
+        if (stream is not None or stdio) and k % max(1, int(round(control_hz / 30))) == 0:
+            _msg = _HS.pose_message(k, k / control_hz, d.xpos, d.xquat)
+            if stream is not None:
+                stream.send(_msg)
+            if stdio:
+                sys.stdout.write(_msg + "\n")
+                sys.stdout.flush()
+        if args.pace:
+            _due = _t_start + (k + 1) / control_hz
+            _slack = _due - _time_mod.time()
+            if _slack > 0:
+                _time_mod.sleep(min(_slack, 0.5))
         if not np.isfinite(d.qpos).all():
             dead = True
             break
@@ -520,7 +544,7 @@ def main() -> int:
 
     for p in plans.values():
         core.ds_free(p.handle)
-    if stream is not None:
+    if stream is not None or stdio:
         # 跑完了也别立刻断：页面还在看最后一帧。Ctrl-C 或超时再关。
         import time as _time
         hold = float(os.environ.get("DUCK_STREAM_HOLD", "180"))
