@@ -50,8 +50,14 @@ contract = json.load(open(os.path.join(BUNDLE, "contract.json"), encoding="utf-8
 preset = yaml.safe_load(open(os.path.join(BUNDLE, "preset.yaml"), encoding="utf-8"))
 DQ = np.asarray(preset["defaultJointPositions"])
 MAP = preset["motorJointOrder"]
-KPS = np.asarray(preset["kp"])
-KDS = np.asarray(preset["kd"])
+# 注意：这里刻意用 **botlab native 路径实际用的 robot.kp/kd**（他们的 trace 就是这么跑的），
+# 不是我们 bundle 里的 balanceStiffness/Damping。两者差在增益：
+#   - native 跑：kp=99/99/40…（robot.kp）→ 2 s 左右倒（他们的 trace 也是这样）
+#   - plan 的 mode 2 分支：kp=balanceStiffness（200/150…）→ 站得住，浏览器用的是这一支
+# 本测试只对拍「目标公式 + 物理」，所以增益要跟 trace 对齐。
+_src = yaml.safe_load(open("/tmp/bt-all/G1-WBC-Multi-Policy/g1-wbc.preset.yaml", encoding="utf-8"))
+KPS = np.asarray(_src["kp"])
+KDS = np.asarray(_src["kd"])
 EFF = np.asarray(preset["effortLimit"])
 trace = [json.loads(line) for line in open(TRACE, encoding="utf-8") if line.strip()]
 

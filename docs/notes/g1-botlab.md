@@ -514,30 +514,34 @@ MJAMP 的定位过程：先按「统一 0.25 + reorder」跑（倒）→ 录 bot
 用他们的状态/动作做**一步重放**，网格搜 target 公式（4 种组合），
 `actionScale(逐关节) + 动作电机序` 一步差 **1.06e-06**，其余组合 1e-1 量级。
 
-### loco：对上了，而且**它在 botlab 里也会倒**
+### loco：增益必须是 balanceStiffness/Damping（我中途判断错了一次）
 
-先 dump 了 loco 的 plan（`patch_plan.py`），公式看着是 `kps = balanceStiffness`；
-但把 PD 的入参直接 hook 出来（`patch_pd.py` 挂 `PreparedSubstepPd.__init__`）后，
-权威值是：
+这里我判断错了一次，记下来免得再犯。
 
-```
-target = [-0.160, 0.245, -0.105, 0.551 …]   ← 和我们的 scatter 目标逐位相同
-kps    = [99.098, 99.098, 40.179, …]        ← **robot.kp**，不是 balanceStiffness(200/150…)
-kds    = robot.kd
-effort = ±88 / ±139 / ±50 …                 ← 等于 ctrlrange（= preset effortLimit）
-```
+`patch_plan.py` dump 出的 plan 写得很清楚：`kps = mode_select([balanceStiffness(2), kp(3,4,5)])`。
+我后来又用 `patch_pd.py` 去 hook `PreparedSubstepPd.__init__`，录到 `kps = [99.098, 99.098, 40.179 …]`
+= **robot.kp**，就以为「plan 写的是 balance，实际用的是 kp」，于是把 loco 的增益换成了 robot.kp。
 
-按这个改完，一步重放 **1.08e-06**（`sim/test/test_loco_parity.py`）。
+结果：loco 2 s 左右就倒。而**botlab 的 native 运行时也确实倒**（他们自己的 `--report` 里
+z 从 0.79 掉到 0.065，第 101 步跌破 0.3 m）——所以我一度得出「loco 本来就会倒」的结论。
 
-另外一个反转：**零速指令下 loco 在 botlab 自己的运行时里也会倒**——
+**这个结论是错的。** 用 plan 里写的 **balanceStiffness/balanceDamping**（mode 2 那一支）：
 
 ```
-他们 400 步：z 从 0.79 掉到 0.064，第 102 步低于 0.3 m
-我们 400 步：第 113 步低于 0.3 m，末 z 0.060
+kp = [200, 150, 150, 200, 20, 20 …]   kd = [5, 5, 5, 5, 2, 2 …]
+零速指令：600 步站稳，z 0.769，直立 1.000
+forward 0.5 / 1.0 / 2.0 → 实际 0.494 / 1.019 / 1.904 m/s，全程直立 ≈1.0
 ```
 
-两边倒的时机只差 11 步（混沌放大），**这是策略行为，不是我们的 bug**。loco 是「零速平衡 +
-走」的策略，得给速度指令和正确的站立状态序列才有意义；bundle 现在忠实复刻了它的行为。
+也就是说：**plan 是对的，是他们 native 路径把 mode 2 的增益解析成了 robot.kp**（一个 native 侧的
+偏差），浏览器走的是 plan 那一支。我们以 plan 为准，loco 就站得住、也能走。
+
+证据链（都留着）：
+
+- `patch_plan.py`：`mode_select` 的 slotModes `[2,3,4,5]` + 三组常量（0 / balance / kp / kd）；
+- 用 balance 增益 + 我们的 target 公式，闭环绕 600 步不倒；
+- 用 native 录的 kp（robot.kp）做一步重放，仍然 1.08e-06 —— 说明**目标公式和物理都对**，
+  差别只在增益，而增益这一项以 plan 为准。
 
 顺带修掉一个真正的 bug：`run_bundle` 里递归状态回填按**名字**（`h_out`）存、下一步却按
 `h_in` 读，导致永远吃全零——改成按位置回填后，loco 的 h/c 与 botlab 逐步一致（我们第 0 步的
@@ -588,9 +592,7 @@ forward 0.5 → 实际 0.49 m/s｜forward 1.0 → 0.92 m/s｜forward 2.0 → 1.9
 
 ![G1 AMP 按指令行走](../images/viewer-g1-amp-walk.png)
 
-### 一个仍然存在的限制（loco）
+### loco 现在也站得住（这一节之前的错误结论已订正）
 
-`g1-loco`（mode 2）即使把指令给到 1.0 m/s 也站不住——**botlab 自己的运行时同样倒**
-（把它们的 `target_velocity` 默认值改成 1.0 跑 400 步：z 从 0.79 掉到 0.064）。
-它不是「站立+行走」两用的策略，得先经过它们的 stand/stand-to-walk 状态序列。
-这条记在这里，避免以后误判成我们的 bug。
+`g1-loco`（mode 2）用 plan 里 mode 2 的 **balanceStiffness/Damping** 之后：零速站稳 600 步、
+给指令就能走（0.5/1.0/2.0 → 0.494/1.019/1.904 m/s）。详见 §16 的订正。

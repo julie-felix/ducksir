@@ -36,7 +36,9 @@ const chrome = spawn('/usr/bin/google-chrome', [
   '--headless=new',
   `--remote-debugging-port=${PORT}`,
   `--user-data-dir=${userDir}`,
-  '--no-first-run', '--no-default-browser-check', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage',
+  '--no-first-run', '--no-default-browser-check', '--no-sandbox', '--disable-dev-shm-usage',
+  // 允许软件 WebGL：headless 里加了 --disable-gpu 之后，依赖 WebGL 的应用会一直卡在启动
+  ...(process.env.CHROME_GPU === '0' ? ['--disable-gpu'] : ['--enable-unsafe-swiftshader', '--use-gl=angle']),
   '--ignore-certificate-errors',
   ...(mobile ? ['--window-size=390,844'] : ['--window-size=1280,900']),
   'about:blank',

@@ -13,9 +13,9 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-# 跑哪几个 bundle：wbc(mode3) / amp(mode4) / mjamp(mode5) 都已对齐；
-# loco(mode2) 的 PD 细节还没对上（见 docs/notes/g1-botlab.md §16），先不纳入判据。
-BUNDLES = ["g1-wbc", "g1-amp", "g1-mjamp"]
+# 四个 bundle 都要站住：wbc(3) / amp(4) / mjamp(5) / loco(2)。
+# loco 的增益是 plan 里 mode 2 那一支（balanceStiffness/Damping），不是 robot.kp。
+BUNDLES = ["g1-wbc", "g1-amp", "g1-mjamp", "g1-loco"]
 MJCF = os.path.join(ROOT, "build", "mjcf", "g1-29dof-torque.xml")
 
 fails = []
