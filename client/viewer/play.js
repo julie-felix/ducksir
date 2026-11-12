@@ -95,7 +95,8 @@ if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
 // 速度指令范围：从契约读（鸭子 0.25、G1 能到 2.5），加载契约后覆盖
 let LIM = { fwd: 0.25, back: -0.2, ang: 1.0, step: 0.05 };
 // 关节数来自契约（载入后按契约重设这个数组），这里先占位
-const state = { vx: 0, wz: 0, lastAction: new Float32Array(0), simTime: 0, error: null };
+const state = { vx: 0, wz: 0, lastAction: new Float32Array(0), simTime: 0, error: null,
+                paused: false, autoWalk: false, focused: false };
 
 async function main() {
   try {
@@ -123,6 +124,12 @@ async function main() {
       };
       const hint = document.getElementById('hint-vx');
       if (hint) hint.textContent = `前进 ±${LIM.step}（${LIM.back} … ${LIM.fwd}）`;
+      const howto = document.getElementById('howto');
+      if (howto) {
+        howto.textContent = meta.commands
+          ? '点一下画面 → 按 W/S 走、A/D 转向；没有键盘就点「自动走」'
+          : '这个策略按自己的动作参考跑，不需要按键';
+      }
     }
     const rates = contract.rates;
     state.lastAction = new Float32Array(meta.joints.length);
@@ -338,6 +345,29 @@ async function main() {
     $('btn-slow').onclick = () => bump(-LIM.step);
     $('btn-fast').onclick = () => bump(+LIM.step);
     $('btn-reset').onclick = resetSim;
+    // 「开始 / 暂停」：默认就在跑，这个按钮给「被嵌进 iframe 后不知道从哪开始」的人一个显式入口
+    const playBtn = $('btn-play');
+    const syncPlayBtn = () => {
+      if (!playBtn) return;
+      playBtn.textContent = state.paused ? '▶ 继续' : '⏸ 暂停';
+      playBtn.classList.toggle('ghost', state.paused);
+    };
+    if (playBtn) playBtn.onclick = () => { state.paused = !state.paused; syncPlayBtn(); };
+    syncPlayBtn();
+    // 「自动走」：没有键盘 / 在 iframe 里拿不到焦点时，用它让机器人自己走起来
+    const autoBtn = $('btn-auto');
+    if (autoBtn) autoBtn.onclick = () => {
+      state.autoWalk = !state.autoWalk;
+      autoBtn.classList.toggle('held', state.autoWalk);
+      if (!state.autoWalk) state.vx = 0;
+    };
+    // iframe 里键盘事件要求文档有焦点：点一下就主动 focus，并给出提示
+    const grabFocus = () => {
+      try { window.focus(); } catch (_) {}
+      state.focused = true;
+    };
+    document.addEventListener('pointerdown', grabFocus, { passive: true });
+    window.addEventListener('focus', () => { state.focused = true; });
     // 触屏上的动作键 = 发一次策略脉冲（和键盘 X / Z / V 等价）
     $('btn-sit').onclick = () => { pendingCmd = 1; manual = null; };
     $('btn-kick').onclick = () => { pendingCmd = 2; manual = null; };
@@ -535,13 +565,17 @@ async function main() {
     }
 
     async function tick() {
+      if (state.autoWalk && !state.paused) {
+        const goal = Math.min(LIM.fwd, 0.4);
+        state.vx = Math.min(goal, state.vx + LIM.step * 0.25);
+      }
       const now = performance.now();
       acc += Math.min(0.25, (now - last) / 1000);
       last = now;
       // 每帧最多补的步数：手机上渲染只有 10–20 fps 时，预算太小会让仿真「越跑越慢」。
       // 8 步 ≈ 160 ms 仿真，仍能挡住「一次补几千步」的雪崩。
       let budget = isTouch ? 8 : 4;
-      while (acc >= STEP_DT && budget-- > 0) {
+      while (!state.paused && acc >= STEP_DT && budget-- > 0) {
         acc -= STEP_DT;
         try {
           await controlStep();

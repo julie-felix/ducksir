@@ -788,3 +788,30 @@ build/release/g1-instinct/
   motion/case_08.npz   动作参考 + config（joint_names/default_angles/duration）与 camera spec 在契约里
   g1-instinct.onnx
 ```
+
+## 21. 打开页面怎么玩（这次补的交互）
+
+之前的页面：机器人在那站着，没有任何提示——**不知道该按什么**。现在补了四样：
+
+1. HUD 第二行直接写玩法：
+   - 有速度指令的（wbc/amp/mjamp/loco）：`点一下画面 → 按 W/S 走、A/D 转向；没有键盘就点「自动走」`
+   - 动作模仿的（unisupermimic/instinct）：`这个策略按自己的动作参考跑，不需要按键`
+2. **「自动走」按钮**：没有键盘 / 在 iframe 里拿不到焦点时，点它让机器人自己走到 0.4 m/s
+   （验证过：`vx 0.40`，基座 0.721 m，仿真 25.2 s）
+3. **「▶ 开始 / ⏸ 暂停」**：显式入口；暂停只停步进、画面继续渲染
+   （验证：暂停后 5 s，仿真时间一直停在 23.8 s）
+4. iframe 里键盘要焦点：`pointerdown` 时主动 `window.focus()`，工作台载入后也会提示一句
+
+### 附带发现：`build/release/` 会被清空
+
+这次进页面报「载入失败：Unexpected token '<'」，原因是 `build/release/` 下只剩 instinct 一个 bundle，
+`contract.json` 404 → 拿到的是 HTML。把六个 bundle 重新导出即可：
+
+```bash
+for b in wbc amp mjamp loco; do … export_artifacts.py … done
+python3 sim/host/export_artifacts.py --manifest contract/policy/g1-unisupermimic.manifest.yaml …
+python3 sim/host/export_artifacts.py --manifest contract/policy/g1-instinct.manifest.yaml …
+```
+
+`build/` 在 `.gitignore` 里，所以**清掉是常态**；页面遇到 404 现在会把错误显示在 HUD 上，
+不会再「看起来在跑其实是空的」。

@@ -305,6 +305,7 @@ async function wireBundles() {
       return;
     }
     frame.src = `/ducksir-static/client/viewer/play.html?bundle=${encodeURIComponent(base)}&embed=1`;
+    showMsg('已载入：点一下画面 → 按 W/S 走、A/D 转向；没有键盘就点下面的「自动走」');
     frame.style.display = 'block';
     canvas.style.display = 'none';
     document.body.classList.add('browser-mode');   // 收起 host 专属控件
