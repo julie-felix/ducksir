@@ -846,6 +846,8 @@ python3 sim/host/export_artifacts.py --manifest contract/policy/g1-instinct.mani
   「这个 bundle 的观测（mimic:instinct）目前只有宿主支持：请用「启动仿真」在宿主里跑，浏览器版本还在做」，
   不再去下 557 个网格。
 
+![Instinct 在浏览器里的提示](../images/g1-instinct-browser-msg.png)
+
 ### 现在哪些能在浏览器里动
 
 | bundle | 浏览器 | 说明 |
