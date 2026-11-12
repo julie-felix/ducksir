@@ -596,3 +596,39 @@ forward 0.5 → 实际 0.49 m/s｜forward 1.0 → 0.92 m/s｜forward 2.0 → 1.9
 
 `g1-loco`（mode 2）用 plan 里 mode 2 的 **balanceStiffness/Damping** 之后：零速站稳 600 步、
 给指令就能走（0.5/1.0/2.0 → 0.494/1.019/1.904 m/s）。详见 §16 的订正。
+
+## 18. 剩下的模型：UniSuperMimic 接通（宿主侧），其余排队
+
+botlab 一共 8 个模板，G1 的 5 个里 WBC 那一套（loco/wbc/amp/mjamp）已经全通，本轮又接了
+**UniSuperMimic**：
+
+| 项 | 值 |
+|---|---|
+| obs | **1720** = 99×10 帧历史（by-frame、最老在前）+ 10×73 未来目标 |
+| obs99 | q−default(29) + qd(29) + base_ang_vel(3) + projected_gravity(3) + last_action(29) + **rot6d(rel(r0, qpos))(6)** |
+| goal73(k) | rel_pos(3) + rot6d(rel(q,heading))(6) + v_local(3) + w_local(3) + joint_pos(29) + joint_vel×0.1(29) |
+| 动作 | `target = default + action_scale × action`，逐关节 scale（0.0745/0.351/0.439/0.548） |
+| 时间轴 | 参考时刻 `t = (k−1)·0.02`（比控制步**慢一拍**，实测反推出来的） |
+
+验证：
+
+```
+用他们录的 obs 喂我们的模型：40 步，最大差 5.65e-06
+我们自己的闭环：300 步站稳（基座 0.768，直立 0.996）
+```
+
+实现落在 `sim/host/unisupermimic_obs.py`（采样 / 四元数 / 6D / 历史 / 未来目标），
+契约新增观测 source `mimic:uni`（整块 1720 由运行器算好传入）。
+
+### 还没接的（按工作量排）
+
+| 模板 | 模型 | 难点 |
+|---|---|---|
+| Instinct-SuperMimic | 1990 | 需要 `tangent_normal`、`relative_position/quaternion`、多段 history，和新的一组信号 |
+| GMTrack Stage-II | 1728 | 按 term 分块的历史（proprio 640 / action 290 / command window 798），参考 token 要按自身时间戳做根系变换 |
+| Hiking-Parkour | 896 + 深度编码器 128 | **要渲深度图**（8×18×32），浏览器/宿主都得加离屏渲染 |
+| PHP-Parkour | 140 + 深度骨干 32 | 同样要深度（58×87），actor 还多一个 `time_step` 输入、7 个输出头 |
+| Go2W-Lab2MJ | 多模型（encoder/memory/actor） | 是 Go2W 四足轮式，机器人模型与感知都不同 |
+
+浏览器侧：`mimic:uni` 目前只有宿主支持，JS 还没实现（页面会显式报
+「观测配方里不认识的 source」而不是假装在跑——这轮顺手把错误显示到 HUD 了）。

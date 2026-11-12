@@ -117,10 +117,26 @@ def main() -> int:
     # 动作参考（WBC / AMP）：契约里有 robot.motion 才启用；播放头 + 参考目标角
     # 只有 WBC(3)/AMP(4) 用动作参考；loco(2)/mjamp(5) 不读参考段，也不该把目标基准换掉
     use_reference = any(int(p.get("mode", 0)) in (3, 4) for p in (con.get("policies") or []))
-    motion_cfg = (con.get("robot") or {}).get("motion") if use_reference else None
+    _motion_all = (con.get("robot") or {}).get("motion")
+    # UniSuperMimic：配方是单条目 mimic:uni，不走 reference，但要读动作
+    _is_uni = bool(_motion_all) and _motion_all.get("format") == "unisupermimic"
+    motion_cfg = _motion_all if (use_reference or _is_uni) else None
     ref_angles = (con.get("robot") or {}).get("reference_joint_positions")
     motion_arrays = motion_meta = playhead = None
-    if motion_cfg and motion_cfg.get("path"):
+    uni_obs_mod = uni_motion = uni_hist = None
+    if motion_cfg and motion_cfg.get("format") == "unisupermimic":
+        import numpy as _np
+        import unisupermimic_obs as _U
+        _mp = motion_cfg["path"]
+        if not os.path.isabs(_mp):
+            _mp = os.path.join(bdir, _mp)      # bundle 内相对路径（导出时写 motion/）
+        z = _np.load(os.path.join(_mp, f"{motion_cfg['clip']}.npz"), allow_pickle=True)
+        uni_motion = {k: z[k] for k in ("joint_pos", "joint_vel", "body_pos_w", "body_quat_w",
+                                        "body_lin_vel_w", "body_ang_vel_w")}
+        uni_motion["fps"] = float(z["fps"][0])
+        uni_obs_mod = _U
+        uni_hist = _U.History()
+    elif motion_cfg and motion_cfg.get("path"):
         import sys as _sys
         _sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "plan"))
         import motion as _M
@@ -293,8 +309,26 @@ def main() -> int:
                 last_anchor_pos=motion_arrays["body_pos"][last][0],
                 last_anchor_quat=motion_arrays["body_quat"][last][0],
                 base_quat=d.qpos[3:7], pause=playhead.paused)
+        mimic_obs = None
+        if uni_obs_mod is not None:
+            q_now = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
+            qd_now = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)
+            w, xq, yq, zq = d.qpos[3:7]
+            Rm = np.array([
+                [1 - 2 * (yq * yq + zq * zq), 2 * (xq * yq - zq * w), 2 * (xq * zq + yq * w)],
+                [2 * (xq * yq + zq * w), 1 - 2 * (xq * xq + zq * zq), 2 * (yq * zq - xq * w)],
+                [2 * (xq * zq - yq * w), 2 * (yq * zq + xq * w), 1 - 2 * (xq * xq + yq * yq)]])
+            per_frame = uni_obs_mod.build_obs(
+                motion=uni_motion, joint_pos=q_now, joint_vel=qd_now,
+                base_ang_vel=d.qvel[3:6], gravity_b=Rm.T @ np.array([0, 0, -1.0]),
+                last_action=last_action, qpos_quat=d.qpos[3:7],
+                default_angles=np.asarray(preset["defaultJointPositions"]),
+                t=(k - 1) * float(motion_cfg.get("dt", 0.02)),
+                joint_order=preset.get("policyJointOrder"))
+            hist990 = uni_hist.push(per_frame[:99])
+            mimic_obs = np.concatenate([hist990, per_frame[99:]]).astype(np.float32)
         obs = CO.make_obs(con, view, last_action=last_action, command=cmd,
-                          motion_ref=motion_ref)
+                          motion_ref=motion_ref, mimic_obs=mimic_obs)
         obs_raw = obs.copy()
         if "pre" in plans:
             obs = run_plan(core, plans["pre"], obs)

@@ -1,0 +1,39 @@
+# G1 的 UniSuperMimic（动作模仿）：obs 1720 = 99×10 帧历史 + 10×73 未来目标。
+# 逐项对齐模板 g1-unisupermimic 的 controller.py：
+#   obs99 = q−default(29) + qd(29) + base_ang_vel(3) + projected_gravity(3)
+#           + last_action(29) + rotation_6d(rel(r0, qpos))(6)
+#   goal73(k) = rel_pos(3) + rot6d(rel(q,heading))(6) + v(3) + w(3) + joint_pos(29) + joint_vel·0.1(29)
+#   total = history(obs99,10,by-frame,oldest-first) + concat(goal73 × 10)
+kind: ducksir-policy-manifest
+version: 1
+policy_id: g1-unisupermimic
+
+model:
+  file: build/models/g1-unisupermimic.onnx
+  input: {name: obs, shape: [1, 1720]}
+  output: {name: actions, shape: [1, 29]}
+
+policies:
+  - {key: g1-unisupermimic, mode: 0, file: build/models/g1-unisupermimic.onnx}
+
+# 单条目：整块 1720 由运行器按模板公式算好（见 sim/host/unisupermimic_obs.py）
+obs:
+  - {slot: mimic_uni, len: 1720}
+
+history: {length: 0, layout: by-frame}
+
+action:
+  # 模板：control = default_angles + action_scale * action（它的 MJCF 是位置执行器，我们这边等价成扭矩 PD）
+  mapping: default_plus_scale
+  order: motor
+  clip: ctrlrange
+
+rates: {control_hz: 50, physics_hz: 200, inference_decimation: 4}
+
+provenance:
+  source: botlab 模板 g1-unisupermimic · assets/models/policy.onnx（2026-11-12 取）
+  upstream: https://botlab.enkeebot.com/templates/g1-unisupermimic/
+  obs_layout: controller.py 的 observations() —— 990 + 730 = 1720
+  action_scale: 逐关节（0.0745 / 0.351 / 0.439 / 0.548）
+  motion: assets/motions/jumps1_subject1.npz（fps 50，50 Hz 网格、nearest 采样）
+  note: 上游无根 LICENSE；仅本地兼容性对照用，不对外分发。

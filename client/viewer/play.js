@@ -547,6 +547,10 @@ async function main() {
           await controlStep();
         } catch (e) {
           console.error(e);
+          // 把错误摆到 HUD 上：不要让页面看起来「在跑但其实没步进」
+          const line = document.getElementById('view-msg') || document.getElementById('stat');
+          if (line) line.textContent = `仿真出错：${e && e.message ? e.message : e}`;
+          state.error = e;
           break;
         }
         ctrlWindowCount += 1;

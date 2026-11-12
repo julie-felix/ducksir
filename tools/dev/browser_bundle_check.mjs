@@ -54,8 +54,9 @@ try {
 
   const m = out.match(/"z":"([0-9.]+)"/);
   const sim = (out.match(/"sim":"([0-9.]+)"/) || [])[1];
-  if (Number(sim || 0) < 5) {
-    console.error(`页面只跑了 ${sim || 0} s 仿真，不能算过（可能还没开始步进）`);
+  const ranEnough = Number(sim || 0) >= 5;
+  if (!ranEnough) {
+    console.error(`页面只跑了 ${sim || 0} s 仿真，不能算过（可能还没开始步进，或加载失败）`);
     code = 1;
   }
   if (!m) {
@@ -71,7 +72,7 @@ try {
     } else if (!(z > MIN_Z)) {
       console.error(`FAIL：基座 ${z.toFixed(3)} m ≤ ${MIN_Z} m（倒了）`);
       code = 1;
-    } else {
+    } else if (ranEnough) {
       console.log(`PASS：浏览器里站稳（> ${MIN_Z} m）`);
     }
   }

@@ -64,7 +64,7 @@ def _body(name: str, view: dict):
 
 
 def make_obs(doc: dict, view: dict, *, last_action=None, command=None, vx: float = 0.0,
-             motion_ref=None) -> np.ndarray:
+             motion_ref=None, mimic_obs=None) -> np.ndarray:
     """按契约配方组 61 维观测。
 
     `view` 需要提供：`data`（MuJoCo 数据）、`qpos_off`/`dof_off`（驱动序地址）、
@@ -107,6 +107,15 @@ def make_obs(doc: dict, view: dict, *, last_action=None, command=None, vx: float
         elif src == "last_action":
             if last_action is not None:
                 obs[off:off + length] = last_action
+        elif src == "mimic:uni":
+            # UniSuperMimic 的 1720 维观测（99×历史 + 10×未来目标）由运行器用
+            # sim/host/unisupermimic_obs.py 算好传进来
+            if mimic_obs is None:
+                raise SystemExit("契约里有 mimic:uni 槽位，但调用方没给 mimic_obs 数组")
+            arr = np.asarray(mimic_obs, dtype=np.float32)
+            if arr.shape != (length,):
+                raise SystemExit(f"mimic_obs 长度 {arr.shape} != 槽位 {length}")
+            obs[off:off + length] = arr
         elif src == "command:velocity":
             c = command if command is not None else np.zeros(13)
             obs[off:off + 3] = np.asarray(c[:3], dtype=np.float32)

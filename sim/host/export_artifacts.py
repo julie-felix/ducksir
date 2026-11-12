@@ -64,6 +64,7 @@ SOURCE_BY_SLOT = {
     "motion_ref": lambda o: "motion_ref",
     # 速度指令 3 维（vx, vy, yaw_rate）——loco / AMP / MJAMP 的观测里有它
     "velocity_command": lambda o: "command:velocity",
+    "mimic_uni": lambda o: "mimic:uni",
 }
 
 
@@ -222,7 +223,13 @@ def main() -> int:
         if os.path.isdir(src):
             if os.path.isdir(dst):
                 shutil.rmtree(dst)
-            shutil.copytree(src, dst)
+            if motion_cfg.get("format") == "unisupermimic":
+                # 只拷当前 clip 的 npz，别把整个动作库搬进 bundle
+                os.makedirs(dst, exist_ok=True)
+                clip = motion_cfg.get("clip")
+                shutil.copyfile(os.path.join(src, f"{clip}.npz"), os.path.join(dst, f"{clip}.npz"))
+            else:
+                shutil.copytree(src, dst)
             motion_cfg = dict(motion_cfg, path="motion/")
             preset["motion"] = motion_cfg        # 契约与 bundle 内的 preset 都用相对路径
             print(f"  动作参考 {os.path.basename(src)} → motion/")
