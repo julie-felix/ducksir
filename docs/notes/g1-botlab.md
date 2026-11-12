@@ -662,11 +662,32 @@ jp10(290) + jv10(290) + pos10(30) + rot10(60) + depth(576) + hist(744) = 1990
 hist = 5 个 term 各 8 帧：[gravity(torso), base_ang_vel, jp−default, jv, last_action]
 ```
 
-`sim/host/instinct_obs.py` 已写了采样/相对位姿/tangent_normal/历史/深度缩放，
-但首块比对还有残差：**jp 0.24 / jv 1.37 / pos 0.01 / rot 1.07**。已知的两个可疑点：
+`sim/host/instinct_obs.py` 里的采样/相对位姿/6D/历史**已经全部对上**（逐段验证）：
 
-1. `rot10` 里用的是 `robot.body_quaternion("torso_link")`（**躯干**的世界姿态），我先拿 `qpos[3:7]`
-   （pelvis）顶了，必然差；
-2. 前瞻时间起点还没定（`t` 与控制步差一拍还是同拍）。
+```
+jp  差 0.000001   jv 差 0.000000   pos 差 0.000000   rot 差 0.001613
+hist 段五项：gravity 0.0049（qpos 量化）、其余 0.0000–0.000001
+```
 
-这两项定下来之后，再接深度相机（44×23 → 裁 → 32×18）就能闭环验证。
+对齐过程中修的三处（都是「看源码以为对、实测才知道」）：
+
+1. **默认动作不是 case_00**：`motion_choices.DEFAULT_MOTION = 8`，我一开始拿 CONFIGS[0] 比，
+   jp 残差 0.23 全是这个原因；
+2. **`tangent_normal` 取的是旋转矩阵第 0 行和第 2 行**（x 轴切向 + z 轴法向），不是「前两行」；
+3. **相对姿态方向**：模板写 `relative_quaternion(sample, robot_r)`，而 botlab 的
+   `relative_quaternion(a,b) = inv(b)·a`，等价于 `inv(sample)·robot_r`。
+
+时间轴：`t = (k−1)·0.02`（与控制步差一拍），前瞻 10 帧 × 0.1 s。
+
+### 深度还没对上（差 1.9）
+
+两个已定位的坑：
+
+1. 他们的 `scene.xml` 里有一块地形摆在 **x=+500**，把 `model.stat.extent` 撑到 **757**，
+   MuJoCo 的相机远近裁剪面跟着放大 → 渲染出来全黑。**先 `m.stat.center=[0,0,0.8]; m.stat.extent=1.5`
+   就正常了**（RGB 非黑像素 1538）；
+2. 相机 `xyaxes` → 四元数的构造：试下来 `cols z+1`（列向量拼）最接近，差 1.911；
+   剩下这 1.9 主要是深度尺度/远景（他们 0.59–1.0 m，我们包含远景到 75 m），
+   还需要按 `depthScale=2`、远景裁剪和 `raycastGeomGroups [0,2]` 再对一轮。
+
+**当前结论**：Instinct 的 670 维本体段 + 744 维历史段已经和 botlab 逐位一致，只剩 576 维深度。

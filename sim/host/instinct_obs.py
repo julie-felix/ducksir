@@ -70,12 +70,13 @@ def relative_quaternion(q, reference):
 
 
 def tangent_normal(q):
-    """6D 特征：取旋转矩阵的前两**行**（m00,m01,m02,m10,m11,m12）再归一化法向。
+    """6D 特征：旋转矩阵的**第 0 行与第 2 行**（x 轴 = 切向，z 轴 = 法向）。
 
-    botlab 的 `tangent_normal` 就是「切向 + 法向」表示：把前两行当作切向，第三行由叉乘得到。
+    实测反推：botlab 的 `tangent_normal` 输出是 [m00,m01,m02, m20,m21,m22]，
+    不是「前两行」。用错的话 rot 段整天差 ~1.0（单位阵情形一眼能看出来）。
     """
     m = _q_to_mat(np.asarray(q, dtype=np.float64))
-    return np.array([m[0, 0], m[0, 1], m[0, 2], m[1, 0], m[1, 1], m[1, 2]], dtype=np.float64)
+    return np.array([m[0, 0], m[0, 1], m[0, 2], m[2, 0], m[2, 1], m[2, 2]], dtype=np.float64)
 
 
 def sample(motion: dict, t: float, channel: str, *, body: int = 0, nearest: bool = True):
@@ -106,7 +107,9 @@ def build_terms(*, motion, t, duration, joint_order, config_defaults,
         pk = sample(motion, ti, "body_pos_w", body=torso_index)
         pos.append(relative_position(pk, p0, r0))
         qk = sample(motion, ti, "body_quat_w", body=torso_index)
-        rk = tangent_normal(relative_quaternion(qk, robot_torso_quat))
+        # 实测：模板里写的是 relative_quaternion(sample, robot_r)，但 botlab 的
+        # relative_quaternion(a,b) = inv(b)·a，所以等价于 inv(sample)·robot_r。
+        rk = tangent_normal(relative_quaternion(robot_torso_quat, qk))
         rot.append(rk if valid else np.zeros(6))
     block = np.concatenate([np.concatenate(jp), np.concatenate(jv),
                             np.concatenate(pos), np.concatenate(rot)])
