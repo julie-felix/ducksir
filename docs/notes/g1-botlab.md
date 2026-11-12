@@ -557,3 +557,40 @@ effort = ±88 / ±139 / ±50 …                 ← 等于 ctrlrange（= preset
 | `g1-amp` | 站稳 |
 | `g1-mjamp` | 站稳 |
 | `g1-loco` | 跑起来，约 2 s 倒（与 botlab 一致） |
+
+## 17. 速度指令范围：以前是鸭子的，现在按模型来
+
+问题：`play.js` 里 `LIM = { fwd: 0.25, back: -0.2, ang: 1.0 }` 是给 MicroDuck 定的
+（怕超出它模型的输入范围），G1 这几个策略根本用不满——它们的 vx 可以到 **2.5 m/s**。
+
+现在整条链路都按模型走：
+
+| 环节 | 以前 | 现在 |
+|---|---|---|
+| 模板参数 | 没人读 | `import_botlab_preset.py --parameters config/parameters.yaml` 把 `range` 搬进 preset |
+| preset | 无 | `commands: {forward_min, forward_max, lateral_*, yaw_max, step}` |
+| 契约 | 写死鸭子那组 | `robot.commands` 从 preset 来（G1：−0.8…2.5，yaw ±3.14，步长 0.1） |
+| 浏览器 | `LIM` 写死 | 载入契约后覆盖，底部提示文字也一起变 |
+
+botlab 的 `parameters.yaml` 里：`target_velocity [-0.8, 2.5]`、`target_lateral_velocity [-1, 1]`、
+`target_yaw_rate [-3.14, 3.14]`、步长 0.1。
+
+### 验证
+
+宿主（AMP，400 步）：
+
+```
+forward 0.5 → 实际 0.49 m/s｜forward 1.0 → 0.92 m/s｜forward 2.0 → 1.99 m/s
+基座全程 0.69–0.77 m，直立 0.996+
+```
+
+浏览器（按 25 次 W）：`vx 2.50`（上限生效）、基座 0.701 m。
+
+![G1 AMP 按指令行走](../images/viewer-g1-amp-walk.png)
+
+### 一个仍然存在的限制（loco）
+
+`g1-loco`（mode 2）即使把指令给到 1.0 m/s 也站不住——**botlab 自己的运行时同样倒**
+（把它们的 `target_velocity` 默认值改成 1.0 跑 400 步：z 从 0.79 掉到 0.064）。
+它不是「站立+行走」两用的策略，得先经过它们的 stand/stand-to-walk 状态序列。
+这条记在这里，避免以后误判成我们的 bug。

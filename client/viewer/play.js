@@ -92,7 +92,8 @@ if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
 // ---------- 载入 ----------
 // 指令范围照上游 app/src/game/constants.js：VEL_FWD 0.25 / VEL_BACK -0.2 / VEL_ANG 1.0。
 // 超出这个范围策略没见过——它会一边走一边拐（用户看到的就是「走得歪」）。
-const LIM = { fwd: 0.25, back: -0.2, ang: 1.0 };
+// 速度指令范围：从契约读（鸭子 0.25、G1 能到 2.5），加载契约后覆盖
+let LIM = { fwd: 0.25, back: -0.2, ang: 1.0, step: 0.05 };
 // 关节数来自契约（载入后按契约重设这个数组），这里先占位
 const state = { vx: 0, wz: 0, lastAction: new Float32Array(0), simTime: 0, error: null };
 
@@ -112,6 +113,17 @@ async function main() {
     ]), 30000);
     setContract(contract);
     const meta = contract.robot;
+    if (meta.commands) {
+      const c = meta.commands;
+      LIM = {
+        fwd: c.forward_max ?? LIM.fwd,
+        back: c.forward_min ?? c.back_max ?? LIM.back,
+        ang: c.yaw_max ?? LIM.ang,
+        step: c.step ?? LIM.step,
+      };
+      const hint = document.getElementById('hint-vx');
+      if (hint) hint.textContent = `前进 ±${LIM.step}（${LIM.back} … ${LIM.fwd}）`;
+    }
     const rates = contract.rates;
     state.lastAction = new Float32Array(meta.joints.length);
     CONTROL_HZ = rates.control_hz;
@@ -299,8 +311,8 @@ async function main() {
     // 键盘
     addEventListener('keydown', (e) => {
       const k = e.key.toLowerCase();
-      if (k === 'w') state.vx = Math.min(LIM.fwd, state.vx + 0.05);
-      else if (k === 's') state.vx = Math.max(LIM.back, state.vx - 0.05);
+      if (k === 'w') state.vx = Math.min(LIM.fwd, state.vx + LIM.step);
+      else if (k === 's') state.vx = Math.max(LIM.back, state.vx - LIM.step);
       // 实测：策略的 +yaw 是向右（+1.0 → yaw −151°），所以「左转」发负值
       else if (k === 'a') state.wz = -LIM.ang;
       else if (k === 'd') state.wz = LIM.ang;
@@ -323,8 +335,8 @@ async function main() {
       state.vx = 0; state.lastAction.fill(0); state.simTime = 0;
       mj.mj_forward(model, data);
     };
-    $('btn-slow').onclick = () => bump(-0.05);
-    $('btn-fast').onclick = () => bump(+0.05);
+    $('btn-slow').onclick = () => bump(-LIM.step);
+    $('btn-fast').onclick = () => bump(+LIM.step);
     $('btn-reset').onclick = resetSim;
     // 触屏上的动作键 = 发一次策略脉冲（和键盘 X / Z / V 等价）
     $('btn-sit').onclick = () => { pendingCmd = 1; manual = null; };

@@ -260,7 +260,8 @@ def main() -> int:
             "initial_qpos": preset["initialQpos"],
             "action_scale": preset["actionScale"],
             "ctrlrange": [[lo[i], hi[i]] for i in range(n)],
-            "commands": {"forward_max": 0.25, "back_max": -0.2, "yaw_max": 1.0},
+            # 速度指令范围：preset 里有就用（G1 的 vx 到 2.5 m/s），否则退回鸭子那组
+            "commands": preset.get("commands") or {"forward_max": 0.25, "back_max": -0.2, "yaw_max": 1.0},
             # 执行器语义：position = MuJoCo 自己算 PD；torque = 消费者每个物理子步按 kp/kd 算
             "actuator_mode": preset.get("actuatorMode", "position"),
             "kp": preset.get("kp") or [],

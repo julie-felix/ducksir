@@ -55,6 +55,11 @@ for bundle_name in BUNDLES:
     ok(f"{bundle_name}：300 步跑完", rep.get("completed_steps", 0) == 300, str(rep.get("completed_steps")))
     ok(f"{bundle_name}：基座 ≥0.55 m（没倒）", zmin is not None and zmin > 0.55, f"zmin={zmin}")
     ok(f"{bundle_name}：末态直立 >0.9", upright is not None and upright > 0.9, f"upright={upright}")
+    cmds = (json.load(open(os.path.join(bundle, "contract.json"), encoding="utf-8"))["robot"]
+            .get("commands") or {})
+    fmax = cmds.get("forward_max")
+    ok(f"{bundle_name}：速度指令上限 >1 m/s（不是鸭子那套 0.25）",
+       bool(fmax) and fmax > 1.0, f"forward_max={fmax}")
 
 print()
 if fails:

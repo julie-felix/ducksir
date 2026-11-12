@@ -14,6 +14,7 @@ G1 那种扭矩模型里，PD 是**引擎/宿主**按这三个数组算的，不
 """
 import argparse
 import hashlib
+import os
 import pathlib
 
 import yaml
@@ -36,6 +37,7 @@ def main() -> int:
     ap.add_argument("--frame-interval", type=int, default=5,
                     help="锚点回看间隔（参考实现 motion_reference(frame_interval=5)）")
     ap.add_argument("--active-mode", type=int, default=3, help="哪个 mode 播放这份参考")
+    ap.add_argument("--parameters", help="模板的 config/parameters.yaml：把速度指令的范围搬进 preset")
     ap.add_argument("--action-scale", type=float, default=0.25,
                     help="动作缩放。botlab 的参考实现（State_Loco/WBC）用**统一 0.25**，"
                          "而 preset JSON 里的 actionScale 是训练期的旧值（逐关节不同），不要用")
@@ -67,6 +69,23 @@ def main() -> int:
         v = src.get(key)
         return [int(x) for x in v] if v else list(range(n_act))
 
+    # 速度指令范围：来自 parameters.yaml（loco/AMP 的 vx 上限能到 2.5 m/s，不是鸭子的 0.25）
+    commands = None
+    if args.parameters and os.path.exists(args.parameters):
+        params = yaml.safe_load(open(args.parameters, encoding="utf-8")) or {}
+        def rng(name, idx):
+            spec = params.get(name) or {}
+            r = spec.get("range")
+            return float(r[idx]) if r and len(r) > idx else None
+        commands = {
+            "forward_min": rng("target_velocity", 0),
+            "forward_max": rng("target_velocity", 1),
+            "lateral_min": rng("target_lateral_velocity", 0),
+            "lateral_max": rng("target_lateral_velocity", 1),
+            "yaw_max": rng("target_yaw_rate", 1),
+            "step": float(((params.get("target_velocity") or {}).get("step")) or 0.1),
+        }
+
     joints = arr("defaultJointPositions") or [0.0] * n_act
     preset = {
         "kind": "botlab-preset",
@@ -96,6 +115,7 @@ def main() -> int:
         "actionScaleFromPresetJson": arr("actionScale"),
         "initialQpos": arr("initialQpos"),
         "referenceJointPositions": arr("referenceJointPositions"),
+        "commands": commands,
         "motion": ({"path": args.motion, "frames": args.motion_frames, "fps": args.motion_fps,
                     "frame_interval": args.frame_interval, "active_mode": args.active_mode}
                    if args.motion else None),
