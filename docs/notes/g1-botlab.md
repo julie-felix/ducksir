@@ -632,3 +632,41 @@ botlab 一共 8 个模板，G1 的 5 个里 WBC 那一套（loco/wbc/amp/mjamp�
 
 浏览器侧：`mimic:uni` 目前只有宿主支持，JS 还没实现（页面会显式报
 「观测配方里不认识的 source」而不是假装在跑——这轮顺手把错误显示到 HUD 了）。
+
+## 19. 深度渲染打通了（Instinct / 两个 Parkour 的前置条件）
+
+之前以为「渲不了深度」，其实只是缺 python 侧的 OpenGL 绑定：
+
+```
+$ python3 -c "from mujoco.rendering.classic.renderer import Renderer; ..."
+ModuleNotFoundError: No module named 'OpenGL'
+```
+
+装上 `PyOpenGL`（wheel 解到 `~/.local/share/ducksir/pylibs`）+ `MUJOCO_GL=egl` 之后：
+
+```
+MUJOCO_GL=egl → depth OK (32, 32) 0.46
+MUJOCO_GL=osmesa → 无输出（不可用）
+MUJOCO_GL=glfw → 缺 glfw 模块
+```
+
+**结论：深度相机用 EGL + `mujoco.rendering.classic.renderer.Renderer`（`enable_depth_rendering()`）**。
+这解除了 Instinct 与 Hiking/PHP Parkour 三个模板的前置条件。
+
+### Instinct-SuperMimic（1990）的进度：脚手架搭好，还没对上
+
+观测结构已经从模板 + 录到的真值确认：
+
+```
+jp10(290) + jv10(290) + pos10(30) + rot10(60) + depth(576) + hist(744) = 1990
+hist = 5 个 term 各 8 帧：[gravity(torso), base_ang_vel, jp−default, jv, last_action]
+```
+
+`sim/host/instinct_obs.py` 已写了采样/相对位姿/tangent_normal/历史/深度缩放，
+但首块比对还有残差：**jp 0.24 / jv 1.37 / pos 0.01 / rot 1.07**。已知的两个可疑点：
+
+1. `rot10` 里用的是 `robot.body_quaternion("torso_link")`（**躯干**的世界姿态），我先拿 `qpos[3:7]`
+   （pelvis）顶了，必然差；
+2. 前瞻时间起点还没定（`t` 与控制步差一拍还是同拍）。
+
+这两项定下来之后，再接深度相机（44×23 → 裁 → 32×18）就能闭环验证。
