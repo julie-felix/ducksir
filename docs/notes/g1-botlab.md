@@ -862,3 +862,36 @@ python3 sim/host/export_artifacts.py --manifest contract/policy/g1-instinct.mani
 MUJOCO_GL=egl python3 sim/host/run_bundle.py --bundle build/release/g1-instinct \
   --mjcf build/release/g1-instinct/robot.xml --steps 300
 ```
+
+## 23. 宿主直播：浏览器不跑物理，也能看到所有 bundle 动起来
+
+浏览器端没有实现 `mimic:uni` / `mimic:instinct`，但**宿主什么都有**。所以加了一条最省事的路径：
+
+```
+宿主：python3 sim/host/run_bundle.py --bundle build/release/g1-instinct \
+        --mjcf build/release/g1-instinct/robot.xml --seconds 600 --stream 8899
+浏览器：client/viewer/host.html?ws=8899
+```
+
+协议（`sim/host/host_stream.py`，只用标准库）：
+
+1. 连上先发 `{"type":"scene",...}` + 一条二进制帧（所有视觉 geom 的顶点/面片，实测 7.7 MB）；
+2. 之后每控制步发 `{"type":"pose","t":..,"xpos":[..],"xquat":[..]}`（约 2.4 KB/帧，30 Hz）；
+3. **后连上的客户端会补发场景和最后一帧**，所以随时刷新都能看到画面。
+
+实测：`t=55.44 s · 第 2772 步 · 收到 714 帧`，机器人正常显示。
+
+![宿主直播](../images/host-live-g1-instinct.png)
+
+### 三个坑（都在这一小时内踩的）
+
+| 症状 | 原因 |
+|---|---|
+| 浏览器连上就 **1006** 断开（python 客户端却正常） | 握手线程和主循环线程同时写同一个 socket，**帧字节交错**；加一把发送锁后正常 |
+| 机器人散成一地碎片 | 发的是**世界坐标**位姿，body 组却按父子嵌套 → 父变换叠加一次；改成全部挂 root |
+| 网格像被炸开 | `mesh_vert/mesh_face` 是二维视图，切片按扁平下标取 → 形状错误；先 `reshape(-1)` |
+
+### 另外发现（待查）
+
+`g1-instinct` 跑长（3000 步）时会倒：`基座 终 0.071`，而 300 步时是 0.832。
+可能是动作片段结束后的行为，也可能和指令为 0 有关，先记下来。

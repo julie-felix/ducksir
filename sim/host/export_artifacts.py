@@ -305,6 +305,7 @@ def main() -> int:
         xml = re.sub(r'meshdir="[^"]+"', 'meshdir="."', xml)
         # 相对上级目录的资源（Instinct 的 ../../terrain/*.obj，深度相机会看到它）一起搬进 bundle
         up_dirs = set()
+        _done = set()
         for rel in re.findall(r'file="((?:\.\./)+[^"]+)"', xml):
             m2 = re.match(r'((?:\.\./)+)([^/]+)/', rel)
             if not m2:
@@ -314,8 +315,9 @@ def main() -> int:
             for _ in range(ups.count("..")):
                 base = os.path.dirname(base)
             src_dir = os.path.join(base, folder)
-            if not os.path.isdir(src_dir):
+            if not os.path.isdir(src_dir) or (src_dir, folder) in _done:
                 continue
+            _done.add((src_dir, folder))
             target = os.path.join(out, folder)
             if os.path.isdir(target):
                 shutil.rmtree(target)

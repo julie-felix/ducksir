@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>宿主直播 · ducksir</title>
+<style>
+  :root { --bg:#0b0f14; --ink:#e6ebf2; --dim:#8b97a7; --line:#222b36; --accent:#4da3ff; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--ink);
+    font: 13px/1.5 system-ui, -apple-system, "Noto Sans CJK SC", sans-serif; overflow:hidden; }
+  canvas { display:block; width:100%; height:100%; }
+  #hud { position:fixed; left:12px; top:12px; padding:9px 12px; border-radius:10px;
+    background:rgba(17,21,26,.88); border:1px solid var(--line); max-width:min(92vw,420px);
+    font-size:12.5px; line-height:1.55; }
+  #hud b { color:#fff; font-weight:600; }
+  #hud .dim { color:var(--dim); }
+  #status { color:var(--accent); }
+  #busy { position:fixed; inset:0; display:grid; place-items:center; color:var(--dim);
+    background:var(--bg); z-index:9; transition:opacity .2s; text-align:center; padding:20px; }
+  #busy.gone { opacity:0; pointer-events:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">
+  <div><b>宿主直播</b> <span class="dim" id="bundle-name"></span></div>
+  <div id="status">连接中…</div>
+  <div class="dim" id="line">等第一帧…</div>
+</div>
+<div id="busy">连接宿主…</div>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/" } }
+</script>
+<script type="module" src="./host.js"></script>
+</body>
+</html>

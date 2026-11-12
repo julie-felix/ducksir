@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "handler": "motion_files.py",
+  "directory": "assets/motions",
+  "extension": ".npz",
+  "outputs": [
+    "motion_choices.py",
+    "robot.preset.yaml"
+  ],
+  "converter": {
+    "handler": "motion_csv.py",
+    "extensions": [
+      ".csv",
+      ".npz"
+    ],
+    "packages": [
+      "numpy"
+    ],
+    "description": "Inspect the exact resource, then prepare it. The processor resolves embedded/export metadata and exact-source resource_inputs.json settings. The host collects missing fields in chat for AI attachments, or the import dialog for file explorer imports; do not copy another source settings. CSV never silently assumes a format. RESOURCE_INPUTS.md documents project requirements.",
+    "options": {
+      "source_format": {
+        "enum": [
+          "motionstudio-g1-default",
+          "motionstudio-g1",
+          "legacy"
+        ],
+        "description": "Use motionstudio-g1 for a confirmed Motion Studio G1 export: XYZ metres, XYZW CSV / marked WXYZ NPZ, 29 G1 joints. The legacy motionstudio-g1-default alias identifies only the format, never coordinates or FPS. Resolve coordinates and FPS from matching metadata or user confirmation for this exact file; ask for missing facts."
+      },
+      "source_coordinates": {
+        "enum": [
+          "stage-y-up",
+          "scene-z-up"
+        ]
+      },
+      "source_fps": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      }
+    },
+    "settingsFile": "resource_inputs.json",
+    "metadataFiles": [
+      "motion-studio-project.json"
+    ]
+  }
+}

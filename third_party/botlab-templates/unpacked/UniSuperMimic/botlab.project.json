@@ -1,0 +1,430 @@
+{
+  "format": "botlab-project",
+  "version": 1,
+  "files": [
+    "NOTICE.py",
+    "RESOURCE_INPUTS.md",
+    "controller.py",
+    "csv_config.json",
+    "file_rules.json",
+    "main.py",
+    "motion_choices.py",
+    "motion_config.py",
+    "motion_csv.py",
+    "motion_files.py",
+    "motion_kinematics.json",
+    "motion_steps.py",
+    "resource_inputs.json",
+    "robot.preset.yaml"
+  ],
+  "assets": [
+    {
+      "resourceId": "workspace-asset-assets-models-policy.onnx",
+      "source": "assets/models/policy.onnx",
+      "path": "assets/models/policy.onnx",
+      "name": "policy.onnx",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-motions-fallAndGetUp1_subject1.npz",
+      "source": "assets/motions/fallAndGetUp1_subject1.npz",
+      "path": "assets/motions/fallAndGetUp1_subject1.npz",
+      "name": "fallAndGetUp1_subject1.npz",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-motions-jumps1_subject1.npz",
+      "source": "assets/motions/jumps1_subject1.npz",
+      "path": "assets/motions/jumps1_subject1.npz",
+      "name": "jumps1_subject1.npz",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-motions-walk4_subject1.npz",
+      "source": "assets/motions/walk4_subject1.npz",
+      "path": "assets/motions/walk4_subject1.npz",
+      "name": "walk4_subject1.npz",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-head_link.STL",
+      "source": "assets/robot/assets/head_link.STL",
+      "path": "assets/robot/assets/head_link.STL",
+      "name": "head_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_ankle_pitch_link.STL",
+      "source": "assets/robot/assets/left_ankle_pitch_link.STL",
+      "path": "assets/robot/assets/left_ankle_pitch_link.STL",
+      "name": "left_ankle_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_ankle_roll_link.STL",
+      "source": "assets/robot/assets/left_ankle_roll_link.STL",
+      "path": "assets/robot/assets/left_ankle_roll_link.STL",
+      "name": "left_ankle_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_elbow_link.STL",
+      "source": "assets/robot/assets/left_elbow_link.STL",
+      "path": "assets/robot/assets/left_elbow_link.STL",
+      "name": "left_elbow_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_hip_pitch_link.STL",
+      "source": "assets/robot/assets/left_hip_pitch_link.STL",
+      "path": "assets/robot/assets/left_hip_pitch_link.STL",
+      "name": "left_hip_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_hip_roll_link.STL",
+      "source": "assets/robot/assets/left_hip_roll_link.STL",
+      "path": "assets/robot/assets/left_hip_roll_link.STL",
+      "name": "left_hip_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_hip_yaw_link.STL",
+      "source": "assets/robot/assets/left_hip_yaw_link.STL",
+      "path": "assets/robot/assets/left_hip_yaw_link.STL",
+      "name": "left_hip_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_knee_link.STL",
+      "source": "assets/robot/assets/left_knee_link.STL",
+      "path": "assets/robot/assets/left_knee_link.STL",
+      "name": "left_knee_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_rubber_hand.STL",
+      "source": "assets/robot/assets/left_rubber_hand.STL",
+      "path": "assets/robot/assets/left_rubber_hand.STL",
+      "name": "left_rubber_hand.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_shoulder_pitch_link.STL",
+      "source": "assets/robot/assets/left_shoulder_pitch_link.STL",
+      "path": "assets/robot/assets/left_shoulder_pitch_link.STL",
+      "name": "left_shoulder_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_shoulder_roll_link.STL",
+      "source": "assets/robot/assets/left_shoulder_roll_link.STL",
+      "path": "assets/robot/assets/left_shoulder_roll_link.STL",
+      "name": "left_shoulder_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_shoulder_yaw_link.STL",
+      "source": "assets/robot/assets/left_shoulder_yaw_link.STL",
+      "path": "assets/robot/assets/left_shoulder_yaw_link.STL",
+      "name": "left_shoulder_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_wrist_pitch_link.STL",
+      "source": "assets/robot/assets/left_wrist_pitch_link.STL",
+      "path": "assets/robot/assets/left_wrist_pitch_link.STL",
+      "name": "left_wrist_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_wrist_roll_link.STL",
+      "source": "assets/robot/assets/left_wrist_roll_link.STL",
+      "path": "assets/robot/assets/left_wrist_roll_link.STL",
+      "name": "left_wrist_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_wrist_yaw_link.STL",
+      "source": "assets/robot/assets/left_wrist_yaw_link.STL",
+      "path": "assets/robot/assets/left_wrist_yaw_link.STL",
+      "name": "left_wrist_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-logo_link.STL",
+      "source": "assets/robot/assets/logo_link.STL",
+      "path": "assets/robot/assets/logo_link.STL",
+      "name": "logo_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-pelvis.STL",
+      "source": "assets/robot/assets/pelvis.STL",
+      "path": "assets/robot/assets/pelvis.STL",
+      "name": "pelvis.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-pelvis_contour_link.STL",
+      "source": "assets/robot/assets/pelvis_contour_link.STL",
+      "path": "assets/robot/assets/pelvis_contour_link.STL",
+      "name": "pelvis_contour_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_ankle_pitch_link.STL",
+      "source": "assets/robot/assets/right_ankle_pitch_link.STL",
+      "path": "assets/robot/assets/right_ankle_pitch_link.STL",
+      "name": "right_ankle_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_ankle_roll_link.STL",
+      "source": "assets/robot/assets/right_ankle_roll_link.STL",
+      "path": "assets/robot/assets/right_ankle_roll_link.STL",
+      "name": "right_ankle_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_elbow_link.STL",
+      "source": "assets/robot/assets/right_elbow_link.STL",
+      "path": "assets/robot/assets/right_elbow_link.STL",
+      "name": "right_elbow_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_hip_pitch_link.STL",
+      "source": "assets/robot/assets/right_hip_pitch_link.STL",
+      "path": "assets/robot/assets/right_hip_pitch_link.STL",
+      "name": "right_hip_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_hip_roll_link.STL",
+      "source": "assets/robot/assets/right_hip_roll_link.STL",
+      "path": "assets/robot/assets/right_hip_roll_link.STL",
+      "name": "right_hip_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_hip_yaw_link.STL",
+      "source": "assets/robot/assets/right_hip_yaw_link.STL",
+      "path": "assets/robot/assets/right_hip_yaw_link.STL",
+      "name": "right_hip_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_knee_link.STL",
+      "source": "assets/robot/assets/right_knee_link.STL",
+      "path": "assets/robot/assets/right_knee_link.STL",
+      "name": "right_knee_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_rubber_hand.STL",
+      "source": "assets/robot/assets/right_rubber_hand.STL",
+      "path": "assets/robot/assets/right_rubber_hand.STL",
+      "name": "right_rubber_hand.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_shoulder_pitch_link.STL",
+      "source": "assets/robot/assets/right_shoulder_pitch_link.STL",
+      "path": "assets/robot/assets/right_shoulder_pitch_link.STL",
+      "name": "right_shoulder_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_shoulder_roll_link.STL",
+      "source": "assets/robot/assets/right_shoulder_roll_link.STL",
+      "path": "assets/robot/assets/right_shoulder_roll_link.STL",
+      "name": "right_shoulder_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_shoulder_yaw_link.STL",
+      "source": "assets/robot/assets/right_shoulder_yaw_link.STL",
+      "path": "assets/robot/assets/right_shoulder_yaw_link.STL",
+      "name": "right_shoulder_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_wrist_pitch_link.STL",
+      "source": "assets/robot/assets/right_wrist_pitch_link.STL",
+      "path": "assets/robot/assets/right_wrist_pitch_link.STL",
+      "name": "right_wrist_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_wrist_roll_link.STL",
+      "source": "assets/robot/assets/right_wrist_roll_link.STL",
+      "path": "assets/robot/assets/right_wrist_roll_link.STL",
+      "name": "right_wrist_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_wrist_yaw_link.STL",
+      "source": "assets/robot/assets/right_wrist_yaw_link.STL",
+      "path": "assets/robot/assets/right_wrist_yaw_link.STL",
+      "name": "right_wrist_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-supermimic-g1_29dof_rev_1_0.urdf",
+      "source": "assets/robot/assets/supermimic/g1_29dof_rev_1_0.urdf",
+      "path": "assets/robot/assets/supermimic/g1_29dof_rev_1_0.urdf",
+      "name": "g1_29dof_rev_1_0.urdf",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-torso_link_rev_1_0.STL",
+      "source": "assets/robot/assets/torso_link_rev_1_0.STL",
+      "path": "assets/robot/assets/torso_link_rev_1_0.STL",
+      "name": "torso_link_rev_1_0.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-waist_roll_link_rev_1_0.STL",
+      "source": "assets/robot/assets/waist_roll_link_rev_1_0.STL",
+      "path": "assets/robot/assets/waist_roll_link_rev_1_0.STL",
+      "name": "waist_roll_link_rev_1_0.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-waist_yaw_link_rev_1_0.STL",
+      "source": "assets/robot/assets/waist_yaw_link_rev_1_0.STL",
+      "path": "assets/robot/assets/waist_yaw_link_rev_1_0.STL",
+      "name": "waist_yaw_link_rev_1_0.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-robot.xml",
+      "source": "assets/robot/robot.xml",
+      "path": "assets/robot/robot.xml",
+      "name": "robot.xml",
+      "mimeType": "application/xml",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-scene.xml",
+      "source": "assets/robot/scene.xml",
+      "path": "assets/robot/scene.xml",
+      "name": "scene.xml",
+      "mimeType": "application/xml",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-third_party-MIT-supermimic.txt",
+      "source": "assets/third_party/MIT-supermimic.txt",
+      "path": "assets/third_party/MIT-supermimic.txt",
+      "name": "MIT-supermimic.txt",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-third_party-Uni-SuperMimic-LICENSE",
+      "source": "assets/third_party/Uni-SuperMimic-LICENSE",
+      "path": "assets/third_party/Uni-SuperMimic-LICENSE",
+      "name": "Uni-SuperMimic-LICENSE",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-third_party-Uni-SuperMimic-NOTICE",
+      "source": "assets/third_party/Uni-SuperMimic-NOTICE",
+      "path": "assets/third_party/Uni-SuperMimic-NOTICE",
+      "name": "Uni-SuperMimic-NOTICE",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    }
+  ],
+  "assetBase": "project",
+  "assetPaths": [
+    "assets/models/policy.onnx",
+    "assets/motions/fallAndGetUp1_subject1.npz",
+    "assets/motions/jumps1_subject1.npz",
+    "assets/motions/walk4_subject1.npz",
+    "assets/robot/assets/head_link.STL",
+    "assets/robot/assets/left_ankle_pitch_link.STL",
+    "assets/robot/assets/left_ankle_roll_link.STL",
+    "assets/robot/assets/left_elbow_link.STL",
+    "assets/robot/assets/left_hip_pitch_link.STL",
+    "assets/robot/assets/left_hip_roll_link.STL",
+    "assets/robot/assets/left_hip_yaw_link.STL",
+    "assets/robot/assets/left_knee_link.STL",
+    "assets/robot/assets/left_rubber_hand.STL",
+    "assets/robot/assets/left_shoulder_pitch_link.STL",
+    "assets/robot/assets/left_shoulder_roll_link.STL",
+    "assets/robot/assets/left_shoulder_yaw_link.STL",
+    "assets/robot/assets/left_wrist_pitch_link.STL",
+    "assets/robot/assets/left_wrist_roll_link.STL",
+    "assets/robot/assets/left_wrist_yaw_link.STL",
+    "assets/robot/assets/logo_link.STL",
+    "assets/robot/assets/pelvis.STL",
+    "assets/robot/assets/pelvis_contour_link.STL",
+    "assets/robot/assets/right_ankle_pitch_link.STL",
+    "assets/robot/assets/right_ankle_roll_link.STL",
+    "assets/robot/assets/right_elbow_link.STL",
+    "assets/robot/assets/right_hip_pitch_link.STL",
+    "assets/robot/assets/right_hip_roll_link.STL",
+    "assets/robot/assets/right_hip_yaw_link.STL",
+    "assets/robot/assets/right_knee_link.STL",
+    "assets/robot/assets/right_rubber_hand.STL",
+    "assets/robot/assets/right_shoulder_pitch_link.STL",
+    "assets/robot/assets/right_shoulder_roll_link.STL",
+    "assets/robot/assets/right_shoulder_yaw_link.STL",
+    "assets/robot/assets/right_wrist_pitch_link.STL",
+    "assets/robot/assets/right_wrist_roll_link.STL",
+    "assets/robot/assets/right_wrist_yaw_link.STL",
+    "assets/robot/assets/supermimic/g1_29dof_rev_1_0.urdf",
+    "assets/robot/assets/torso_link_rev_1_0.STL",
+    "assets/robot/assets/waist_roll_link_rev_1_0.STL",
+    "assets/robot/assets/waist_yaw_link_rev_1_0.STL",
+    "assets/robot/robot.xml",
+    "assets/robot/scene.xml",
+    "assets/third_party/MIT-supermimic.txt",
+    "assets/third_party/Uni-SuperMimic-LICENSE",
+    "assets/third_party/Uni-SuperMimic-NOTICE"
+  ]
+}

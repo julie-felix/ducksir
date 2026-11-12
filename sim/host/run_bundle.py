@@ -93,6 +93,8 @@ def main() -> int:
     ap.add_argument("--mjcf", help="物理模型（默认 bundle/duck.xml，没有就用 build/mjcf/duck-hd1910-all.xml）")
     ap.add_argument("--seconds", type=float, default=20.0)
     ap.add_argument("--steps", type=int)
+    ap.add_argument("--stream", type=int, metavar="PORT",
+                    help="把每帧位姿推给浏览器（0 = 随机端口）：ws://127.0.0.1:PORT/")
     ap.add_argument("--forward", type=float, default=0.0)
     ap.add_argument("--yaw", type=float, default=0.0)
     ap.add_argument("--fsm", action="store_true", help="用 fsm.blob 驱动（否则单策略常值指令）")
@@ -221,6 +223,15 @@ def main() -> int:
     m.opt.timestep = 1.0 / physics_hz
     d.qpos[:] = robot["initial_qpos"]
     mujoco.mj_forward(m, d)
+
+    stream = None
+    if args.stream is not None:
+        import host_stream as _HS
+        stream = _HS.HostStream(args.stream)
+        _scene, _blob = _HS.build_scene(m, mujoco)
+        stream.set_scene(json.dumps(_scene, separators=(",", ":")), _blob)
+        stream.send(json.dumps(_scene, separators=(",", ":")), _blob)
+        print(f"  直播 ws://127.0.0.1:{stream.port}/（{len(_scene['geoms'])} 个视觉 geom）")
 
     driven = robot["joints"]
     n = len(driven)
@@ -440,6 +451,8 @@ def main() -> int:
             d.ctrl[:] = act
             for _ in range(decim):
                 mujoco.mj_step(m, d)
+        if stream is not None and k % max(1, int(round(control_hz / 30))) == 0:
+            stream.send(_HS.pose_message(k, k / control_hz, d.xpos, d.xquat))
         if not np.isfinite(d.qpos).all():
             dead = True
             break
@@ -507,6 +520,16 @@ def main() -> int:
 
     for p in plans.values():
         core.ds_free(p.handle)
+    if stream is not None:
+        # 跑完了也别立刻断：页面还在看最后一帧。Ctrl-C 或超时再关。
+        import time as _time
+        hold = float(os.environ.get("DUCK_STREAM_HOLD", "180"))
+        print(f"  直播保持中 {hold:.0f}s（关掉页面或 Ctrl-C 即可结束）")
+        try:
+            _time.sleep(hold)
+        except KeyboardInterrupt:
+            pass
+
     return 0 if report["verdict"]["pass"] else 1
 
 
