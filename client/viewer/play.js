@@ -113,6 +113,13 @@ async function main() {
         .then((r) => (r.ok ? r.text() : fetch('./data/mjcf-browser/duck.xml').then((x) => x.text()))),
     ]), 30000);
     setContract(contract);
+    // 宿主专属的观测来源（mimic:instinct / mimic:uni 需要深度渲染或 1720 维拼装），浏览器还没有实现。
+    // 早点说清楚，别让它去下载几百个网格之后才报错。
+    const unsupported = (contract.obs || []).find((o) => /^mimic:/.test(o.source || ''));
+    if (unsupported) {
+      throw new Error(`这个 bundle 的观测（${unsupported.source}）目前只有宿主支持：`
+        + '请用「启动仿真」在宿主里跑，浏览器版本还在做');
+    }
     const meta = contract.robot;
     if (meta.commands) {
       const c = meta.commands;

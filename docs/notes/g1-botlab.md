@@ -821,3 +821,42 @@ python3 sim/host/export_artifacts.py --manifest contract/policy/g1-instinct.mani
 
 `build/` 在 `.gitignore` 里，所以**清掉是常态**；页面遇到 404 现在会把错误显示在 HUD 上，
 不会再「看起来在跑其实是空的」。
+
+## 22. 「打开 g1-instinct 不动」的真相：卡在下载 557 个网格
+
+庆喆的截图里 HUD 写着：
+
+```
+基座 0.942 m · 仿真 0.0 s · 0 次推理
+墙钟 211.6 s（0.00× 实时）
+载入中：下载 STL 40/557
+```
+
+三个事实叠在一起：
+
+1. **`meshes.json` 列了 557 个文件**，其中 522 个是地形 obj（`terrain/*.obj`，在子目录里）。
+   浏览器把 meshes.json 当清单逐个下，5 秒一个——3 分钟还在第 40 个；
+2. Instinct 的观测是 `mimic:instinct`（1720＋深度），**浏览器这边根本没实现**，就算下完也跑不了；
+3. 页面的「载入失败」提示出现在下载**之后**，等于用 557 次请求换一句错误。
+
+修了两处：
+
+- 导出器写 `meshes.json` 时**只列 bundle 根下的网格**（`"/" not in n`）→ 557 → **35**；
+- `play.js` 在载入契约后立刻检查观测来源，遇到 `mimic:*` 直接抛错：
+  「这个 bundle 的观测（mimic:instinct）目前只有宿主支持：请用「启动仿真」在宿主里跑，浏览器版本还在做」，
+  不再去下 557 个网格。
+
+### 现在哪些能在浏览器里动
+
+| bundle | 浏览器 | 说明 |
+|---|---|---|
+| `g1-loco` / `g1-amp` / `g1-mjamp` / `g1-wbc` | ✅ | 点画面按 W，或点「自动走」 |
+| `g1-unisupermimic` | ❌ 待做 | 需要 JS 侧 1720 维装配（动作 npz 解析 + 四元数），可以纯前端做 |
+| `g1-instinct` | ❌ 待做 | 还要深度图：浏览器得用 three.js Raycaster 打 576 条射线近似 |
+
+宿主侧都能跑：
+
+```bash
+MUJOCO_GL=egl python3 sim/host/run_bundle.py --bundle build/release/g1-instinct \
+  --mjcf build/release/g1-instinct/robot.xml --steps 300
+```

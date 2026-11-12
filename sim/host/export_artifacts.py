@@ -335,7 +335,9 @@ def main() -> int:
                 shutil.copyfile(path, os.path.join(mesh_out, name))
                 copied += 1
         with open(os.path.join(out, "meshes.json"), "w", encoding="utf-8") as f:
-            json.dump([n for n in meshes if os.path.exists(os.path.join(mesh_out, n))], f)
+            # 只列 bundle 根下的网格：子目录里的资源（如 terrain/*.obj）是给物理/深度用的，
+            # 列进 meshes.json 会让浏览器去下载几百个大文件（实测 557 个 → 3 分钟还没跑起来）
+            json.dump([n for n in meshes if "/" not in n and os.path.exists(os.path.join(mesh_out, n))], f)
         print(f"  物理模型 robot.xml + {copied} 个网格（bundle 根）")
 
     print(f"  策略 {len(policies)} 个｜契约 contract.json")
