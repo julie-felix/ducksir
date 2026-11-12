@@ -679,7 +679,7 @@ hist 段五项：gravity 0.0049（qpos 量化）、其余 0.0000–0.000001
 
 时间轴：`t = (k−1)·0.02`（与控制步差一拍），前瞻 10 帧 × 0.1 s。
 
-### 深度还没对上（差 1.9）
+### 深度：对上了（照抄 botlab 的实现，别再猜）
 
 两个已定位的坑：
 
@@ -721,3 +721,36 @@ hist 段五项：gravity 0.0049（qpos 量化）、其余 0.0000–0.000001
    先让 Instinct 在宿主里跑起来看站不站得住，再决定要不要死磕这一项。
 
 我倾向 2：深度是感知输入，像素级复刻的收益远低于「策略能不能站稳」这个判据。
+
+#### 深度最终怎么对的
+
+不再猜相机外参，直接把 `botlab/_runtime/_observations.py` 的实现照搬（`sim/host/depth_camera.py`）：
+
+1. 相机是 **`mjCAMERA_FREE`**，不是往模型里加 `<camera>`：
+   先算 pos/forward/up，再写进 `renderer.scene.camera[0/1]`，frustum 的
+   `near/far/bottom/top/width` 也一起写；
+2. three.js 轴系 → MuJoCo：`(x,y,z)_three → (x, -z, y)`；`cameraXyaxes` 先用
+   `_mujoco_to_three` 转过去，正交化后 **按列** 拼成基（写错就「位置对、朝向错」）；
+3. 深度线性化要临时改 `model.vis.map.znear/zfar = near/extent, far/extent`；
+4. 观测里的深度是 **`clip(meters / depthScale, 0, 1)`**（`depthScale=2`），
+   不是米、也不用再乘系数；
+5. 裁剪窗口 `cropX/cropY` 之后按 `align_corners=False` 双线性缩到 32×18。
+
+结果（与 botlab 真值比）：
+
+```
+深度残差 0.0986 ｜ 相关 0.9993
+本体段残差 1.61e-03
+```
+
+#### 还有一个关键坑：他们的机器人是**位置执行器**
+
+`assets/robot/scene.xml` 里是 `<position kp kv forcerange>`，控制器直接写目标角度
+（`default + scale·action`）。我在冒烟脚本里一开始把扭矩写进 `data.ctrl`，等于把 6 N·m
+当目标角度喂进去——必倒。改成写目标位置后：
+
+```
+Instinct 闭环 300 步：z 0.940 → 0.832（最低 0.553），直立 0.956 → PASS
+```
+
+（`tools/dev/instinct_smoke.py`、`sim/test/test_instinct_depth.py`）
