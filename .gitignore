@@ -18,6 +18,7 @@ wandb/
 # 上游原始 mesh（可用 tools/robot/fetch_meshes.py 重新拉，不入库）
 third_party/*/meshes/
 third_party/*/assets/
+third_party/*/terrain/     # 地形 obj（Instinct 深度相机用），从模板包取，不进仓库
 
 # onnxruntime-web 的运行时（14 MB），用 tools/vendor_ort_web.py 抓
 client/viewer/vendor/ort/
