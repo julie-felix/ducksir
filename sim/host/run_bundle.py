@@ -313,9 +313,11 @@ def main() -> int:
         results = sess.run(None, feed)
         raw = np.asarray(results[0]).reshape(-1).astype(np.float32)
         if len(out_names) > 1:
+            # 递归状态按**位置**回填：out[1] → in[1]（h_out → h_in），
+            # 按名字会错位（h_out 存进去、下一步却读 h_in → 永远吃全零）。
             st = rnn_state.setdefault(mode_key, {})
-            for name, value in zip(out_names[1:], results[1:]):
-                st[name] = np.asarray(value, dtype=np.float32)
+            for in_name, value in zip(in_names[1:], results[1:]):
+                st[in_name] = np.asarray(value, dtype=np.float32)
         # botlab 的控制器对动作做 ±100 截断（`policy_bank(...).clip(-100, 100)`），
         # 少了这一步，扭矩模式会把超界的动作直接放大成力矩。
         raw = np.clip(raw, -100.0, 100.0)

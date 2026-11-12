@@ -514,16 +514,31 @@ MJAMP 的定位过程：先按「统一 0.25 + reorder」跑（倒）→ 录 bot
 用他们的状态/动作做**一步重放**，网格搜 target 公式（4 种组合），
 `actionScale(逐关节) + 动作电机序` 一步差 **1.06e-06**，其余组合 1e-1 量级。
 
-### loco 为什么还差
+### loco：对上了，而且**它在 botlab 里也会倒**
 
-loco 的 plan 我 dump 出来了（`patch_plan.py`），公式看着很清楚：
+先 dump 了 loco 的 plan（`patch_plan.py`），公式看着是 `kps = balanceStiffness`；
+但把 PD 的入参直接 hook 出来（`patch_pd.py` 挂 `PreparedSubstepPd.__init__`）后，
+权威值是：
 
 ```
-proc-reorder(motorJointOrder) → affine(scale=0.25, offset=default_joint_positions)
-kps = mode_select([balanceStiffness(2), kp(3,4,5)])   kds = mode_select([balanceDamping(2), kd(3,4,5)])
-proc-pd(target, q_native, v_native, kps, kds, effortLimit)
+target = [-0.160, 0.245, -0.105, 0.551 …]   ← 和我们的 scatter 目标逐位相同
+kps    = [99.098, 99.098, 40.179, …]        ← **robot.kp**，不是 balanceStiffness(200/150…)
+kds    = robot.kd
+effort = ±88 / ±139 / ±50 …                 ← 等于 ctrlrange（= preset effortLimit）
 ```
 
-按这个公式做一步重放，残差还有 **3.2e-2**（其它三个模型是 1e-6 量级）；把 kp/kd 置换、
-去掉 effort 截断、换基准都试过，最好也只有 3.2e-2。**说明还有一处没读到**（怀疑 PD 用的
-q/qd 采样时刻或 `proc-mode-select` 的默认值）。loco 的 manifest 留着了，接上只差这一处。
+按这个改完，一步重放 **1.08e-06**（`sim/test/test_loco_parity.py`）。
+
+另外一个反转：**零速指令下 loco 在 botlab 自己的运行时里也会倒**——
+
+```
+他们 400 步：z 从 0.79 掉到 0.064，第 102 步低于 0.3 m
+我们 400 步：第 113 步低于 0.3 m，末 z 0.060
+```
+
+两边倒的时机只差 11 步（混沌放大），**这是策略行为，不是我们的 bug**。loco 是「零速平衡 +
+走」的策略，得给速度指令和正确的站立状态序列才有意义；bundle 现在忠实复刻了它的行为。
+
+顺带修掉一个真正的 bug：`run_bundle` 里递归状态回填按**名字**（`h_out`）存、下一步却按
+`h_in` 读，导致永远吃全零——改成按位置回填后，loco 的 h/c 与 botlab 逐步一致（我们第 0 步的
+`h_out[:3]` 和他们第 1 步的 `h_in[:3]` 完全相同）。
