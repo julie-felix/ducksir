@@ -542,3 +542,18 @@ effort = ±88 / ±139 / ±50 …                 ← 等于 ctrlrange（= preset
 顺带修掉一个真正的 bug：`run_bundle` 里递归状态回填按**名字**（`h_out`）存、下一步却按
 `h_in` 读，导致永远吃全零——改成按位置回填后，loco 的 h/c 与 botlab 逐步一致（我们第 0 步的
 `h_out[:3]` 和他们第 1 步的 `h_in[:3]` 完全相同）。
+
+### 浏览器侧：4 个 bundle 都能跑
+
+- loco 需要 **h/c 递归输入**：`play.js` 现在会按位置回填（`out[1] → in[1]`），和宿主同规则；
+- 浏览器里 loco 跑起来后同样在约 2 s 内倒（仿真 31.5 s 时基座 0.106 m），**和 botlab 一致**；
+- `tools/dev/browser_bundle_check.mjs` 新增 `EXPECT_FALL=1`（对这个策略只验「页面在跑」），
+  并且**每次用新 profile**——固定 profile 会命中浏览器缓存，跑到过期的 `play.js`（表现为「仿真 0.0 s」，
+  我第一次排查 loco 就被这个坑了一下）。
+
+| bundle | 浏览器 |
+|---|---|
+| `g1-wbc` | 站稳（0.74 m） |
+| `g1-amp` | 站稳 |
+| `g1-mjamp` | 站稳 |
+| `g1-loco` | 跑起来，约 2 s 倒（与 botlab 一致） |

@@ -399,7 +399,27 @@ async function main() {
       const sess = await getSession(active);
       const packed = Float32Array.from(policyInput);
       let action;
-      if (!sess.duckInLens || isSingleTensor(sess.duckInLens)) {
+      // 递归策略（loco 的 h/c）：输入不止一个时，把上一拍的 h/c 回填进去
+      const extraInputs = sess.inputNames.slice(1);
+      if (extraInputs.length > 0) {
+        if (!sess.recurrent) sess.recurrent = {};
+        const feeds = { [sess.inputNames[0]]: new ort.Tensor('float32', packed, [1, packed.length]) };
+        extraInputs.forEach((name, i) => {
+          if (!sess.recurrent[name]) {
+            const meta = sess.inputMetadata?.[sess.inputNames.indexOf(name)];
+            const dims = meta && meta.dims && meta.dims.length ? meta.dims.map((d) => (d > 0 ? d : 1)) : [1, 1, 256];
+            sess.recurrent[name] = new ort.Tensor('float32', new Float32Array(dims.reduce((a, b) => a * b, 1)), dims);
+          }
+          feeds[name] = sess.recurrent[name];
+        });
+        const res = await sess.run(feeds);
+        // 按位置回填：out[1] → in[1]（宿主 run_bundle 同规则）
+        extraInputs.forEach((name, i) => {
+          const key = sess.outputNames[i + 1];
+          if (key && res[key]) sess.recurrent[name] = res[key];
+        });
+        action = Array.from(res[sess.outputNames[0]].data);
+      } else if (!sess.duckInLens || isSingleTensor(sess.duckInLens)) {
         const res = await sess.run({ [sess.inputNames[0]]:
           new ort.Tensor('float32', packed, [1, packed.length]) });
         action = sess.duckOutLens

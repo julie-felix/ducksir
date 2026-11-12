@@ -15,6 +15,8 @@ const BUNDLE = process.argv[2] || 'build/release/g1-wbc';
 const PORT = 8831;
 const URL = `http://127.0.0.1:${PORT}/client/viewer/play.html?bundle=/${BUNDLE.replace(/^\/+/, '')}/`;
 const MIN_Z = Number(process.env.MIN_Z || 0.55);
+// EXPECT_FALL=1：这个策略本来就站不住（loco 零速指令在 botlab 里也会倒），只验「页面在跑」
+const EXPECT_FALL = process.env.EXPECT_FALL === '1';
 const WAIT_MS = Number(process.env.WAIT_MS || 90000);
 const RUN_MS = Number(process.env.RUN_MS || 20000);
 
@@ -37,7 +39,12 @@ try {
   const args = [join(HERE, 'webcheck.mjs'), URL, '--wait', String(WAIT_MS), '--eval', evalCode];
   const child = spawn(process.execPath, args, {
     cwd: ROOT,
-    env: { ...process.env, CDP_PORT: process.env.CDP_PORT || '9741', CDP_PROFILE: process.env.CDP_PROFILE || '/tmp/cdp-bundle-check' },
+    // 每次用新 profile：复用旧 profile 会命中浏览器缓存，跑到过期的 play.js
+    env: {
+      ...process.env,
+      CDP_PORT: process.env.CDP_PORT || '9741',
+      CDP_PROFILE: process.env.CDP_PROFILE || `/tmp/cdp-bundle-check-${Date.now()}`,
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let out = '';
@@ -47,13 +54,21 @@ try {
 
   const m = out.match(/"z":"([0-9.]+)"/);
   const sim = (out.match(/"sim":"([0-9.]+)"/) || [])[1];
+  if (Number(sim || 0) < 5) {
+    console.error(`页面只跑了 ${sim || 0} s 仿真，不能算过（可能还没开始步进）`);
+    code = 1;
+  }
   if (!m) {
     console.error('没读到 HUD：\n' + out.slice(-1200));
     code = 1;
   } else {
     const z = Number(m[1]);
     console.log(`${BUNDLE}：基座 ${z.toFixed(3)} m（仿真实时 ${sim || '?'} s，exit ${done}）`);
-    if (!(z > MIN_Z)) {
+    if (EXPECT_FALL) {
+      console.log(z <= MIN_Z
+        ? `PASS：按预期倒下了（这个策略本来就站不住，和 botlab 一致）`
+        : `注意：没倒（z=${z.toFixed(3)}），但这不构成失败`);
+    } else if (!(z > MIN_Z)) {
       console.error(`FAIL：基座 ${z.toFixed(3)} m ≤ ${MIN_Z} m（倒了）`);
       code = 1;
     } else {
