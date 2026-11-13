@@ -18,8 +18,21 @@ const $ = (id) => document.getElementById(id);
 //   2) `ducksir run` 直接打开：页面由 runner 的显示服务提供，端点在根路径
 const BUILD = '2026-11-11 01:10';   // 改这个文件就 bump：诊断页签会显示，用来判断「页面是不是旧的」
 
-const IN_PANEL = location.pathname.startsWith('/ducksir-static/');
-const API = IN_PANEL ? '/ducksir-live' : '';
+// 后端前缀不再靠猜路径：启动时探一次 /api/health，谁答应用谁。
+//   直连 python 后端        → ''
+//   经 DSH 插件反代（iframe）→ '/ducksir-live'
+let API = '';
+async function pickApi() {
+  for (const base of ['', '/ducksir-live']) {
+    try {
+      const r = await fetch(base + '/api/health', { cache: 'no-store' });
+      if (r.ok) { API = base; return base; }
+    } catch { /* 试下一个 */ }
+  }
+  return '';
+}
+// 统一后端（ADR-001）：工程仿真的兼容前缀
+const PAPI = () => API + '/api/project';
 // 静态资源全部走**相对路径**（相对页面所在目录）：面板里是 /ducksir-static/client/viewer/，
 // runner 直开时是 `/`（显示服务把 vendor/data/assets 挂在根下）。这样不需要探测、也不会拼错根。
 const assets = (rel) => rel.replace(/^\.\//, '');
@@ -150,7 +163,7 @@ async function loadDiag() {
   } catch (e) {
     $('diag').innerHTML += `<tr><th>后端自检</th><td class="bad">取不到 /diag：${e?.message || e}</td></tr>`;
   }
-  const sc = await (await fetch(`${API}/scene`)).json();
+  const sc = await (await fetch(`${PAPI()}/scene`)).json();
   $('diag').innerHTML = [
     ['项目', sc.project || '—'],
     ['策略', sc.policy || '—'],
@@ -355,7 +368,7 @@ async function wireBundles() {
 async function refreshConn() {
   if (document.body.classList.contains('browser-mode')) return false;   // 浏览器模式不关心宿主动态
   try {
-    const st = await (await fetch(`${API}/status`)).json();
+    const st = await (await fetch(`${PAPI()}/status`)).json();
     $('conn').textContent = st.running ? `运行中 :${st.port}` : '未运行';
     $('conn').className = 'pill ' + (st.running ? 'ok' : '');
     return st.running;
@@ -369,17 +382,23 @@ function wireRunControls() {
   $('btn-start').onclick = async () => {
     const project = $('project-path').value.trim() || 'sim/test/fixtures/project_demo.py';
     $('conn').textContent = '启动中…';
-    const res = await fetch(`${API}/start`, {
+    // 统一后端：作业模型（op:'sim'），不再走插件的 /start
+    const res = await fetch(`${API}/api/jobs`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ project, seconds: 600 }),
+      body: JSON.stringify({ op: 'sim', args: { project, seconds: 600 } }),
     });
-    const out = await res.json();
-    if (!out.ok) { $('conn').textContent = '启动失败：' + (out.error || ''); return; }
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok || !out.id) {
+      const e = out.error || {};
+      $('conn').textContent = `启动失败：HTTP ${res.status} · ${e.code || ''} ${e.message || ''}`;
+      return;
+    }
     await refreshConn();
     startStream();
   };
   $('btn-stop').onclick = async () => {
-    await fetch(`${API}/stop`, { method: 'POST' });
+    const st = await (await fetch(`${PAPI()}/status`)).json().catch(() => ({}));
+    if (st.job) await fetch(`${API}/api/jobs/${st.job}/cancel`, { method: 'POST' });
     await refreshConn();
   };
 }
@@ -387,12 +406,13 @@ function wireRunControls() {
 let streamSrc = null;
 function startStream() {
   if (streamSrc) streamSrc.close();
-  streamSrc = new EventSource(`${API}/stream`);
+  streamSrc = new EventSource(`${PAPI()}/stream`);
   streamSrc.onmessage = (ev) => { try { applyFrame(JSON.parse(ev.data)); } catch (e) { console.warn(e); } };
   streamSrc.onerror = () => { $('conn').textContent = '断开了'; };
 }
 
 async function main() {
+  await pickApi();
   wireTabs();
   wireParams();
   wireRunControls();
@@ -408,7 +428,7 @@ async function main() {
 
   try {
     const running = document.body.classList.contains('browser-mode') ? false : await refreshConn();
-    const sc = await (await fetch(`${API}/scene`)).json();
+    const sc = await (await fetch(`${PAPI()}/scene`)).json();
     (sc.bodies || []).forEach((n, i) => bodyIndex.set(n, i));
     if (running) startStream();
     await loadDiag().catch(fail('诊断'));

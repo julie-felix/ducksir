@@ -66,7 +66,9 @@ GET  /files?path=build/release/x/...   → 只读，白名单 build/ 与 runs/
 - ✅ 插件宿主退化为纯反代：`/ducksir-live/api/*` → `127.0.0.1:8899/api/*`，旧 spawn 逻辑已删
 - ✅ `tools/dev/serve_smoke.sh`（11 项 curl 断言）进 CI
 - ⏳ `train` 预留为 501（`training/` 目录尚不存在，训练方案未定）
-- ⏳ studio 的 `/start` `/stream` 仍是旧路径，下一步迁到 `/api/jobs`
+- ✅ studio 已迁到统一后端：`op: sim` 起作业，`/api/project/{status,scene,stream}` 是给它的兼容层
+  （后端把 run_project 的显示服务按 127.0.0.1:随机端口 代理出来，SSE 逐块转发）；
+  页面启动时探 `/api/health` 决定前缀（`''` 直连 / `'/ducksir-live'` 经插件反代）
 
 ## 后果
 

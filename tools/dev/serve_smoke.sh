@@ -72,6 +72,18 @@ FRAMES=$(timeout 12 curl -sN "$BASE/api/jobs/$ID/stream" | grep -c 'type.*pose' 
 CANCEL=$(curl -s -X POST "$BASE/api/jobs/$ID/cancel")
 echo "$CANCEL" | grep -q '"ok": true' && ok "取消返回 ok" || note "取消返回：$CANCEL"
 
+# 4b) 工程仿真（studio 的兼容层）：op=sim 起得来，/api/project/status 能查到
+SIM=$(curl -s -X POST -H 'content-type: application/json' \
+  -d '{"op":"sim","args":{"project":"sim/test/fixtures/project_demo.py","seconds":30}}' "$BASE/api/jobs")
+SIMID=$(echo "$SIM" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("id",""))')
+[ -n "$SIMID" ] && ok "op=sim 作业已提交（$SIMID）" || bad "op=sim 提交失败：$SIM"
+sleep 2
+PS=$(curl -s "$BASE/api/project/status")
+echo "$PS" | grep -q '"running": true' && ok "/api/project/status 运行中" || bad "project status 异常：$PS"
+SC=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/api/project/scene")
+[ "$SC" = "200" ] && ok "/api/project/scene 200" || bad "project scene 应 200，实得 $SC"
+curl -s -X POST "$BASE/api/jobs/$SIMID/cancel" > /dev/null
+
 # 5) 文件树白名单（判据：安全边界）
 CODE=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/files?path=../../etc/passwd")
 [ "$CODE" = "403" ] && ok "越界路径 → 403" || bad "越界路径应当 403，实得 $CODE"

@@ -24,7 +24,7 @@ import threading
 import time
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SECRET_PATH = os.path.join(os.path.expanduser("~"), ".local/share/ducksir/serve.secret")
@@ -221,6 +221,7 @@ class Registry:
 
 
 REGISTRY = Registry()
+PROJECT: dict = {}          # 当前工程仿真的显示端口（studio 的兼容层）
 
 
 def _watch_finish():
@@ -230,6 +231,47 @@ def _watch_finish():
         job = REGISTRY.current
         if job and job.status in ("done", "failed", "cancelled"):
             REGISTRY.finish_current()
+
+
+def _free_port() -> int:
+    import socket
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    return port
+
+
+def _proxy_local(req, res, port: int, rest: str):
+    """把请求原样转给 127.0.0.1:port（SSE 直接 pipe）。"""
+    import http.client
+    conn = http.client.HTTPConnection("127.0.0.1", port, timeout=30)
+    try:
+        conn.request(req.command, rest, headers={k: v for k, v in req.headers.items()
+                                                  if k.lower() in ("accept", "content-type")})
+        up = conn.getresponse()
+        res.send_response(up.status)
+        for k, v in up.getheaders():
+            if k.lower() in ("content-length", "transfer-encoding", "connection"):
+                continue
+            res.send_header(k, v)
+        res.end_headers()
+        # 逐块转发：SSE 不能一次 read() 到底，那样会挂到超时
+        while True:
+            chunk = up.read(1024)
+            if not chunk:
+                break
+            res.wfile.write(chunk)
+            res.wfile.flush()
+    except Exception as exc:
+        res.send_response(504)
+        res.send_header("content-type", "application/json; charset=utf-8")
+        body = json.dumps({"error": {"code": "display_down", "message": str(exc)}}).encode()
+        res.send_header("content-length", str(len(body)))
+        res.end_headers()
+        res.wfile.write(body)
+    finally:
+        conn.close()
 
 
 def make_op(op: str, args: dict) -> tuple[list[str], dict]:
@@ -265,9 +307,13 @@ def make_op(op: str, args: dict) -> tuple[list[str], dict]:
         if not project:
             raise ValueError("缺 project")
         seconds = int((args or {}).get("seconds") or 60)
+        if not os.path.isfile(os.path.join(ROOT, str(project))):
+            raise ValueError(f"没有这个 project：{project}")
+        port = _free_port()
         argv = [python, os.path.join(ROOT, "sim/host/run_project.py"),
-                "--project", str(project), "--seconds", str(seconds), "--no-open"]
-        return argv, {"project": project, "seconds": seconds}
+                "--project", str(project), "--seconds", str(seconds),
+                "--port", str(port), "--no-open"]
+        return argv, {"project": str(project), "seconds": seconds, "displayPort": port}
     if op == "train":
         # 训练方案还没定（docs/index.md 末尾），先把位置留出来：501 比将来改协议便宜
         raise NotImplementedError("训练方案未定：training/ 还不存在")
@@ -315,6 +361,8 @@ class Handler(BaseHTTPRequestHandler):
             }))
         if not self._authorized():
             return self._send(_err(401, "unauthorized", "缺 X-Ducksir-Secret 或不对"))
+        if path.startswith("/api/project/"):
+            return self._project(path[len("/api/project/"):], qs)
         if path == "/api/bundles":
             return self._send(_json(200, {"bundles": list_bundles()}))
         if path == "/api/jobs":
@@ -335,6 +383,7 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(_err(404, "no_route", "没有这个路由", path=path))
 
     def do_POST(self):
+        global PROJECT
         url = urlparse(self.path)
         path = url.path
         if not self._authorized():
@@ -349,12 +398,39 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError as exc:
                 return self._send(_err(400, "bad_request", str(exc), op=op))
             job = Job(op, argv)
+            if op == "sim":
+                PROJECT = {"job": job, "port": meta.get("displayPort"),
+                           "project": meta.get("project")}
             REGISTRY.submit(job)
             return self._send(_json(200, {"id": job.id, "status": job.status, "meta": meta}))
         if path.startswith("/api/jobs/") and path.endswith("/cancel"):
             job_id = path[len("/api/jobs/"):-len("/cancel")]
             return self._send(_json(200, {"ok": REGISTRY.cancel(job_id)}))
         return self._send(_err(404, "no_route", "没有这个路由", path=path))
+
+    # ---- 工程仿真的兼容层（studio 用；等它改成 /api/jobs 再删）----
+    def _project(self, action: str, qs):
+        global PROJECT
+        if action == "status":
+            job = PROJECT.get("job")
+            if job and job.status in ("done", "failed", "cancelled"):
+                PROJECT = {}
+                job = None
+            return self._send(_json(200, {
+                "running": bool(job and job.status == "running"),
+                "port": PROJECT.get("port"), "project": PROJECT.get("project"),
+                "error": job.error if job else "", "job": job.id if job else None,
+            }))
+        if action == "start":
+            return self._send(_err(405, "use_api_jobs", "请用 POST /api/jobs {op:'sim'}"))
+        if action == "scene" or action == "stream" or action == "files" or action == "file":
+            port = PROJECT.get("port")
+            if not port:
+                return self._send(_err(503, "no_project", "没有在跑的工程仿真",
+                                       hint="POST /api/jobs {op:'sim',args:{project}}"))
+            rest = "/" + action + (("?" + urlencode(qs, doseq=True)) if qs else "")
+            return _proxy_local(self, self, port, rest)
+        return self._send(_err(404, "no_route", "没有这个路由", path="/api/project/" + action))
 
     # ---- SSE ----
     def _stream(self, job: Job):

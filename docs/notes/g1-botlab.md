@@ -948,3 +948,24 @@ t=7.04 s · 第 352 步  →  t=15.20 s · 第 760 步     （实时推进）
 | `读 bundle 列表失败：HTTP 401` | 页面没登录态 | 重新登录 |
 | `找到 N 个 bundle，正在启动…` 但一直是这句 | 宿主进程起不来 | 看 dsh 终端里 `[ducksir-live] bundle stderr:` |
 | `t=xx s · 第 N 步 · 收到 M 帧` | 正常 | — |
+
+## 25. 统一后端落地（ADR-001）
+
+一个 python 进程（`sim/host/serve.py`）把页面、直播、工程仿真、文件树收在一处：
+
+```
+GET  /api/health | /api/bundles | /api/jobs | /api/jobs/<id> | /api/jobs/<id>/stream
+POST /api/jobs {op: bundle_live|sim|train}  ·  /api/jobs/<id>/cancel
+GET  /api/project/{status,scene,stream}     ← studio 的兼容层（代理 run_project 的显示服务）
+GET  /files?path=…                           ← 白名单 build/、runs/
+GET  /ducksir-static/…                       ← 页面/网格，同源
+```
+
+`tools/dev/serve_smoke.sh` 用 curl 断言 14 项（含 SSE 帧数、越界 403、`op=sim` 起得来），已进 CI。
+
+踩到的三个实现坑（都不是设计问题）：
+
+1. **SSE 代理不能 `read()` 到底**：`http.client` 读完才返回 → 必须逐块 `read(1024)` + flush；
+2. **`global` 漏写**：`do_POST` 里给 `PROJECT` 赋值没声明 global → 状态查询永远空（`running:false`）；
+3. **页面靠路径猜后端前缀会猜错**：`/ducksir-static/` 既可能是插件也在服务、也可能是 python 在服务；
+   改成启动时探 `/api/health`，谁答快用谁。
