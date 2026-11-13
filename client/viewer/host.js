@@ -148,7 +148,15 @@ function connect() {
   ws.onerror = () => { $('status').textContent = '连不上宿主：先跑 run_bundle.py --stream'; };
   ws.onmessage = (ev) => {
     if (typeof ev.data === 'string') {
-      const msg = JSON.parse(ev.data);
+      const wrap = JSON.parse(ev.data);
+      if (wrap.type === 'end') {
+        es.close();
+        $('status').textContent = `这一轮结束（${wrap.status}）`;
+        if (loopEnabled) { $('status').textContent = '跑完一轮，重新开始…'; setTimeout(startBundle, 600); }
+        return;
+      }
+      if (typeof wrap.line !== 'string') return;
+      const msg = JSON.parse(wrap.line);
       if (msg.type === 'scene') {
         pendingScene = msg;
         if (msg.meshBase64) {     // SSE 路径：场景和网格一起送
@@ -185,27 +193,37 @@ addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight, false);
 });
 
+let currentJob = null;
 async function startBundle() {
   const bundle = $('bundle').value;
   if (!bundle) { $('status').textContent = '先选一个 bundle'; return; }
   $('status').textContent = '启动中…';
-  const r = await fetch('/ducksir-live/bundle/start', {
+  // 只发名字：后端会去 build/release/ 找（ADR-001 判据 4：形状固定，不猜路径）
+  const r = await fetch('/api/jobs', {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ bundle, seconds: 120 }),
+    body: JSON.stringify({ op: 'bundle_live', args: { bundle: bundle.split('/').pop(), seconds: 120 } }),
   });
   if (!r.ok) {
-    const body = await r.text().catch(() => '');
-    $('status').textContent = `启动失败：HTTP ${r.status}` + (body ? ` · ${body.slice(0, 120)}` : '')
-      + (r.status === 404 ? '（宿主没加载 /bundle/start → 重启 dsh web）' : '');
+    const body = await r.json().catch(() => ({}));
+    const e = body.error || {};
+    $('status').textContent = `启动失败：HTTP ${r.status} · ${e.code || ''} ${e.message || ''}`;
     return;
   }
-  const out = await r.json().catch(() => ({ ok: false, error: '返回不是 JSON' }));
-  if (!out.ok) { $('status').textContent = '启动失败：' + (out.error || ''); return; }
-  $('status').textContent = '已启动，接流中…';
-  const es = new EventSource('/ducksir-live/bundle/stream');
+  const out = await r.json();
+  currentJob = out.id;
+  $('status').textContent = `已启动（job ${out.id}），接流中…`;
+  const es = new EventSource(`/api/jobs/${out.id}/stream`);
   es.onmessage = (ev) => {
     try {
-      const msg = JSON.parse(ev.data);
+      const wrap = JSON.parse(ev.data);
+      if (wrap.type === 'end') {
+        es.close();
+        $('status').textContent = `这一轮结束（${wrap.status}）`;
+        if (loopEnabled) { $('status').textContent = '跑完一轮，重新开始…'; setTimeout(startBundle, 600); }
+        return;
+      }
+      if (typeof wrap.line !== 'string') return;
+      const msg = JSON.parse(wrap.line);
       if (msg.type === 'scene') {
         bodies = msg.bodies;
         buildScene(msg, msg.meshBase64 ? base64ToArrayBuffer(msg.meshBase64) : new ArrayBuffer(0));
@@ -238,16 +256,17 @@ async function startBundle() {
 
 async function loadBundles() {
   try {
-    const res = await fetch('/ducksir-live/bundles');
+    const res = await fetch('/api/bundles');
     if (!res.ok) {
       $('status').textContent = `读 bundle 列表失败：HTTP ${res.status}`
-        + (res.status === 401 ? '（没登录）' : res.status === 404 ? '（插件宿主没加载新代码 → 重启 dsh web）' : '');
+        + (res.status === 401 ? '（没登录）' : res.status === 404 ? '（后端没起：python3 sim/host/serve.py --port 8899）' : '');
       return;
     }
     const data = await res.json();
     const list = data.bundles || [];
     const sel = $('bundle');
-    sel.innerHTML = list.map((b) => `<option value="${b.path || b.name}">${b.name}</option>`).join('')
+    // 只发名字：后端负责去 build/release/ 找（ADR-001 判据 4）
+    sel.innerHTML = list.map((b) => `<option value="${b.name}">${b.name}</option>`).join('')
       || '<option value="">（没有 bundle，先导出）</option>';
     $('status').textContent = list.length ? `找到 ${list.length} 个 bundle，正在启动…` : '没有 bundle';
     return list;
