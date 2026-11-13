@@ -193,6 +193,12 @@ async function startBundle() {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ bundle, seconds: 120 }),
   });
+  if (!r.ok) {
+    const body = await r.text().catch(() => '');
+    $('status').textContent = `启动失败：HTTP ${r.status}` + (body ? ` · ${body.slice(0, 120)}` : '')
+      + (r.status === 404 ? '（宿主没加载 /bundle/start → 重启 dsh web）' : '');
+    return;
+  }
   const out = await r.json().catch(() => ({ ok: false, error: '返回不是 JSON' }));
   if (!out.ok) { $('status').textContent = '启动失败：' + (out.error || ''); return; }
   $('status').textContent = '已启动，接流中…';
@@ -232,14 +238,21 @@ async function startBundle() {
 
 async function loadBundles() {
   try {
-    const res = await (await fetch('/ducksir-live/bundles')).json();
-    const list = res.bundles || [];
+    const res = await fetch('/ducksir-live/bundles');
+    if (!res.ok) {
+      $('status').textContent = `读 bundle 列表失败：HTTP ${res.status}`
+        + (res.status === 401 ? '（没登录）' : res.status === 404 ? '（插件宿主没加载新代码 → 重启 dsh web）' : '');
+      return;
+    }
+    const data = await res.json();
+    const list = data.bundles || [];
     const sel = $('bundle');
     sel.innerHTML = list.map((b) => `<option value="${b.path || b.name}">${b.name}</option>`).join('')
       || '<option value="">（没有 bundle，先导出）</option>';
-    $('status').textContent = list.length ? `找到 ${list.length} 个 bundle` : '没有 bundle';
-  } catch {
-    $('status').textContent = '读不到 bundle 列表（插件宿主没起？）';
+    $('status').textContent = list.length ? `找到 ${list.length} 个 bundle，正在启动…` : '没有 bundle';
+    return list;
+  } catch (e) {
+    $('status').textContent = '读不到 bundle 列表：' + (e && e.message ? e.message : e);
   }
 }
 
@@ -247,7 +260,12 @@ async function loadBundles() {
 if (WS_PORT) {
   connect();
 } else {
-  loadBundles();
+  // SSE 模式：不要用全屏遮罩挡住状态文字（否则失败原因被盖住，只能看到「连接宿主…」）
+  $('busy').classList.add('gone');
+  loadBundles().then(() => {
+    const sel = $('bundle');
+    if (sel && sel.value) startBundle();      // 默认自动开第一个，进页面就能动
+  });
   const loopBox = $('loop');
   if (loopBox) { loopBox.checked = loopEnabled; loopBox.onchange = () => { loopEnabled = loopBox.checked; }; }
   $('start').onclick = startBundle;

@@ -15,6 +15,8 @@ window.__ModuleLoader__.load({
     var React = require('react')
 
     var PANEL_ID = 'ducksir-robot'
+    // 页面加了?v=：不然浏览器会一直用缓存里的旧 host.js（「改了没生效」的经典原因）
+    var VIEWER_VERSION = '20261113a'
     var STYLE_ID = 'ducksir-robot-style'
     var BASE = '/ducksir-static/client/viewer/'
     // 面板里能切四个页面：都是 client/viewer/ 下的静态页，共用同一条只读路由。
