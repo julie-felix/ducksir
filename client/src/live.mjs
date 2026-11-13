@@ -139,10 +139,19 @@ export function createLive({ repo, python = 'python3' }) {
   async function startBundle({ bundle, seconds = 120, mjcf = '' } = {}) {
     await stopBundle()
     if (!bundle) throw new Error('缺 bundle')
-    const dir = path.isAbsolute(bundle) ? bundle : path.join(repo, bundle)
     const { existsSync } = await import('node:fs')
-    if (!existsSync(path.join(dir, 'contract.json'))) {
-      throw new Error(`bundle 不存在：${dir}`)
+    // 页面可能只传名字（g1-loco），也可能传相对路径（build/release/g1-loco）。
+    // 依次试几个候选，别让「名字对但前缀缺」看起来像 bundle 不存在。
+    const candidates = path.isAbsolute(bundle)
+      ? [bundle]
+      : [
+        path.join(repo, bundle),
+        path.join(repo, 'build/release', bundle),
+        path.join(repo, 'build/release', path.basename(bundle)),
+      ]
+    const dir = candidates.find((d) => existsSync(path.join(d, 'contract.json')))
+    if (!dir) {
+      throw new Error(`bundle 不存在：试过 ${candidates.join('、')}`)
     }
     const model = mjcf || path.join(dir, 'robot.xml')
     const args = [path.join(repo, 'sim/host/run_bundle.py'), '--bundle', dir,
