@@ -21,7 +21,9 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b0f14);
 const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.05, 200);
 camera.position.set(2.2, 1.4, 2.6);
-const renderer = new THREE.WebGLRenderer({ canvas: $('c'), antialias: true });
+// preserveDrawingBuffer：探针要把 canvas 内容画进 2D canvas 做像素统计，
+// 不开的话 WebGL 缓冲在合成后就丢了（读到全 0）。
+const renderer = new THREE.WebGLRenderer({ canvas: $('c'), antialias: true, preserveDrawingBuffer: true });
 renderer.setSize(innerWidth, innerHeight, false);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 
@@ -47,6 +49,8 @@ let bodies = [];          // [{id,name,parent,group}]
 let groupsById = new Map();
 let pelvisId = -1;
 let poseSeen = 0;
+let lastPose = null;
+let meshCount = 0;
 
 function makeGeometry(g, model, meshBytes) {
   if (g.kind === 7 /* MESH */ && g.mesh != null) {
@@ -103,6 +107,7 @@ function buildScene(model, meshBytes) {
     (host || root).add(mesh);
     built += 1;
   }
+  meshCount = built;
   pelvisId = model.bodies.find((b) => b.name === 'pelvis')?.id
     ?? model.bodies.find((b) => /torso|trunk/.test(b.name))?.id ?? -1;
   console.log(`[host] 场景建好：${model.bodies.length} body / ${built} geom`);
@@ -119,6 +124,7 @@ function applyPose(msg) {
     g.quaternion.set(xquat[q + 1], xquat[q + 2], xquat[q + 3], xquat[q]);
   }
   poseSeen += 1;
+  lastPose = msg;
   // 业务指标（判据 5）：基座高度与直立度，页面自己也能算，和后端 /api/jobs 里的对得上
   const pelvis = groupsById.get(bodies[1] && bodies[1].id);
   let zText = '';
@@ -153,6 +159,31 @@ function applyPose(msg) {
     }
   }
 }
+
+// ADR-002：给探针一个只读自述对象。断言只写数字，不写“看起来对不对”。
+window.__probe = {
+  state() {
+    const pelvisId = bodies[1] ? bodies[1].id : null;
+    const g = pelvisId != null ? groupsById.get(pelvisId) : null;
+    let z = null; let upright = null;
+    if (g) {
+      const wp = new THREE.Vector3();
+      g.getWorldPosition(wp);
+      z = Number(wp.y.toFixed(4));
+      const up = new THREE.Vector3(0, 0, 1).applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion()));
+      upright = Number(up.y.toFixed(4));
+    }
+    return {
+      sim: lastPose ? lastPose.t : 0,
+      step: lastPose ? lastPose.step : 0,
+      frames: poseSeen,
+      z, upright,
+      meshes: meshCount,
+      bodies: bodies.length,
+      error: null,
+    };
+  },
+};
 
 let pendingScene = null;
 function connect() {
