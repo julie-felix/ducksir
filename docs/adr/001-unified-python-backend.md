@@ -70,6 +70,14 @@ GET  /files?path=build/release/x/...   → 只读，白名单 build/ 与 runs/
   （后端把 run_project 的显示服务按 127.0.0.1:随机端口 代理出来，SSE 逐块转发）；
   页面启动时探 `/api/health` 决定前缀（`''` 直连 / `'/ducksir-live'` 经插件反代）
 
+## 后端怎么起（不用人记）
+
+- 插件宿主**懒启动**：`/ducksir-live/api/*` 的请求如果连不上 `127.0.0.1:8899`，先 spawn
+  `python3 sim/host/serve.py --port 8899`（detached），等 `/api/health` 通过再重试一次；
+- 后端如果带了 secret（默认会生成到 `~/.local/share/ducksir/serve.secret`），插件从同一个文件
+  读出来，代填 `X-Ducksir-Secret`；
+- 所以重启 dsh 之后打开面板即可，不需要先手动起后端。
+
 ## 后果
 
 - 页面从“自己拼 URL + 猜形状”变成“只认 `/api/*` 的固定字段”；
