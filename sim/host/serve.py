@@ -83,6 +83,7 @@ class Job:
         self._proc: subprocess.Popen | None = None
         self._thread: threading.Thread | None = None
         self._env = env
+        self.metrics: dict = {}
 
     # ---- 生命周期 ----
     def start(self):
@@ -111,6 +112,7 @@ class Job:
         assert self._proc and self._proc.stdout
         for line in self._proc.stdout:
             line = line.rstrip("\n")
+            self._update_metrics(line)
             with self._lock:
                 self.lines.append(line)
                 if len(self.lines) > 4000:
@@ -128,6 +130,22 @@ class Job:
             self.error = f"退出码 {code}"
         self.ended_at = time.time()
         self._save()
+
+    def _update_metrics(self, line: str):
+        """从一帧 pose 里算业务指标：基座高度、直立度（判据 5：可自动断言）。"""
+        if not line.startswith('{"type":"pose"'):
+            return
+        try:
+            msg = json.loads(line)
+            xpos, xquat = msg["xpos"], msg["xquat"]
+            idx = 1 if len(xpos) >= 6 else 0            # body 1 = pelvis（world 之后）
+            z = float(xpos[idx * 3 + 2])
+            qw, qx, qy, _qz = xquat[idx * 4: idx * 4 + 4]
+            upright = 1.0 - 2.0 * (qx * qx + qy * qy)
+            self.metrics = {"t": msg.get("t"), "step": msg.get("step"),
+                            "z": round(z, 4), "upright": round(upright, 4)}
+        except (KeyError, ValueError, IndexError):
+            pass
 
     def cancel(self):
         if self._proc and self._proc.poll() is None:
@@ -162,7 +180,7 @@ class Job:
             "id": self.id, "op": self.op, "status": self.status,
             "startedAt": self.started_at, "endedAt": self.ended_at,
             "exitCode": self.exit_code, "error": self.error,
-            "argv": self.argv,
+            "argv": self.argv, "metrics": self.metrics,
         }
 
     def _save(self):
@@ -398,6 +416,11 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError as exc:
                 return self._send(_err(400, "bad_request", str(exc), op=op))
             job = Job(op, argv)
+            if op == "bundle_live":
+                cur = REGISTRY.current
+                if cur and cur.op == "bundle_live" and cur.status == "running":
+                    cur.cancel()                      # 切台：旧的直接停，别排队
+                    REGISTRY.finish_current()
             if op == "sim":
                 PROJECT = {"job": job, "port": meta.get("displayPort"),
                            "project": meta.get("project")}

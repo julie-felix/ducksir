@@ -38,6 +38,9 @@ const grid = new THREE.GridHelper(12, 24, 0x2a3542, 0x1a222c);
 scene.add(grid);
 
 const root = new THREE.Group();
+// MuJoCo 是 z-up，three.js 是 y-up：整棵树绕 X 转 -90°，之后所有位姿都能直接用
+// MuJoCo 世界坐标（不转的话机器人会「躺」在地上——这坑今天踩了一次）。
+root.rotation.x = -Math.PI / 2;
 scene.add(root);
 
 let bodies = [];          // [{id,name,parent,group}]
@@ -116,7 +119,20 @@ function applyPose(msg) {
     g.quaternion.set(xquat[q + 1], xquat[q + 2], xquat[q + 3], xquat[q]);
   }
   poseSeen += 1;
-  $('line').textContent = `t=${msg.t.toFixed(2)} s · 第 ${msg.step} 步 · 收到 ${poseSeen} 帧`;
+  // 业务指标（判据 5）：基座高度与直立度，页面自己也能算，和后端 /api/jobs 里的对得上
+  const pelvis = groupsById.get(bodies[1] && bodies[1].id);
+  let zText = '';
+  if (pelvis) {
+    const wp = new THREE.Vector3();
+    pelvis.getWorldPosition(wp);
+    // three 里 y 是上；直立度 = 机体自身 up 向量在世界 up 上的投影
+    // 几何在 MuJoCo 轴系里（机体自身 up = 局部 +z），整棵树被 root 转了 -90°，
+    // 所以「机体 up 在世界里的方向」= q_world * (0,0,1)，再取世界 +y 分量。
+    const worldUp = new THREE.Vector3(0, 0, 1)
+      .applyQuaternion(pelvis.getWorldQuaternion(new THREE.Quaternion()));
+    zText = ` · 基座 ${wp.y.toFixed(3)} m · 直立 ${worldUp.y.toFixed(3)}`;
+  }
+  $('line').textContent = `t=${msg.t.toFixed(2)} s · 第 ${msg.step} 步 · 收到 ${poseSeen} 帧${zText}`;
   // 第一帧把相机拉到能看清的距离（否则默认视角里机器人只有指甲盖大）
   if (poseSeen === 1 && pelvisId >= 0) {
     const g0 = groupsById.get(pelvisId);

@@ -69,6 +69,23 @@ echo "$ST" | grep -qE '"status": "(running|queued|done)"' && ok "作业状态可
 FRAMES=$(timeout 12 curl -sN "$BASE/api/jobs/$ID/stream" | grep -c 'type.*pose' || true)
 [ "${FRAMES:-0}" -ge 3 ] && ok "SSE 收到 $FRAMES 帧位姿" || bad "SSE 帧数不足（$FRAMES）"
 
+# 4a) 业务指标（判据 5）：从 pose 流里算出的基座高度/直立度必须合理
+MET=$(curl -s "$BASE/api/jobs/$ID")
+CHECK=$(echo "$MET" | python3 -c '
+import json, sys
+job = json.load(sys.stdin)
+m = job.get("metrics") or {}
+z, up = m.get("z"), m.get("upright")
+if z is None:
+    print("NONE|" + str(job.get("status"))); sys.exit(0)
+print(("OK" if (z > 0.5 and up > 0.8) else "BAD") + f"|{z}|{up}")
+')
+case "$CHECK" in
+  OK*)   ok "业务指标合理（${CHECK#OK|}）" ;;
+  BAD*)  bad "业务指标异常（${CHECK#BAD|}：基座/直立不合理）" ;;
+  *)     bad "读不到 metrics（$CHECK）" ;;
+esac
+
 CANCEL=$(curl -s -X POST "$BASE/api/jobs/$ID/cancel")
 echo "$CANCEL" | grep -q '"ok": true' && ok "取消返回 ok" || note "取消返回：$CANCEL"
 
