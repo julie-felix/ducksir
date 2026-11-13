@@ -45,7 +45,8 @@ const glb = (rel) => rel;   // duck-hd1910.json 里的 mesh 本来就是 ../../a
 const bootConn = document.getElementById('conn');
 if (bootConn) bootConn.textContent = '页面已加载';
 const canvas = $('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+// 探针读像素需要（ADR-002）
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
 
 const scene = new THREE.Scene();
@@ -116,6 +117,8 @@ function applyFrame(f) {
     group.quaternion.set(f.quat[q + 1], f.quat[q + 2], f.quat[q + 3], f.quat[q]);
   }
   frames += 1; hzFrames += 1;
+  window.__lastFrame = { t: f.t, pos: f.pos, stats: f.stats };
+  window.__frameCount = frames;
   const now = performance.now();
   if (now - hzSince > 1000) { hz = (hzFrames * 1000) / (now - hzSince); hzSince = now; hzFrames = 0; }
   const s = f.stats || {};
@@ -163,7 +166,16 @@ async function loadDiag() {
   } catch (e) {
     $('diag').innerHTML += `<tr><th>后端自检</th><td class="bad">取不到 /diag：${e?.message || e}</td></tr>`;
   }
-  const sc = await (await fetch(`${PAPI()}/scene`)).json();
+  // 场景可能比作业晚一点就绪：重试几次，别静默拿空场景（否则 groups 全是 (0,0,0)）
+  let sc = null;
+  for (let i = 0; i < 10; i += 1) {
+    try {
+      const r = await fetch(`${PAPI()}/scene`);
+      if (r.ok) { sc = await r.json(); break; }
+    } catch { /* 再试 */ }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  if (!sc) { $('conn').textContent = '场景读不到（仿真还没起？）'; return; }
   $('diag').innerHTML = [
     ['项目', sc.project || '—'],
     ['策略', sc.policy || '—'],
@@ -407,9 +419,40 @@ let streamSrc = null;
 function startStream() {
   if (streamSrc) streamSrc.close();
   streamSrc = new EventSource(`${PAPI()}/stream`);
-  streamSrc.onmessage = (ev) => { try { applyFrame(JSON.parse(ev.data)); } catch (e) { console.warn(e); } };
+  streamSrc.onmessage = (ev) => {
+    try {
+      const raw = JSON.parse(ev.data);
+      // 后端 SSE 有两条形状：`{"line": "<原始帧>"}`（作业日志）和裸帧
+      const f = raw && typeof raw.line === 'string' ? JSON.parse(raw.line) : raw;
+      if (!f || typeof f.t !== 'number') return;      // 启动日志行之类，跳过
+      applyFrame(f);
+    } catch (e) { console.warn('[studio] 帧解析失败', e); }
+  };
   streamSrc.onerror = () => { $('conn').textContent = '断开了'; };
 }
+
+// ADR-002：探针自述（只读数字）
+// 调试：给探针看“几何到底有没有被更新”（真机上很难区分“没动”和“没渲染”）
+window.__dbg = { state() {
+  const out = {};
+  for (const [name, g] of groups) { out[name] = [Number(g.position.x.toFixed(3)), Number(g.position.y.toFixed(3)), Number(g.position.z.toFixed(3))]; if (Object.keys(out).length > 3) break; }
+  return { groups: groups.size, bodies: bodyIndex.size, sample: out, frame: window.__lastFrame ? Number(window.__lastFrame.t.toFixed(2)) : 0 };
+} };
+
+window.__probe = {
+  state() {
+    const last = (window.__lastFrame || null);
+    return {
+      sim: last ? Number(last.t.toFixed(3)) : 0,
+      running: Boolean($('conn') && /运行中/.test($('conn').textContent || '')),
+      z: last ? Number((last.stats?.base_height ?? null)) : null,
+      upright: last ? Number((last.stats?.upright ?? null)) : null,
+      speed: last ? Number((last.stats?.speed ?? null)) : null,
+      frames: window.__frameCount || 0,
+      error: null,
+    };
+  },
+};
 
 async function main() {
   await pickApi();
@@ -428,7 +471,16 @@ async function main() {
 
   try {
     const running = document.body.classList.contains('browser-mode') ? false : await refreshConn();
-    const sc = await (await fetch(`${PAPI()}/scene`)).json();
+    // 场景可能比作业晚一点就绪：重试几次，别静默拿空场景（否则 groups 全是 (0,0,0)）
+  let sc = null;
+  for (let i = 0; i < 10; i += 1) {
+    try {
+      const r = await fetch(`${PAPI()}/scene`);
+      if (r.ok) { sc = await r.json(); break; }
+    } catch { /* 再试 */ }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  if (!sc) { $('conn').textContent = '场景读不到（仿真还没起？）'; return; }
     (sc.bodies || []).forEach((n, i) => bodyIndex.set(n, i));
     if (running) startStream();
     await loadDiag().catch(fail('诊断'));

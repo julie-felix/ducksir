@@ -1,0 +1,54 @@
+{
+  "url": "/ducksir-static/client/viewer/studio.html",
+  "steps": [
+    {
+      "await": "typeof window.__probe === 'object'",
+      "timeout": 20000,
+      "why": "页面暴露了 __probe"
+    },
+    {
+      "click": "#btn-start",
+      "after": 2000,
+      "why": "点「启动仿真」"
+    },
+    {
+      "await": "typeof window.__dbg === 'object' && window.__dbg.state().bodies > 0",
+      "timeout": 30000,
+      "why": "场景载入（body 索引就绪）"
+    },
+    {
+      "await": "__probe.state().frames > 20",
+      "timeout": 60000,
+      "why": "收到帧（>20）"
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().sim > 0.5",
+      "why": "仿真在推进"
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().z > 0.05",
+      "why": "基座高度有值"
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().upright > 0.8",
+      "why": "直立 >0.8"
+    },
+    {
+      "assert": "pixels",
+      "minRatio": 0.01,
+      "why": "画面不是空的"
+    },
+    {
+      "assert": "moved",
+      "expr": "window.__dbg.state().sample",
+      "gap": 1500,
+      "why": "场景对象在动（相机跟随时机器人居中，像素几乎不动）"
+    },
+    {
+      "shot": "studio"
+    }
+  ]
+}

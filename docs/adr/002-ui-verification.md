@@ -112,6 +112,33 @@ PASS  无 console 错误
 1. **WebGL canvas 读像素要 `preserveDrawingBuffer: true`**，否则探针采样到全 0、报“画面是空的”假失败；
 2. 「在动」不能只看亮度均值（机器人摆臂时均值几乎不变）——改成**同画布采样两次做逐像素平均绝对差**。
 
+## 三个页面 + 三条交互探针（2026-11-13）
+
+| 探针 | 覆盖 |
+|---|---|
+| `probes/host-live.json` | 宿主直播：网格挂上、帧在流、基座/直立、画面非空、**画面在变** |
+| `probes/play-bundle.json` | 浏览器跑：wasm 物理 + 推理、画面非空、**点「自动走」→ vx>0.1**、**点「暂停」→ 仿真时间不再前进** |
+| `probes/studio.json` | 工作台：点「启动仿真」→ 场景 body 就绪、帧数、基座/直立、画面非空、**场景对象在动** |
+
+`node tools/dev/probe.mjs --base http://127.0.0.1:8899 --probes host-live.json,play-bundle.json,studio.json` 全 PASS。
+
+### 写探针时又踩的四个坑
+
+1. **`moved` 与 `changed` 要分开**：相机跟随的页面（studio）里机器人始终居中，像素几乎不动；
+   这时要断言**场景对象的坐标在变**（`window.__dbg.state().sample`），而不是像素差。
+2. **一个探针一个浏览器**：同一个 Chrome 跑三个页面，第三个的 WebGL 上下文会丢（帧还在流、画面冻住），
+   看起来像页面 bug。
+3. **`wait` 不如 `await`**：实时页面加载 20 s+，固定 sleep 会误判；探针要轮询
+   `__probe.state().frames > N` 这种可观测条件。
+4. **改了 studio 的 `/api/project/stream` 走「作业日志」后**，页面要解包 `{"line": ...}`，
+   否则拿到启动日志行会 `f.t.toFixed` 报错——而错误被 try/catch 吞掉，表现是「画面不动」。
+
+### 顺手修的两个真 bug
+
+- **SSE 代理不能 `read(1024)`**（等凑满才返回 → 页面只有 ~5 Hz，最后像卡死）；改 `readline()` 逐行转发。
+- **studio 的场景 race**：作业刚起、`/api/project/scene` 还没 200，页面静默拿空场景
+  → `groups` 全在 (0,0,0)。改成重试 10 次。
+
 ## 不在范围
 
 - 不做像素级 golden（相机一变就废）；

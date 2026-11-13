@@ -57,7 +57,9 @@ async function json(url) { return (await fetch(url)).json(); }
 // ---------- 场景 ----------
 const canvas = $('c');
 const isTouch = matchMedia('(hover: none) and (pointer: coarse)').matches;
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isTouch, powerPreference: 'high-performance' });
+/** preserveDrawingBuffer：探针要读 canvas 像素（ADR-002），否则采样到全 0 */
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isTouch,
+  powerPreference: 'high-performance', preserveDrawingBuffer: true });
 // 手机上像素比给到 1.5 就够（2 及以上在 60 Hz 下很吃 GPU）；桌面保留 2
 // 手机上 1.0 就够：AGL/GLB 多、像素比一高帧率就塌，而帧率会反过来拖慢仿真（循环是 rAF 驱动）
 let pixelRatio = Math.min(devicePixelRatio || 1, isTouch ? 1.0 : 2);
@@ -95,6 +97,7 @@ if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
 // 速度指令范围：从契约读（鸭子 0.25、G1 能到 2.5），加载契约后覆盖
 let LIM = { fwd: 0.25, back: -0.2, ang: 1.0, step: 0.05 };
 // 关节数来自契约（载入后按契约重设这个数组），这里先占位
+let ctrlCounter = 0;
 const state = { vx: 0, wz: 0, lastAction: new Float32Array(0), simTime: 0, error: null,
                 paused: false, autoWalk: false, focused: false };
 
@@ -548,6 +551,7 @@ async function main() {
 
       const z = read(data.qpos, 2);
       const wall = (performance.now() - t0) / 1000;
+      ctrlCounter = ctrl;
       $('stat').textContent = `基座 ${z.toFixed(3)} m · 仿真 ${state.simTime.toFixed(1)} s · ${ctrl} 次推理`;
       const fs = state.fsm || { state: '—', mode: '—' };
       $('vx').textContent = `vx ${state.vx.toFixed(2)} · yaw ${state.wz.toFixed(2)} · 状态 ${fs.state} · 策略 ${active}`
@@ -570,6 +574,26 @@ async function main() {
         resize();
       }
     }
+
+    // ADR-002：给探针自述状态（只读数字，不做“看起来对不对”的判断）
+    window.__probe = {
+      state() {
+        const z = read(data.qpos, 2);
+        return {
+          sim: Number(state.simTime.toFixed(3)),
+          vx: Number(state.vx.toFixed(3)),
+          wz: Number(state.wz.toFixed(3)),
+          paused: Boolean(state.paused),
+          autoWalk: Boolean(state.autoWalk),
+          ctrl: ctrlCounter,
+          z: Number(z.toFixed(4)),
+          // MuJoCo 是 z-up：直立度直接看基座四元数的 roll/pitch 分量
+          upright: Number((1 - 2 * (data.qpos[4] * data.qpos[4] + data.qpos[5] * data.qpos[5])).toFixed(4)),
+          strategy: active || null,
+          error: state.error ? String(state.error.message || state.error) : null,
+        };
+      },
+    };
 
     async function tick() {
       if (state.autoWalk && !state.paused) {

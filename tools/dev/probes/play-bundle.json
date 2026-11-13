@@ -1,0 +1,80 @@
+{
+  "url": "/ducksir-static/client/viewer/play.html?bundle=/ducksir-static/build/release/g1-loco/",
+  "steps": [
+    {
+      "await": "typeof window.__probe === 'object'",
+      "timeout": 30000,
+      "why": "页面暴露了 __probe"
+    },
+    {
+      "await": "__probe.state().sim > 1",
+      "timeout": 90000,
+      "why": "仿真开始推进（>1 s）"
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().z > 0.5",
+      "why": "基座 >0.5 m"
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().upright > 0.8",
+      "why": "直立 >0.8"
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().ctrl > 20",
+      "why": "推理在跑（>20 次）"
+    },
+    {
+      "assert": "pixels",
+      "minRatio": 0.02,
+      "why": "画面不是空的"
+    },
+    {
+      "assert": "changed",
+      "gap": 1000,
+      "why": "画面在变化（机器人没冻住）"
+    },
+    {
+      "click": "#btn-auto",
+      "after": 2500,
+      "why": "点「自动走」"
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().autoWalk === true",
+      "why": "开关状态同步"
+    },
+    {
+      "await": "__probe.state().vx > 0.1",
+      "timeout": 15000,
+      "why": "自动走后 vx > 0.1"
+    },
+    {
+      "click": "#btn-play",
+      "after": 800,
+      "why": "点「暂停」"
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().paused === true",
+      "why": "暂停生效"
+    },
+    {
+      "capture": "simPaused",
+      "expr": "__probe.state().sim"
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().sim - window.__cap.simPaused < 0.05",
+      "why": "暂停后仿真时间不再前进"
+    },
+    {
+      "shot": "play-bundle"
+    }
+  ]
+}

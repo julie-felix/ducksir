@@ -33,29 +33,32 @@ if (!PROBE_FILES.length) {
 }
 fs.mkdirSync(SHOT_DIR, { recursive: true });
 
-const chrome = spawn('/usr/bin/google-chrome', [
+function launchChrome(port, profile) {
+  const proc = spawn('/usr/bin/google-chrome', [
   '--headless=new',
-  `--remote-debugging-port=${PORT}`,
-  `--user-data-dir=${PROFILE}`,
+  `--remote-debugging-port=${port}`,
+  `--user-data-dir=${profile}`,
   '--no-first-run', '--no-default-browser-check', '--no-sandbox', '--disable-dev-shm-usage',
   '--ignore-certificate-errors',
   '--enable-unsafe-swiftshader',
   `--window-size=${VIEW[0]},${VIEW[1]}`,
   'about:blank',
-], { stdio: ['ignore', 'ignore', 'pipe'] });
-chrome.stderr.on('data', () => {});
+  ], { stdio: ['ignore', 'ignore', 'pipe'] });
+  proc.stderr.on('data', (d) => { const t = String(d); if (/DevTools|error|Error/.test(t)) console.error('[chrome]', t.trim().slice(0, 160)); });
+  return proc;
+}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function httpJson(p, method = 'GET') {
-  const res = await fetch(`http://127.0.0.1:${PORT}${p}`, { method });
+async function httpJson(port, p, method = 'GET') {
+  const res = await fetch(`http://127.0.0.1:${port}${p}`, { method });
   return res.json();
 }
 
-async function waitTarget() {
-  for (let i = 0; i < 100; i += 1) {
+async function waitTarget(port) {
+  for (let i = 0; i < 150; i += 1) {
     try {
-      const list = await httpJson('/json/list');
+      const list = await httpJson(port, '/json/list');
       const page = list.find((t) => t.type === 'page');
       if (page) return page;
     } catch { /* 还没起 */ }
@@ -143,6 +146,20 @@ async function runProbe(page, spec, label) {
 
   for (const step of spec.steps) {
     if (step.wait) await sleep(step.wait);
+    // 轮询等待（实时页面加载慢，固定 sleep 会误判）
+    if (step.await) {
+      const deadline = Date.now() + (step.timeout ?? 30000);
+      let val = false;
+      while (Date.now() < deadline) {
+        try { val = await evaluate(page, step.await); } catch { val = false; }
+        if (val) break;
+        await sleep(250);
+      }
+      val ? ok(step.why || `等到 ${step.await}`) : bad(step.why || `等到 ${step.await}`, '超时');
+    }
+    if (step.capture) {
+      await evaluate(page, `window.__cap = window.__cap || {}; window.__cap[${JSON.stringify(step.capture)}] = (${step.expr});`);
+    }
     if (step.click) {
       await evaluate(page, `(() => {
         const el = document.querySelector(${JSON.stringify(step.click)});
@@ -168,28 +185,52 @@ async function runProbe(page, spec, label) {
         : bad(step.why || '画面非空', `非空 ${(s.ratio * 100).toFixed(1)}% < ${(step.minRatio ?? 0.02) * 100}%  ${s.file}`);
     }
     if (step.assert === 'changed') {
-      // 逐像素平均绝对差（同一块画布采样两次），比“均值变没变”硬得多
-      const grab = `(() => {
-        const cv = document.querySelector('canvas');
-        const g = document.createElement('canvas');
-        g.width = 160; g.height = 100;
-        const ctx = g.getContext('2d');
-        ctx.drawImage(cv, 0, 0, 160, 100);
-        return Array.from(ctx.getImageData(0, 0, 160, 100).data);
-      })()`;
-      const a = await evaluate(page, grab);
-      await sleep(step.gap ?? 800);
-      const b = await evaluate(page, grab);
-      let sum = 0; let n = 0;
-      for (let i = 0; i < a.length; i += 4) {
-        sum += Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]);
-        n += 3;
-      }
-      const diff = sum / n;
-      (diff > (step.minDiff ?? 0.5))
-        ? ok(step.why || '画面在变化', `逐像素平均差 ${diff.toFixed(2)}`)
-        : bad(step.why || '画面在变化', `两帧几乎一样（平均差 ${diff.toFixed(2)}）`);
+      // 一次 evaluate 里完成「采样 → 等 gap → 再采样 → 求逐像素平均差」，
+      // 避免两次跨进程取大数组带来的时序/序列化问题。
+      const gap = step.gap ?? 1500;
+      const diff = await evaluate(page, `(async () => {
+        const grab = () => {
+          const cv = document.querySelector('canvas');
+          const g = document.createElement('canvas');
+          g.width = 160; g.height = 100;
+          const ctx = g.getContext('2d');
+          ctx.drawImage(cv, 0, 0, 160, 100);
+          return ctx.getImageData(0, 0, 160, 100).data;
+        };
+        const st = () => (window.__probe ? window.__probe.state() : {});
+        const s0 = st();
+        const a = grab();
+        await new Promise((r) => setTimeout(r, ${gap}));
+        const s1 = st();
+        const b = grab();
+        let sum = 0, n = 0;
+        for (let i = 0; i < a.length; i += 4) {
+          sum += Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]);
+          n += 3;
+        }
+        return { diff: sum / n, s0, s1 };
+      })()`);
+      const d = Number(diff.diff);
+      const tail = `frames ${diff.s0.frames}→${diff.s1.frames}｜sim ${diff.s0.sim}→${diff.s1.sim}`;
+      (d > (step.minDiff ?? 0.5))
+        ? ok(step.why || '画面在变化', `逐像素平均差 ${d.toFixed(2)}｜${tail}`)
+        : bad(step.why || '画面在变化', `两帧几乎一样（平均差 ${d.toFixed(2)}）｜${tail}`);
       await shot(page, 'changed');
+    }
+    if (step.assert === 'moved') {
+      // 「几何在变」：相机跟随的页面（studio）里机器人始终居中，像素几乎不动，
+      // 这时要断言的是场景对象自身的坐标在变（expr 返回可序列化值）。
+      const gap = step.gap ?? 1500;
+      const r = await evaluate(page, `(async () => {
+        const pick = () => { try { return JSON.stringify(${step.expr}); } catch (e) { return 'ERR:' + e.message; } };
+        const a = pick();
+        await new Promise((r) => setTimeout(r, ${gap}));
+        const b = pick();
+        return { same: a === b, a, b };
+      })()`);
+      (!r.same)
+        ? ok(step.why || '几何在变', r.b.slice(0, 90))
+        : bad(step.why || '几何在变', `采样没变：${r.a.slice(0, 90)}`);
     }
     if (step.shot) {
       const s = await shot(page, step.shot);
@@ -203,22 +244,32 @@ async function runProbe(page, spec, label) {
 }
 
 async function main() {
-  const target = await waitTarget();
-  const page = client(target.webSocketDebuggerUrl);
-  await page.ready;
-
+  process.env.NO_PROXY = '127.0.0.1,localhost';
+  process.env.no_proxy = '127.0.0.1,localhost';
   let fails = 0;
-  for (const file of PROBE_FILES) {
+  // 一个探针一个干净浏览器：WebGL 上下文跑久了会丢（帧还在流、画面冻住），
+  // 那不是页面的 bug，却会把「画面在变化」判成失败。
+  for (const [i, file] of PROBE_FILES.entries()) {
     const spec = JSON.parse(fs.readFileSync(file, 'utf8'));
-    fails += await runProbe(page, spec, path.basename(file));
-  }
-
-  if (!flag('keep-open')) {
-    page.close();
-    chrome.kill('SIGTERM');
+    const port = PORT + i;
+    const profile = `${PROFILE}-${i}`;
+    const chrome = launchChrome(port, profile);
+    try {
+      const target = await waitTarget(port);
+      const page = client(target.webSocketDebuggerUrl);
+      await page.ready;
+      fails += await runProbe(page, spec, path.basename(file));
+      page.close();
+    } catch (e) {
+      console.log(`  \x1b[31mFAIL\x1b[0m  ${path.basename(file)} 跑不起来：${e.message}`);
+      fails += 1;
+    } finally {
+      chrome.kill('SIGTERM');
+      await sleep(400);
+    }
   }
   console.log(`\n${fails === 0 ? 'PASS' : `失败 ${fails} 项`}｜截图目录 ${SHOT_DIR}`);
   process.exit(fails === 0 ? 0 : 1);
 }
 
-main().catch((e) => { console.error(e); chrome.kill('SIGTERM'); process.exit(2); });
+main().catch((e) => { console.error(e); process.exit(2); });

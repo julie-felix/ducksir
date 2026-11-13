@@ -160,6 +160,19 @@ class Job:
             return True
         return False
 
+    def push_line(self, line: str):
+        """外部线程往里塞一行（工程仿真的显示帧走这里）。"""
+        with self._lock:
+            self.lines.append(line)
+            if len(self.lines) > 4000:
+                self.lines = self.lines[-2000:]
+            subs = list(self._subs)
+        for fn in subs:
+            try:
+                fn(line)
+            except Exception:
+                pass
+
     def subscribe(self, fn):
         with self._lock:
             self._subs.add(fn)
@@ -222,6 +235,17 @@ class Registry:
                     nxt.start()
                     return
 
+    def drop_queued(self, pred) -> int:
+        """把排队里满足条件的作业直接取消（频道切换用）。"""
+        with self._lock:
+            keep, drop = [], []
+            for j in self.queue:
+                (drop if pred(j) else keep).append(j)
+            self.queue = keep
+        for j in drop:
+            j.status = "cancelled"
+        return len(drop)
+
     def cancel(self, job_id: str) -> bool:
         job = self.jobs.get(job_id)
         if not job:
@@ -240,6 +264,38 @@ class Registry:
 
 REGISTRY = Registry()
 PROJECT: dict = {}          # 当前工程仿真的显示端口（studio 的兼容层）
+
+
+def _attach_display(job: "Job", port: int):
+    """把 run_project 的 /stream 接进 job：一个上游连接，页面重连不重开上游。"""
+    import http.client
+    import time as _t
+    deadline = _t.time() + 20
+    while _t.time() < deadline:
+        try:
+            conn = http.client.HTTPConnection("127.0.0.1", port, timeout=30)
+            conn.request("GET", "/stream", headers={"accept": "text/event-stream"})
+            up = conn.getresponse()
+            if up.status == 200:
+                break
+        except Exception:
+            pass
+        _t.sleep(0.3)
+    else:
+        print(f"[serve] 显示服务 {port} 没起来", flush=True)
+        return
+    try:
+        while True:
+            line = up.readline()
+            if not line:
+                break
+            text = line.decode("utf-8", "replace").rstrip("\n")
+            if text.startswith("data: "):
+                job.push_line(text[6:])
+    except Exception as exc:
+        print(f"[serve] 显示流断开：{type(exc).__name__}: {exc}", flush=True)
+    finally:
+        conn.close()
 
 
 def _watch_finish():
@@ -274,14 +330,18 @@ def _proxy_local(req, res, port: int, rest: str):
                 continue
             res.send_header(k, v)
         res.end_headers()
-        # 逐块转发：SSE 不能一次 read() 到底，那样会挂到超时
+        # 逐**行**转发：`read(1024)` 会一直等到凑满 1024 字节才返回，
+        # SSE 就被压在缓冲里（实测页面只有 ~5 Hz，然后看起来“卡住”）。
+        # 用 readline() 一有换行就立刻往下写。
         while True:
-            chunk = up.read(1024)
-            if not chunk:
+            line = up.readline()
+            if not line:
+                print("[serve] display 流结束（upstream EOF）", flush=True)
                 break
-            res.wfile.write(chunk)
+            res.wfile.write(line)
             res.wfile.flush()
     except Exception as exc:
+        print(f"[serve] display 代理失败：{type(exc).__name__}: {exc}", flush=True)
         res.send_response(504)
         res.send_header("content-type", "application/json; charset=utf-8")
         body = json.dumps({"error": {"code": "display_down", "message": str(exc)}}).encode()
@@ -416,14 +476,20 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError as exc:
                 return self._send(_err(400, "bad_request", str(exc), op=op))
             job = Job(op, argv)
-            if op == "bundle_live":
+            # 「频道」语义：直播和工程仿真都是“看画面”，同一时刻只留一个；
+            # 新的接手时把旧的（包括排队中的）停掉，否则页面会一直等一个永远轮不到的作业。
+            CHANNEL = ("bundle_live", "sim")
+            if op in CHANNEL:
                 cur = REGISTRY.current
-                if cur and cur.op == "bundle_live" and cur.status == "running":
-                    cur.cancel()                      # 切台：旧的直接停，别排队
+                if cur and cur.op in CHANNEL and cur.status in ("running", "queued"):
+                    cur.cancel()
                     REGISTRY.finish_current()
+                REGISTRY.drop_queued(lambda j: j.op in CHANNEL)
             if op == "sim":
                 PROJECT = {"job": job, "port": meta.get("displayPort"),
                            "project": meta.get("project")}
+                threading.Thread(target=_attach_display,
+                                 args=(job, int(meta["displayPort"])), daemon=True).start()
             REGISTRY.submit(job)
             return self._send(_json(200, {"id": job.id, "status": job.status, "meta": meta}))
         if path.startswith("/api/jobs/") and path.endswith("/cancel"):
@@ -446,7 +512,12 @@ class Handler(BaseHTTPRequestHandler):
             }))
         if action == "start":
             return self._send(_err(405, "use_api_jobs", "请用 POST /api/jobs {op:'sim'}"))
-        if action == "scene" or action == "stream" or action == "files" or action == "file":
+        if action == "stream":
+            job = PROJECT.get("job")
+            if not job:
+                return self._send(_err(503, "no_project", "没有在跑的工程仿真"))
+            return self._stream(job)
+        if action == "scene" or action == "files" or action == "file":
             port = PROJECT.get("port")
             if not port:
                 return self._send(_err(503, "no_project", "没有在跑的工程仿真",
