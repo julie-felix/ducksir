@@ -470,8 +470,11 @@ def main() -> int:
             if stream is not None:
                 stream.send(_msg)
             if stdio:
-                sys.stdout.write(_msg + "\n")
-                sys.stdout.flush()
+                try:
+                    sys.stdout.write(_msg + "\n")
+                    sys.stdout.flush()
+                except BrokenPipeError:
+                    stdio = False       # 页面关了就别再写，也别打一堆 traceback
         if args.pace:
             _due = _t_start + (k + 1) / control_hz
             _slack = _due - _time_mod.time()
