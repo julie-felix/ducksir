@@ -49,3 +49,6 @@ jobs:
         run: |
           printf 'refs/heads/feat/x 1111 refs/heads/feat/x 0000\n' | .githooks/pre-push origin origin.url
           echo "✓ 普通分支放行"
+
+      - name: serve smoke（统一后端 curl 冒烟）
+        run: bash tools/dev/serve_smoke.sh

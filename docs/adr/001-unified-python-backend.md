@@ -59,6 +59,15 @@ GET  /files?path=build/release/x/...   → 只读，白名单 build/ 与 runs/
 - 鉴权：启动时生成一次性 secret 写入 `~/.local/share/ducksir/serve.secret`，请求带 `X-Ducksir-Secret`；
   仅绑 `127.0.0.1`。
 
+## 落地进度（2026-11-13）
+
+- ✅ `sim/host/serve.py`：`/api/health|bundles|jobs|jobs/<id>|stream|cancel|files` + `/ducksir-static/*`
+- ✅ 直播页走 `/api/jobs`（页面可用 `?api=` 指到反代前缀）
+- ✅ 插件宿主退化为纯反代：`/ducksir-live/api/*` → `127.0.0.1:8899/api/*`，旧 spawn 逻辑已删
+- ✅ `tools/dev/serve_smoke.sh`（11 项 curl 断言）进 CI
+- ⏳ `train` 预留为 501（`training/` 目录尚不存在，训练方案未定）
+- ⏳ studio 的 `/start` `/stream` 仍是旧路径，下一步迁到 `/api/jobs`
+
 ## 后果
 
 - 页面从“自己拼 URL + 猜形状”变成“只认 `/api/*` 的固定字段”；

@@ -132,101 +132,30 @@ export function createLive({ repo, python = 'python3' }) {
   }
 
   /**
-   * bundle 直播：spawn `run_bundle.py --stdio`，把 stdout 的 JSONL 直接当 SSE 推给页面。
-   * 这样浏览器跑在 https 面板里也不需要 ws://（会被混合内容拦掉），也不用开端口。
+   * 纯反代：插件不再持有业务逻辑（ADR-001）。
+   * `/ducksir-live/api/*` → 后端 `http://127.0.0.1:${backendPort}/api/*`，SSE 直接 pipe。
+   * 这样「作业长什么样」只有 python 一处定义。
    */
-  let bundleSession = null
-  async function startBundle({ bundle, seconds = 120, mjcf = '' } = {}) {
-    await stopBundle()
-    if (!bundle) throw new Error('缺 bundle')
-    const { existsSync } = await import('node:fs')
-    // 页面可能只传名字（g1-loco），也可能传相对路径（build/release/g1-loco）。
-    // 依次试几个候选，别让「名字对但前缀缺」看起来像 bundle 不存在。
-    const candidates = path.isAbsolute(bundle)
-      ? [bundle]
-      : [
-        path.join(repo, bundle),
-        path.join(repo, 'build/release', bundle),
-        path.join(repo, 'build/release', path.basename(bundle)),
-      ]
-    const dir = candidates.find((d) => existsSync(path.join(d, 'contract.json')))
-    if (!dir) {
-      throw new Error(`bundle 不存在：试过 ${candidates.join('、')}`)
-    }
-    const model = mjcf || path.join(dir, 'robot.xml')
-    const args = [path.join(repo, 'sim/host/run_bundle.py'), '--bundle', dir,
-      '--mjcf', model, '--seconds', String(seconds), '--stdio', '--pace']
-    const child = spawn(python, args, {
-      cwd: repo,
-      env: { ...process.env, PYTHONPATH: pythonPath(), MUJOCO_GL: process.env.MUJOCO_GL || 'egl' },
-      stdio: ['ignore', 'pipe', 'pipe'],
+  const BACKEND_PORT = Number(process.env.DUCKSIR_BACKEND_PORT || 8899)
+  function proxyBackend(req, res, rest) {
+    const upstream = http.request({
+      host: '127.0.0.1', port: BACKEND_PORT, path: rest, method: req.method,
+      headers: { ...req.headers, host: `127.0.0.1:${BACKEND_PORT}` },
+    }, (up) => {
+      res.writeHead(up.statusCode || 502, up.headers)
+      up.pipe(res)
     })
-    const buffer = { chunk: '' }
-    let errTail = ''
-    child.stderr.on('data', (d) => {
-      errTail = (errTail + d).slice(-3000)
-      console.warn('[ducksir-live] bundle stderr:', String(d).slice(-300))
+    upstream.on('error', () => {
+      res.writeHead(502, { 'content-type': 'application/json; charset=utf-8' })
+      res.end(JSON.stringify({
+        error: {
+          code: 'backend_down',
+          message: `连不上后端 127.0.0.1:${BACKEND_PORT}`,
+          detail: { hint: '先起：python3 sim/host/serve.py --port 8899' },
+        },
+      }))
     })
-    child.stdout.setEncoding('utf8')
-    this_bundle = { child, buffer, dir, errTail: () => errTail, listeners: new Set() }
-    child.stdout.on('data', (chunk) => {
-      const st = this_bundle
-      if (!st) return
-      st.buffer.chunk += chunk
-      let idx
-      while ((idx = st.buffer.chunk.indexOf('\n')) >= 0) {
-        const line = st.buffer.chunk.slice(0, idx).trim()
-        st.buffer.chunk = st.buffer.chunk.slice(idx + 1)
-        if (!line) continue
-        // 场景只发一次，但后连上来的页面也得有：留着，接流时补发
-        if (!st.sceneLine && line.includes('"type":"scene"')) st.sceneLine = line
-        for (const fn of st.listeners) fn(line)
-      }
-    })
-    child.on('exit', () => {
-      const st = this_bundle
-      if (st && st.child === child) {
-        st.done = true          // 保底：页面晚连上来时也要知道这轮已经结束
-        // 先告诉页面这一轮结束了（页面据此决定要不要自动重来），再清掉会话
-        for (const fn of st.listeners) { try { fn(JSON.stringify({ type: 'done' })) } catch { /* noop */ } }
-        setTimeout(() => { if (this_bundle === st) this_bundle = null }, 200)
-      }
-    })
-    return { ok: true, bundle: dir }
-  }
-  let this_bundle = null
-
-  function stopBundle() {
-    const st = this_bundle
-    this_bundle = null
-    if (!st) return Promise.resolve({ ok: true, stopped: false })
-    st.child.kill('SIGINT')
-    return new Promise((resolve) => {
-      const t = setTimeout(() => { st.child.kill('SIGKILL'); resolve({ ok: true, stopped: true }) }, 4000)
-      st.child.once('exit', () => { clearTimeout(t); resolve({ ok: true, stopped: true }) })
-    })
-  }
-
-  /** GET：把 bundle 的 stdout JSONL 转成 SSE。 */
-  function bundleStream(req, res) {
-    const st = this_bundle
-    if (!st) {
-      res.writeHead(503, { 'content-type': 'application/json; charset=utf-8' })
-      res.end(JSON.stringify({ error: '没有在跑的 bundle 直播', hint: 'POST /ducksir-live/bundle/start' }))
-      return
-    }
-    res.writeHead(200, {
-      'content-type': 'text/event-stream; charset=utf-8',
-      'cache-control': 'no-cache', connection: 'keep-alive',
-      'x-accel-buffering': 'no',
-    })
-    res.write(': connected\n\n')
-    if (st.sceneLine) res.write(`data: ${st.sceneLine}\n\n`)   // 补发场景（含网格）
-    if (st.done) res.write(`data: {"type":"done"}\n\n`)        // 这轮已经跑完了
-    const fn = (line) => res.write(`data: ${line}\n\n`)
-    st.listeners.add(fn)
-    const ping = setInterval(() => res.write(': ping\n\n'), 15000)
-    req.on('close', () => { clearInterval(ping); st.listeners.delete(fn) })
+    req.pipe(upstream)
   }
 
   function status() {
@@ -321,7 +250,7 @@ export function createLive({ repo, python = 'python3' }) {
     return json(404, { error: '没这个端点', path: pathname })
   }
 
-  return { handle, start, stop, status, startBundle, stopBundle, bundleStream }
+  return { handle, start, stop, status, proxyBackend }
 }
 
 export { PROXY_PATHS }

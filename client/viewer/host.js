@@ -12,6 +12,8 @@ const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const WS_PORT = params.get('ws') ? Number(params.get('ws')) : 0;
 const BUNDLE = params.get('bundle') || '';
+// 同源后端默认 /api；被插件面板嵌时由 ?api=/ducksir-live 指到反代前缀
+const API = (params.get('api') || '').replace(/\/$/, '');
 let loopEnabled = params.get('loop') !== '0';
 if (BUNDLE) $('bundle-name').textContent = BUNDLE.split('/').filter(Boolean).pop() || '';
 
@@ -199,7 +201,7 @@ async function startBundle() {
   if (!bundle) { $('status').textContent = '先选一个 bundle'; return; }
   $('status').textContent = '启动中…';
   // 只发名字：后端会去 build/release/ 找（ADR-001 判据 4：形状固定，不猜路径）
-  const r = await fetch('/api/jobs', {
+  const r = await fetch(`${API}/api/jobs`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ op: 'bundle_live', args: { bundle: bundle.split('/').pop(), seconds: 120 } }),
   });
@@ -212,7 +214,7 @@ async function startBundle() {
   const out = await r.json();
   currentJob = out.id;
   $('status').textContent = `已启动（job ${out.id}），接流中…`;
-  const es = new EventSource(`/api/jobs/${out.id}/stream`);
+  const es = new EventSource(`${API}/api/jobs/${out.id}/stream`);
   es.onmessage = (ev) => {
     try {
       const wrap = JSON.parse(ev.data);
@@ -256,7 +258,7 @@ async function startBundle() {
 
 async function loadBundles() {
   try {
-    const res = await fetch('/api/bundles');
+    const res = await fetch(`${API}/api/bundles`);
     if (!res.ok) {
       $('status').textContent = `读 bundle 列表失败：HTTP ${res.status}`
         + (res.status === 401 ? '（没登录）' : res.status === 404 ? '（后端没起：python3 sim/host/serve.py --port 8899）' : '');

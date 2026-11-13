@@ -268,6 +268,9 @@ def make_op(op: str, args: dict) -> tuple[list[str], dict]:
         argv = [python, os.path.join(ROOT, "sim/host/run_project.py"),
                 "--project", str(project), "--seconds", str(seconds), "--no-open"]
         return argv, {"project": project, "seconds": seconds}
+    if op == "train":
+        # 训练方案还没定（docs/index.md 末尾），先把位置留出来：501 比将来改协议便宜
+        raise NotImplementedError("训练方案未定：training/ 还不存在")
     raise ValueError(f"不认识的 op：{op}")
 
 
@@ -341,6 +344,8 @@ class Handler(BaseHTTPRequestHandler):
             op = body.get("op")
             try:
                 argv, meta = make_op(op, body.get("args") or {})
+            except NotImplementedError as exc:
+                return self._send(_err(501, "not_implemented", str(exc), op=op))
             except ValueError as exc:
                 return self._send(_err(400, "bad_request", str(exc), op=op))
             job = Job(op, argv)
