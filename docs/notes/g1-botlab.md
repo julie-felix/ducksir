@@ -1322,3 +1322,35 @@ step 2: obs 差 0.4846
 
 **当前状态**：观测对齐（step0 action 0.395 vs 0.394），闭环会倒退走并倒。这条线我建议
 先停在这里，把 PHP 变体（106×60 深度 + 7 输出）和 Go2W 接完，再回头啃这个动力学差异。
+
+### 34.4 差异找到了：动作映射不能「整条重排」
+
+按模板 `controller.py` 原文：
+
+```python
+target = robot.default_angles + robot.action_scale * action[robot.motor_order]
+```
+
+关键是**运算顺序**：先把 `action` 换到 motor 序（`action[motor_order]`），
+再和 `default_angles` / `action_scale` **逐项**相加相乘；**不是**把 `default + scale·action`
+整条再按 `motor_order` 重排。两者只差一个置换，但结果差 0.16 rad：
+
+```
+DQ + SC·a[MO]       逐步误差 [0.0, 0.0, 0.0, 0.0]     ← 模板原式，完全复现
+(DQ + SC·a)[MO]     逐步误差 [0.162, 0.270, 0.423, 0.535]   ← 我们之前
+DQ[MO] + SC[MO]·a[MO] 同错
+```
+
+（GMTrack 那个模板只有 `[motor_order]` 一次、且 order 是恒等，所以没暴露这个坑。）
+
+修完的闭环（平地）：
+
+```
+bundle g1-hiking｜400/400 步｜基座 终 +0.834 最低 +0.804｜直立 +0.998
+指令 forward +0.40 → 实际速度 0.531 m/s｜路程 4.01 m
+```
+
+**能按指令走了**（之前是倒退走然后倒）。
+
+楼梯场景还有问题：走到 x=1.8（第一级台阶）后 z 从 0.83 掉到 0.33 再倒，
+说明我按 preset 推的台阶几何（朝向/起坡/是否上楼梯即下坡）还不对，需要按视觉调。

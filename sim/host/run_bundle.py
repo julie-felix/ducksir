@@ -555,10 +555,13 @@ def main() -> int:
         if playhead is not None and in_active_mode:
             playhead.advance()
         if pk_mod is not None:
+            # 模板原式：target = default + action_scale * action[motor_order]
+            # **整条再按 motor_order 重排是错的**（实测差 0.16 rad，复现不了他们的轨迹）：
+            # 先把 action 换到 motor 序，再和 default/scale 逐项算，不再动输出顺序。
             _scale = np.asarray(preset.get("actionScale"), dtype=np.float64)
             _def = np.asarray(preset["defaultJointPositions"], dtype=np.float64)
             _raw = np.asarray(raw, dtype=np.float64)
-            act = (_def + _scale * _raw)[np.asarray(preset["motorJointOrder"])]
+            act = _def + _scale * _raw[np.asarray(preset["motorJointOrder"])]
         if gm_obs_mod is not None:
             # 模板：target = q_ref(t+lead) + scale·action（policy 序），再按 motor_order 重排
             _tref = sim_k * 0.02 + float(gm_cfg.get("reference_lead", 0.02))
