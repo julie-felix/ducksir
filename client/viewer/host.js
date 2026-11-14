@@ -358,6 +358,10 @@ async function loadUiSpec(bundle) {
       el.value = spec.default;
       if ($(`${id}-v`)) $(`${id}-v`).textContent = Number(spec.default).toFixed(2);
     }
+    if ($('cmd-tip')) {
+      $('cmd-tip').textContent = uiSpec.forward.min < 0 ? '支持倒车（训练范围含负速度）'
+        : '该策略不支持倒车（训练范围 0 起）';
+    }
     if (uiSpec.lateral && uiSpec.lateral.min === uiSpec.lateral.max) {
       const lw = $('lat-wrap'); if (lw) lw.style.display = 'none';
     }
