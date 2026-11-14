@@ -347,6 +347,28 @@ def main() -> int:
             print(f"  额外资源 {folder}/（被 MJCF 相对引用）")
         for ups in up_dirs:
             xml = xml.replace(ups, "")
+        # 程序化楼梯：几何完全照 botlab worker 的生成器（mjw.js 的 hn()）：
+        #   m += stepDepth; half_z = stepHeight*(e+1); z = half_z/2
+        #   size = [stepDepth, stepWidth, half_z]（MJCF 是半长！）
+        _scene = (man.get("scene") or {}) if isinstance(man, dict) else {}
+        _stairs = _scene.get("stairs")
+        if _stairs:
+            import math as _math
+            _pos = _stairs.get("position", [0, 0, 0]); _yaw = float(_stairs.get("yaw", 0) or 0)
+            _d = float(_stairs["stepDepth"]); _h = float(_stairs["stepHeight"])
+            _w = float(_stairs["stepWidth"]); _n = int(_stairs["stepCount"])
+            _rows, _m = [], 0.0
+            for _i in range(_n):
+                _m += _d
+                _hz = _h * (_i + 1)
+                _c, _s = _math.cos(_yaw), _math.sin(_yaw)
+                _cx = _pos[0] + _m * _c; _cy = _pos[1] + _m * _s
+                _rows.append(
+                    f'    <geom name="stair_{_i+1}" type="box" pos="{_cx:.6f} {_cy:.6f} {_pos[2] + _hz/2:.6f}"'
+                    f' size="{_d} {_w} {_hz:.6f}" rgba="0.68 0.62 0.52 1"'
+                    f' friction="1.5 0.005 0.0001" group="0" contype="1" conaffinity="1"/>')
+            xml = xml.replace("</mujoco>", "  <worldbody>\n" + "\n".join(_rows) + "\n  </worldbody>\n</mujoco>")
+            print(f"  楼梯 {_n} 级（照 worker 生成器）")
         # 上游 MJCF 没写 <actuator>（Parkour 的机器人就是这种，自动执行器由 preset 生成）：
         # 按契约的驱动关节顺序补一组 motor，ctrlrange 取 preset 的 effortLimit。
         if "<actuator" not in xml:

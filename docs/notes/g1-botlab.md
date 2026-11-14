@@ -1406,3 +1406,43 @@ worker 是 botlab 自编译的 MuJoCo WASM（`mujocoWasmVariant: single-threaded
 1. **从 WASM 里反推**：抓 `mj_*` 导出（MuJoCo 有 `mj_saveLastXML`），但要先找到 worker 的 RPC 通道；
 2. **视觉反推**：编辑器里把相机调到俯视，用已知的 `stepDepth/stepHeight/stepWidth` 当标尺量实际几何；
 3. **接受平地对齐**：策略已能在我们 sim 里按 0.4 m/s 走（这是核心目标），台阶留作后续。
+
+### 34.7 拿到地形生成器源码了（`mujocoWorker-*.js` 的 `hn()`）
+
+worker 脚本是 `https://botlab.enkeebot.com/assets/mujocoWorker-<hash>.js`（80 KB，没混淆）。
+里面 `Mn()` 按 `terrainKind` 分派，`stairs` 走 `hn()`，逐字抄下来是：
+
+```js
+function hn(e, suspend) {
+  n = position; r = yaw; i = stepDepth; a = stepHeight; o = stepWidth; s = stepCount;
+  l = suspend ? |a - gap| : a;
+  d = quat(0,0,r); p = []; m = 0; h = -0.5*a;
+  for (e = 0; e < s; e++) {
+    m += i;                        // 每级再前进一个 stepDepth
+    s2 = suspend ? l : a * (e+1);  // 这一级的「半高」
+    h  = suspend ? h + a : s2*0.5; // 中心高度
+    [c,g] = rotate(m, 0, yaw);     // 绕 yaw 旋转
+    p.push(geom({ pos:[n0+c, n1+g, n2+h], size:[i, o, s2], quat:d }));
+  }
+}
+```
+
+要点（和想当然的拼法都不同）：
+
+- `size = [stepDepth, stepWidth, half_z]` —— **MJCF 是半长**，所以每级台阶在 x 方向长 `2×0.28=0.56 m`，
+  相邻两级互相重叠 0.28 m；
+- 第 e 级顶面高度是 `stepHeight*(e+1)`，但**中心只在半高处**，所以第一级顶面其实是 **0.09 m**（不是 0.06）；
+- 整条楼梯从 `position` 沿 yaw 方向排，第一级中心在 `position + stepDepth`。
+
+已按这个公式重写进 `export_artifacts.py`（读 manifest 的 `scene.stairs`），不再是手推的近似。
+
+### 但台阶上仍然会倒
+
+用**逐字复刻**的几何跑 12 s：
+
+```
+基座 终 +0.074｜直立 +0.334｜速度 0.268 m/s
+```
+
+所以几何不是瓶颈了。剩下只可能是：深度噪声/高斯顺序、接触参数，或他们场景里还有别的东西
+（比如出生平台）。这条线到这里我先停，记录在案。
