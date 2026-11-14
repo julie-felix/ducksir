@@ -380,19 +380,37 @@ function wireControls() {
   };
   const speedBox = $('speed');
   if (speedBox) speedBox.onchange = () => pushControl();
+  // 键盘：**按住**加速（botlab 的 rampRate 语义），松手停在当前值
+  const held = new Set();
+  let lastTick = performance.now();
+  const tick = () => {
+    const now = performance.now();
+    const dt = Math.min(Math.max(now - lastTick, 0), 250) / 1000;
+    lastTick = now;
+    const rate = (uiSpec && uiSpec.rampRate) || 4;
+    const step = rate * dt;
+    const bump = (el, dir, spec) => {
+      if (!el || !spec || dir === 0) return 0;
+      const target = dir > 0 ? spec.max : spec.min;
+      const cur = Number(el.value);
+      const next = Math.abs(target - cur) <= step ? target : cur + Math.sign(target - cur) * step;
+      if (next !== cur) el.value = String(next);
+      return Math.abs(next - cur);
+    };
+    const fwdDir = (held.has('w') ? 1 : 0) + (held.has('s') ? -1 : 0);
+    const yawDir = (held.has('d') ? 1 : 0) + (held.has('a') ? -1 : 0);
+    const spec = uiSpec || { forward: { min: -0.8, max: 2.5 }, yaw: { min: -3.14, max: 3.14 } };
+    const d1 = bump($('fwd'), fwdDir, spec.forward);
+    const d2 = bump($('yaw'), yawDir, spec.yaw);
+    if (d1 > 0 || d2 > 0) pushControl();
+  };
+  setInterval(tick, 60);
   addEventListener('keydown', (e) => {
-    const step = (uiSpec && uiSpec.forward && uiSpec.forward.step) || 0.05;
-    const fwd = $('fwd'); const yaw = $('yaw');
-    if (!fwd || !yaw) return;
-    const fmin = uiSpec ? uiSpec.forward.min : -0.8;
-    const fmax = uiSpec ? uiSpec.forward.max : 2.5;
-    if (e.key === 'w') fwd.value = String(Math.min(fmax, Number(fwd.value) + step));
-    else if (e.key === 's') fwd.value = String(Math.max(fmin, Number(fwd.value) - step));
-    else if (e.key === 'a') yaw.value = String(Math.max(-3.14, Number(yaw.value) - step));
-    else if (e.key === 'd') yaw.value = String(Math.min(3.14, Number(yaw.value) + step));
-    else return;
-    pushControl();
+    const k = e.key.toLowerCase();
+    if (['w', 'a', 's', 'd'].includes(k)) { held.add(k); e.preventDefault(); }
   });
+  addEventListener('keyup', (e) => { held.delete(e.key.toLowerCase()); });
+  addEventListener('blur', () => held.clear());
 }
 async function startBundle() {
   const bundle = $('bundle').value;

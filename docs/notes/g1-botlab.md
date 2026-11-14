@@ -1546,3 +1546,27 @@ controls.target.set(wp.x + 1.2, wp.y - 0.6, wp.z);
 页面按 `size*2` 建 `PlaneGeometry` 就成了 0×0 的方片 → 现在尺寸为 0 时按 40×40 兜底。
 
 ![跟随相机](../images/host-follow-cam.png)
+
+### 37.1 键盘改成 botlab 的「按住加速」语义
+
+庆喆说「原本的操作像 RPG，我们的不像」。查 botlab 前端（`botlabBridge` 的 `Vt()`）：
+
+```js
+rampRate = bindings.rampRate ?? 4          // 每秒多少个指令单位
+dt = clamp(now - last, 0, 0.25)
+step = rampRate * dt
+target = 按住 increase ? max : 按住 decrease ? min : 当前值
+value = 朝 target 逼近 step                 // Bt()：够近就一步到位
+```
+
+也就是：**按住 W → 以 4/s 的速度往上限逼近；松手停在当前值（巡航）；按 S 反向**。
+我们原来是「按一下 +0.05」的离散步进，所以不像 RPG。
+
+现在照抄这套：
+
+- `contract.json` 的 `robot.ui.rampRate = 4`；
+- 页面记录按键状态，每 60 ms tick 一次，`step = rampRate × dt` 朝上限/下限逼近；
+- 松手保持当前值（和 botlab 一致），滑杆仍然可以手动拖。
+
+实测（php，上限 1.0）：按住 W 1 s → 值 0→1，松手保持 1；hiking（上限 0.5）按住 W 600 ms → 0.5，
+机器人随后按这个速度走。
