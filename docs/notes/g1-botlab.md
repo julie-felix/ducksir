@@ -1427,14 +1427,27 @@ function hn(e, suspend) {
 }
 ```
 
-要点（和想当然的拼法都不同）：
+要点：`hn()` 传出的 `size` 是**全长**，最后统一进 `mn()`：
 
-- `size = [stepDepth, stepWidth, half_z]` —— **MJCF 是半长**，所以每级台阶在 x 方向长 `2×0.28=0.56 m`，
-  相邻两级互相重叠 0.28 m；
-- 第 e 级顶面高度是 `stepHeight*(e+1)`，但**中心只在半高处**，所以第一级顶面其实是 **0.09 m**（不是 0.06）；
-- 整条楼梯从 `position` 沿 yaw 方向排，第一级中心在 `position + stepDepth`。
+```js
+function mn(e){ ... V(`size`, H(e.size.map(v => v * 0.5))) ... }   // ← 在这里折半
+```
 
-已按这个公式重写进 `export_artifacts.py`（读 manifest 的 `scene.stairs`），不再是手推的近似。
+所以 MJCF 里是半长 `[stepDepth/2, stepWidth/2, stepHeight*(e+1)/2]`，
+第 e 级顶面 = `stepHeight*(e+1)`，第一级中心在 `position + stepDepth`、顶面 0.06 m。
+
+**我一开始漏看了 `mn()` 的折半**，把 `stepDepth` 当半长 → 每级台阶变成 0.56 m 长、互相重叠
+0.28 m，于是机器人踩到的是一堆错位的台阶。改对之后：
+
+```
+bundle g1-hiking（12 s，指令 0.4）｜基座 终 +0.842｜直立 +0.999｜实际速度 0.484 m/s
+t=4.00 x=1.90 z=0.821   ← 到第一级
+t=5.00 x=2.41 z=1.006   ← 上台阶
+t=6.00 x=2.86 z=1.108   ← 顶层（0.82 + 5×0.06 ≈ 1.12）
+t=8.00 x=3.65 z=0.821   ← 走下来继续前进
+```
+
+**Hiking Parkour 端到端跑通了**：平地走、上楼梯、下楼梯、按速度指令前进。
 
 ### 但台阶上仍然会倒
 
