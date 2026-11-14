@@ -361,7 +361,12 @@ def main() -> int:
                     continue
                 lim = float(lim[1]) if lim else 100.0
                 lim = abs(lim)
-                rows.append(f'    <motor joint="{jn}" ctrlrange="-{lim} {lim}" gear="1"/>')
+                if preset.get("actuatorMode") == "position":
+                    kp = float(preset["kp"][i]); kd = float(preset["kd"][i])
+                    rows.append(f'    <position joint="{jn}" kp="{kp}" kv="{kd}" '
+                                f'ctrlrange="-3.14 3.14" forcerange="-{lim} {lim}"/>')
+                else:
+                    rows.append(f'    <motor joint="{jn}" ctrlrange="-{lim} {lim}" gear="1"/>')
             if rows:
                 block = "  <actuator>\n" + "\n".join(rows) + "\n  </actuator>\n"
                 xml = xml.replace("</mujoco>", block + "</mujoco>")

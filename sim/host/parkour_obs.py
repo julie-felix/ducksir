@@ -43,48 +43,43 @@ JOINTVEL_SCALE = 0.05
 
 
 class StateHistory:
-    """按 term 平铺的本体历史：**最老在前、最新在后；未填的槽位补 0**。
+    """按 term 平铺的本体历史：最老在前、最新在后；**首帧重复填满**。
 
-    实测（botlab 录像 step 4 的 q 段 8 帧首值）：
-
-    ```
-    [0, 0, 0, 0, 0.003, 0.010, 0.026, 0.051]
-    ```
-
-    前 4 个还是 0（没填），后 4 个是已经发生的步、越靠后越新。
-    注意这跟 GMTrack 那套「首帧填满」不同——按模板分别处理，别通用化。
+    实测证据是 gravity 段（q 段的 0 会骗人：初始 q 恰好是 0）：
+    step 6 时他们前两帧都是 `[0,-0,-1]`（初始重力），后面才随姿态变化 ——
+    说明未填的槽位复制**第一帧观测**，不是补 0。
     """
+
+    CONSTANT_TERMS = (2,)      # 第 3 段是速度指令：8 帧都填当前值
 
     def __init__(self, frames: int = HISTORY, dim: int = STATE_PER_FRAME):
         self.frames = frames
         self.dim = dim
-        self.buf: list[np.ndarray] = [np.zeros(dim, dtype=np.float64) for _ in range(frames)]
-
-    CONSTANT_TERMS = (2,)      # 第 3 段是速度指令：它不随历史变化，8 帧都填当前值
+        self.buf: list[np.ndarray] | None = None
 
     def push(self, terms) -> np.ndarray:
         vec = np.concatenate([np.asarray(t, dtype=np.float64).reshape(-1) for t in terms])
         if vec.shape[0] != self.dim:
             raise ValueError(f"本体观测应为 {self.dim} 维，现在是 {vec.shape[0]}")
-        self.buf.append(vec.copy())
-        del self.buf[:max(0, len(self.buf) - self.frames)]
-        # 常量段：把已填的所有帧都改成最新值（实测他们 command 段 8 帧全是 0.4）
-        off = 0
-        for idx, d in enumerate((3, 3, 3, JOINT_COUNT, JOINT_COUNT, JOINT_COUNT)):
-            if idx in self.CONSTANT_TERMS:
-                for f in self.buf:
-                    f[off:off + d] = vec[off:off + d]
-            off += d
+        if self.buf is None:
+            self.buf = [vec.copy() for _ in range(self.frames)]
+        else:
+            self.buf.append(vec.copy())
+            del self.buf[:max(0, len(self.buf) - self.frames)]
         out = []
         off = 0
-        for d in (3, 3, 3, JOINT_COUNT, JOINT_COUNT, JOINT_COUNT):
-            for f in self.buf:
-                out.append(f[off:off + d])
+        for idx, d in enumerate((3, 3, 3, JOINT_COUNT, JOINT_COUNT, JOINT_COUNT)):
+            latest = vec[off:off + d]
+            for i, f in enumerate(self.buf):
+                if idx in self.CONSTANT_TERMS or (i == len(self.buf) - 1 and False):
+                    out.append(latest)
+                else:
+                    out.append(f[off:off + d])
             off += d
         return np.concatenate(out)
 
     def reset(self):
-        self.buf = [np.zeros(self.dim, dtype=np.float64) for _ in range(self.frames)]
+        self.buf = None
 
 
 class DepthHistory:
