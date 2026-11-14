@@ -141,12 +141,30 @@ def main() -> int:
     use_reference = any(int(p.get("mode", 0)) in (3, 4) for p in (con.get("policies") or []))
     _motion_all = (con.get("robot") or {}).get("motion")
     # UniSuperMimic：配方是单条目 mimic:uni，不走 reference，但要读动作
-    _is_uni = bool(_motion_all) and _motion_all.get("format") in ("unisupermimic", "instinct", "gmtrack")
+    _is_uni = bool(_motion_all) and _motion_all.get("format") in ("unisupermimic", "instinct", "gmtrack", "parkour")
     motion_cfg = _motion_all if (use_reference or _is_uni) else None
     ref_angles = (con.get("robot") or {}).get("reference_joint_positions")
     motion_arrays = motion_meta = playhead = None
     uni_obs_mod = uni_motion = uni_hist = None
     inst_obs_mod = inst_motion = inst_hist = inst_cfg = inst_cam = None
+    pk_mod = pk_cam = pk_enc = pk_state_hist = pk_depth_hist = pk_cfg = None
+    if motion_cfg and motion_cfg.get("format") == "parkour":
+        import onnxruntime as _ort
+        import parkour_obs as _PK
+        from depth_camera import DepthCamera as _DepthCamera
+        pk_mod = _PK
+        pk_cfg = dict(motion_cfg)
+        _cam_spec = dict(motion_cfg.get("camera") or {})
+        _cam_spec.setdefault("cropMode", "offset")
+        pk_cfg["_cam_spec"] = _cam_spec     # 相机要等模型编译完才能建
+        _enc_path = motion_cfg.get("encoder")
+        if not os.path.isabs(_enc_path):
+            _enc_path = os.path.join(bdir, os.path.basename(_enc_path)) if os.path.isfile(
+                os.path.join(bdir, os.path.basename(_enc_path))) else _enc_path
+        pk_enc = _ort.InferenceSession(_enc_path, providers=["CPUExecutionProvider"])
+        pk_state_hist = _PK.StateHistory(int(motion_cfg.get("stateHistory", 8)))
+        _dh = motion_cfg.get("depthHistory") or {}
+        pk_depth_hist = _PK.DepthHistory(int(_dh.get("frames", 8)), int(_dh.get("stride", 5)))
     gm_obs_mod = gm_motion = gm_ph = gm_ah = gm_cfg = None
     if motion_cfg and motion_cfg.get("format") == "gmtrack":
         import numpy as _np
@@ -257,6 +275,9 @@ def main() -> int:
         geom.size = [6.0, 6.0, 0.1]
         geom.condim = 3
     m = spec.compile()
+    if pk_cfg is not None:
+        from depth_camera import DepthCamera as _DepthCamera
+        pk_cam = _DepthCamera(m, pk_cfg["_cam_spec"])
     d = mujoco.MjData(m)
     m.opt.timestep = 1.0 / physics_hz
     d.qpos[:] = robot["initial_qpos"]
@@ -423,6 +444,23 @@ def main() -> int:
                 last_anchor_quat=motion_arrays["body_quat"][last][0],
                 base_quat=d.qpos[3:7], pause=playhead.paused)
         mimic_obs = None
+        if pk_mod is not None:
+            _pb = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
+            if _pb < 0:
+                _pb = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "pelvis")
+            _R = _GM_mat(d.xquat[_pb])
+            _ang = _R.T @ np.asarray(d.cvel[_pb][:3], dtype=np.float64)
+            _frame = pk_cam.process(pk_cam.render(d), pk_mod.DEPTH_SHAPE[2], pk_mod.DEPTH_SHAPE[1])
+            _dhist = pk_depth_hist.push(_frame)
+            _latent = pk_enc.run(None, {"input": _dhist[None].astype("float32")})[0]
+            _state = pk_state_hist.push(pk_mod.state_terms(
+                angvel_b=_ang, gravity_b=_R.T @ np.array([0, 0, -1.0]),
+                command=np.array([cmd[0], cmd[1], cmd[2]], dtype=np.float64),
+                joint_pos=np.asarray(d.qpos[7:36], dtype=np.float64),
+                default_angles=np.asarray(preset["defaultJointPositions"], dtype=np.float64),
+                joint_vel=np.asarray(d.qvel[6:35], dtype=np.float64),
+                last_action=last_action))
+            mimic_obs = pk_mod.actor_obs(_state, _latent)
         if gm_obs_mod is not None:
             _pb = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "pelvis")
             _R = _GM_mat(d.xquat[_pb])
@@ -514,6 +552,11 @@ def main() -> int:
             act = raw
         if playhead is not None and in_active_mode:
             playhead.advance()
+        if pk_mod is not None:
+            _scale = np.asarray(preset.get("actionScale"), dtype=np.float64)
+            _def = np.asarray(preset["defaultJointPositions"], dtype=np.float64)
+            _raw = np.asarray(raw, dtype=np.float64)
+            act = (_def + _scale * _raw)[np.asarray(preset["motorJointOrder"])]
         if gm_obs_mod is not None:
             # 模板：target = q_ref(t+lead) + scale·action（policy 序），再按 motor_order 重排
             _tref = sim_k * 0.02 + float(gm_cfg.get("reference_lead", 0.02))

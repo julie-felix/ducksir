@@ -99,6 +99,10 @@ class DepthCamera:
             model.stat.extent = float(forced)
         self.crop_x = int(spec.get("cropX", 0))
         self.crop_y = int(spec.get("cropY", 0))
+        self.out_w = int(spec.get("width", 32))
+        self.out_h = int(spec.get("height", 18))
+        self.gauss_kernel = int(spec.get("depthGaussianKernelSize") or 0)
+        self.gauss_sigma = float(spec.get("depthGaussianSigma") or 1.0)
         self.renderer = Renderer(model, self.height, self.width)
         self.option = None
         if self.groups:
@@ -155,8 +159,22 @@ class DepthCamera:
         残差 0.0986、相关 0.9993；换成 align_corners=True 差 0.1246。
         """
         h, w = full.shape
-        window = full[self.crop_y:self.crop_y + (h - 2 * self.crop_y),
-                      self.crop_x:self.crop_x + (w - 2 * self.crop_x)]
+        if self.spec.get("cropMode") == "offset":
+            # parkour 的 preset 里 cropX/cropY 是**左上角偏移**（64×36 → 裁 32×18）
+            window = full[self.crop_y:self.crop_y + int(self.out_h),
+                          self.crop_x:self.crop_x + int(self.out_w)]
+        else:
+            window = full[self.crop_y:h - self.crop_y, self.crop_x:w - self.crop_x]
+        if self.gauss_kernel >= 3:
+            # botlab 对裁剪后的深度做 3×3 高斯（σ=1）再进网络
+            import numpy as _np
+            r = self.gauss_kernel // 2
+            g = _np.exp(-(_np.arange(-r, r + 1) ** 2) / (2 * self.gauss_sigma ** 2))
+            g /= g.sum()
+            padded = _np.pad(window, ((r, r), (r, r)), mode="edge")
+            window = sum(g[i] * sum(g[j] * padded[i:i + window.shape[0], j:j + window.shape[1]]
+                                   for j in range(self.gauss_kernel))
+                         for i in range(self.gauss_kernel))
         scale = float(self.spec.get("depthScale") or 1.0)
         img = np.clip(window.astype(np.float64) / scale, 0.0, 1.0)
         return resize_depth(img, out_w, out_h, align_corners=False)

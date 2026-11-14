@@ -1206,3 +1206,37 @@ actor   输入 (1, 896)         ← state 768 + latent 128
 - 在我们这边生成同样的**楼梯地形**（5 级、0.06 m 高、0.28 m 深、宽 1.4、x 偏移 1.6）；
 - 深度相机按这套 preset 重配（64×36 渲染 → 裁 32×18，fov 58.29，near .1 far 2.5，scale 2.5，3×3 高斯）；
 - runner 支持 **encoder+actor 两段推理**（现在只支持单个 ONNX）。
+
+## 34. Hiking Parkour：管线打通了，行为还没对上（WIP）
+
+用 §33 拿到的三份 preset 把整条链路接起来了：
+
+| 环节 | 做法 | 状态 |
+|---|---|---|
+| 机器人 | 站点 `models/g1/instinctmj/*`（MJCF + 35 网格） | ✅ |
+| 执行器 | 上游 MJCF 没有 `<actuator>`，export 按契约补 29 个 `motor`（ctrlrange=effortLimit） | ✅ |
+| 楼梯地形 | 派生 `scene_stairs.xml`：5 级、0.06 高、0.28 深、宽 1.4、x=1.6 | ✅ |
+| 深度相机 | `depth_camera.py` 支持 **offset 裁剪**（64×36 → 裁 32×18）+ 3×3 高斯 | ✅ 对拍残差 **0.0032** |
+| 观测 | `parkour_obs.py`：state 96×8 + 深度历史 8 帧（stride 5）→ 编码器 128 | ✅ |
+| 两段推理 | runner 里 encoder → latent → actor（896） | ✅ |
+| 闭环 | 400 步会倒（`直立 −0.833`） | ❌ |
+
+相机对拍（用 `/tmp/hiking.jsonl` 里录到的 encoder 输入）：
+
+```
+我们的深度范围 0.452–0.656｜他们 0.450–0.670
+最新帧平均差 0.0032（噪声 std .001 + 高斯顺序）
+```
+
+### 顺带修的两个 export bug（对所有 bundle 都有用）
+
+1. **MJCF 用 `<include>` 时网格收不到**：export 只扫顶层 XML 的 `file="*.STL"`，
+   Parkour 的 scene 是一层壳 → 收 0 个网格。现在会跟进 include，并把 include 文件里
+   `meshdir` 也改成 `.`（否则解析成 `meshes/<bundle 路径>/x.STL`）。
+2. **没有 `<actuator>` 的 MJCF**：按契约补 `motor`，上限取 preset 的 `effortLimit`。
+
+### 下一步
+
+- 用录到的 `qpos` 逐段对拍 `state 768`（先确认本体观测一致，再看闭环为什么倒）；
+- 楼梯几何是我按 preset 推的（朝向/起坡方向没验证）——他们录制那次是**平地**跑的
+  （程序化地形只在编辑器里生成），所以台阶形状只能靠视觉调。

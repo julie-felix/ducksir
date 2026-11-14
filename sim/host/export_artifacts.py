@@ -67,6 +67,7 @@ SOURCE_BY_SLOT = {
     "mimic_uni": lambda o: "mimic:uni",
     "mimic_instinct": lambda o: "mimic:instinct",
     "mimic_gmtrack": lambda o: "mimic:gmtrack",
+    "mimic_parkour": lambda o: "mimic:parkour",
 }
 
 
@@ -226,7 +227,12 @@ def main() -> int:
         if os.path.isdir(src):
             if os.path.isdir(dst):
                 shutil.rmtree(dst)
-            if motion_cfg.get("format") == "gmtrack":
+            if motion_cfg.get("format") == "parkour":
+                # 两段推理：编码器模型也要进 bundle
+                enc = motion_cfg.get("encoder")
+                if enc and os.path.isfile(enc):
+                    shutil.copyfile(enc, os.path.join(bundle_dir, "parkour_enc.onnx"))
+            elif motion_cfg.get("format") == "gmtrack":
                 os.makedirs(dst, exist_ok=True)
                 clip = motion_cfg.get("clip")
                 shutil.copyfile(os.path.join(src, f"{clip}.npz"), os.path.join(dst, f"{clip}.npz"))
@@ -308,6 +314,14 @@ def main() -> int:
         src = os.path.join(ROOT, args.mjcf)
         xml = open(src, encoding="utf-8").read()
         mesh_dir = re.search(r'meshdir="([^"]+)"', xml)
+        if not mesh_dir:
+            # meshdir 常写在被 include 的文件里（Parkour 的 scene 就是一层壳）
+            for _inc in re.findall(r'<include file="([^"]+)"', xml):
+                _p = os.path.join(os.path.dirname(src), _inc)
+                if os.path.isfile(_p):
+                    mesh_dir = re.search(r'meshdir="([^"]+)"', open(_p, encoding="utf-8").read())
+                    if mesh_dir:
+                        break
         assets_dir = os.path.join(os.path.dirname(src), mesh_dir.group(1)) if mesh_dir else os.path.dirname(src)
         xml = re.sub(r'meshdir="[^"]+"', 'meshdir="."', xml)
         # 相对上级目录的资源（Instinct 的 ../../terrain/*.obj，深度相机会看到它）一起搬进 bundle
@@ -333,9 +347,41 @@ def main() -> int:
             print(f"  额外资源 {folder}/（被 MJCF 相对引用）")
         for ups in up_dirs:
             xml = xml.replace(ups, "")
+        # 上游 MJCF 没写 <actuator>（Parkour 的机器人就是这种，自动执行器由 preset 生成）：
+        # 按契约的驱动关节顺序补一组 motor，ctrlrange 取 preset 的 effortLimit。
+        if "<actuator" not in xml:
+            _ent = E.read_yaml(os.path.join(ROOT, args.entity)) if getattr(args, "entity", None) else {}
+            acts = doc_contract.get("actuators") or _ent.get("actuators") or []
+            # 契约里执行器的关节名与力矩上限
+            rows = []
+            for i, a in enumerate(acts):
+                jn = a.get("joint")
+                lim = a.get("ctrlrange")
+                if not jn:
+                    continue
+                lim = float(lim[1]) if lim else 100.0
+                lim = abs(lim)
+                rows.append(f'    <motor joint="{jn}" ctrlrange="-{lim} {lim}" gear="1"/>')
+            if rows:
+                block = "  <actuator>\n" + "\n".join(rows) + "\n  </actuator>\n"
+                xml = xml.replace("</mujoco>", block + "</mujoco>")
+                print(f"  补执行器 {len(rows)} 个（motor）")
         with open(os.path.join(out, "robot.xml"), "w", encoding="utf-8") as f:
             f.write(xml)
-        meshes = sorted({m for m in re.findall(r'file="([^"]+\.(?:stl|STL|obj|OBJ))"', xml)})
+        # 顶层 XML 可能只写了 <include file="..."/>（Parkour 的 scene 就是这样）：
+        # 把被 include 的文件也复制进 bundle，并把它的网格一起收进来
+        inc_meshes = []
+        for inc in re.findall(r'<include file="([^"]+)"', xml):
+            inc_src = os.path.join(os.path.dirname(src), inc)
+            if not os.path.isfile(inc_src):
+                continue
+            inc_txt = open(inc_src, encoding="utf-8").read()
+            # 被 include 的文件也要把 meshdir 改成 "."（网格都放在 bundle 根）
+            inc_txt = re.sub(r'meshdir="[^"]+"', 'meshdir="."', inc_txt)
+            with open(os.path.join(out, inc), "w", encoding="utf-8") as f:
+                f.write(inc_txt)
+            inc_meshes += re.findall(r'file="([^"]+\.(?:stl|STL|obj|OBJ))"', inc_txt)
+        meshes = sorted(set(re.findall(r'file="([^"]+\.(?:stl|STL|obj|OBJ))"', xml)) | set(inc_meshes))
         mesh_out = out          # 网格直接放 bundle 根：meshdir="." 对宿主和浏览器都成立
         copied = 0
         for name in meshes:

@@ -1,0 +1,40 @@
+# G1 Hiking Parkour：两段推理（深度编码器 → actor），obs 896。
+# 对齐模板 G1-Hiking-Parkour/controller.py：
+#   state 768 = [angvel*0.25, gravity, command(3), q−default, qd*0.05, last_action] × 8（by-term）
+#   depth 8×18×32（stride=5 采样）→ encoder → latent 128
+#   actor(state, latent) → 29 维动作；target = default + scale·action[motor_order]
+kind: ducksir-policy-manifest
+version: 1
+policy_id: g1-hiking
+
+model:
+  file: build/models/g1-parkour.onnx
+  encoder: build/models/g1-parkour-enc.onnx
+  input: {name: obs, shape: [1, 896]}
+  output: {name: actions, shape: [1, 29]}
+
+policies:
+  - {key: g1-hiking, mode: 0, file: build/models/g1-parkour.onnx}
+
+obs:
+  - {slot: mimic_parkour, len: 896}
+
+history: {length: 0, layout: by-term}
+
+action:
+  mapping: default_plus_scale
+  order: motor
+  clip: ctrlrange
+
+rates: {control_hz: 50, physics_hz: 200, inference_decimation: 4}
+
+scene:
+  preset: third_party/g1-parkour/presets/stairs.preset.yaml
+  stairs: {stepCount: 5, stepHeight: 0.06, stepDepth: 0.28, stepWidth: 1.4, position: [1.6, 0, 0]}
+
+provenance:
+  source: botlab 模板 G1-Hiking-Parkour · assets/models/*.onnx（2026-11-14 取）
+  presets: third_party/g1-parkour/presets/（从站点 low-code bundle 提取）
+  obs_layout: state 96×8 + latent 128 = 896（录制对拍 /tmp/hiking.jsonl）
+  depth_camera: 32×18，full 64×36，crop 偏移 (16,18)，fov 58.29，near .1 far 2.5，scale 2.5，3×3 高斯
+  note: 上游无根 LICENSE；仅本地兼容性对照用，不对外分发。
