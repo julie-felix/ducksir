@@ -1459,3 +1459,36 @@ t=8.00 x=3.65 z=0.821   ← 走下来继续前进
 
 所以几何不是瓶颈了。剩下只可能是：深度噪声/高斯顺序、接触参数，或他们场景里还有别的东西
 （比如出生平台）。这条线到这里我先停，记录在案。
+
+## 35. PHP Parkour：也接上了（140 维观测 + 两段推理）
+
+模板 `G1-PHP-Parkour` 自带机器人场景、模型和 preset，所以这次不用去站点挖资源。观测：
+
+```
+3(gravity) + 3(angvel) + 29(q−default) + 29(qd) + 29(last_action)
++ 11(指令 one-hot) + 4(pad) + 32(latent) = 140
+```
+
+- 深度：106×60 渲染 → offset(4,0) 裁 98×58 → 缩到 87×58 → `×1.1111 − 0.6111` → backbone → latent 32；
+- latent 要按 `delay(total_steps=7, age, prime=True)` 延迟（逐行照抄了 SDK 的 ring 实现）；
+- actor 多一个 `time_step` 常量输入（0）；
+- 动作：`target = default + (scale·action)[motor_order]`，torque 执行器 + 引擎 PD。
+
+### 三个坑（都和后处理顺序有关）
+
+1. **PD 的 qpos 必须用原生序**：PHP 的 preset 带 `actuatorJointOrder`（非恒等），
+   他们的引擎是 `tau[i] = kp[i]·(target[i]−qpos[7+i]) − kd[i]·qvel[6+i]`，
+   而我们原来按契约的 driven 序取 qpos → PD 作用在错关节上，**第 1 步 qvel 就飙到 29 rad/s**。
+2. **tau 要写进 `ctrl[actuatorJointOrder[i]]`**，不是 `ctrl[i]`；
+3. **纹理要一起打包**：场景引用了 17 张 `botworld_*.png`，export 原来只搬 stl/obj。
+
+修完：
+
+```
+指令 0 → 基座 0.785｜直立 0.985（300 步）
+指令 0.4 → 速度 1.012 m/s｜路程 9.22 m｜直立 0.981
+```
+
+### 现在的 bundle 清单（9 个）
+
+wbc / amp / mjamp / loco / unisupermimic / instinct / gmtrack / hiking / php

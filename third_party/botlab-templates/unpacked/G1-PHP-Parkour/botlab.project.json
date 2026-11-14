@@ -1,0 +1,506 @@
+{
+  "format": "botlab-project",
+  "version": 1,
+  "files": [
+    "config/io.yaml",
+    "config/observation.yaml",
+    "config/parameters.yaml",
+    "config/runtime.yaml",
+    "controller.py",
+    "depth-camera.preset.yaml",
+    "g1-php.preset.yaml",
+    "main.py",
+    "php_policy.py"
+  ],
+  "assets": [
+    {
+      "resourceId": "workspace-asset-assets-models-php_parkour_actor.onnx",
+      "source": "assets/models/php_parkour_actor.onnx",
+      "path": "assets/models/php_parkour_actor.onnx",
+      "name": "php_parkour_actor.onnx",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-models-php_parkour_depth_backbone.onnx",
+      "source": "assets/models/php_parkour_depth_backbone.onnx",
+      "path": "assets/models/php_parkour_depth_backbone.onnx",
+      "name": "php_parkour_depth_backbone.onnx",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_banner.png",
+      "source": "assets/scenes/botworld_banner.png",
+      "path": "assets/scenes/botworld_banner.png",
+      "name": "botworld_banner.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_01.png",
+      "source": "assets/scenes/botworld_box_01.png",
+      "path": "assets/scenes/botworld_box_01.png",
+      "name": "botworld_box_01.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_02.png",
+      "source": "assets/scenes/botworld_box_02.png",
+      "path": "assets/scenes/botworld_box_02.png",
+      "name": "botworld_box_02.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_03.png",
+      "source": "assets/scenes/botworld_box_03.png",
+      "path": "assets/scenes/botworld_box_03.png",
+      "name": "botworld_box_03.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_04.png",
+      "source": "assets/scenes/botworld_box_04.png",
+      "path": "assets/scenes/botworld_box_04.png",
+      "name": "botworld_box_04.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_05.png",
+      "source": "assets/scenes/botworld_box_05.png",
+      "path": "assets/scenes/botworld_box_05.png",
+      "name": "botworld_box_05.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_06.png",
+      "source": "assets/scenes/botworld_box_06.png",
+      "path": "assets/scenes/botworld_box_06.png",
+      "name": "botworld_box_06.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_07.png",
+      "source": "assets/scenes/botworld_box_07.png",
+      "path": "assets/scenes/botworld_box_07.png",
+      "name": "botworld_box_07.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_08.png",
+      "source": "assets/scenes/botworld_box_08.png",
+      "path": "assets/scenes/botworld_box_08.png",
+      "name": "botworld_box_08.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_09.png",
+      "source": "assets/scenes/botworld_box_09.png",
+      "path": "assets/scenes/botworld_box_09.png",
+      "name": "botworld_box_09.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_10.png",
+      "source": "assets/scenes/botworld_box_10.png",
+      "path": "assets/scenes/botworld_box_10.png",
+      "name": "botworld_box_10.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_11.png",
+      "source": "assets/scenes/botworld_box_11.png",
+      "path": "assets/scenes/botworld_box_11.png",
+      "name": "botworld_box_11.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_12.png",
+      "source": "assets/scenes/botworld_box_12.png",
+      "path": "assets/scenes/botworld_box_12.png",
+      "name": "botworld_box_12.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_13.png",
+      "source": "assets/scenes/botworld_box_13.png",
+      "path": "assets/scenes/botworld_box_13.png",
+      "name": "botworld_box_13.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_14.png",
+      "source": "assets/scenes/botworld_box_14.png",
+      "path": "assets/scenes/botworld_box_14.png",
+      "name": "botworld_box_14.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_15.png",
+      "source": "assets/scenes/botworld_box_15.png",
+      "path": "assets/scenes/botworld_box_15.png",
+      "name": "botworld_box_15.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-botworld_box_16.png",
+      "source": "assets/scenes/botworld_box_16.png",
+      "path": "assets/scenes/botworld_box_16.png",
+      "name": "botworld_box_16.png",
+      "mimeType": "image/png",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-g1_with_terrain.xml",
+      "source": "assets/scenes/g1_with_terrain.xml",
+      "path": "assets/scenes/g1_with_terrain.xml",
+      "name": "g1_with_terrain.xml",
+      "mimeType": "application/xml",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-half_sphere.obj",
+      "source": "assets/scenes/meshes/g1/half_sphere.obj",
+      "path": "assets/scenes/meshes/g1/half_sphere.obj",
+      "name": "half_sphere.obj",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-head_link.STL",
+      "source": "assets/scenes/meshes/g1/head_link.STL",
+      "path": "assets/scenes/meshes/g1/head_link.STL",
+      "name": "head_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-left_ankle_pitch_link.STL",
+      "source": "assets/scenes/meshes/g1/left_ankle_pitch_link.STL",
+      "path": "assets/scenes/meshes/g1/left_ankle_pitch_link.STL",
+      "name": "left_ankle_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-left_ankle_roll_link.STL",
+      "source": "assets/scenes/meshes/g1/left_ankle_roll_link.STL",
+      "path": "assets/scenes/meshes/g1/left_ankle_roll_link.STL",
+      "name": "left_ankle_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-left_elbow_link.STL",
+      "source": "assets/scenes/meshes/g1/left_elbow_link.STL",
+      "path": "assets/scenes/meshes/g1/left_elbow_link.STL",
+      "name": "left_elbow_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-left_hip_pitch_link.STL",
+      "source": "assets/scenes/meshes/g1/left_hip_pitch_link.STL",
+      "path": "assets/scenes/meshes/g1/left_hip_pitch_link.STL",
+      "name": "left_hip_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-left_hip_roll_link.STL",
+      "source": "assets/scenes/meshes/g1/left_hip_roll_link.STL",
+      "path": "assets/scenes/meshes/g1/left_hip_roll_link.STL",
+      "name": "left_hip_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-left_hip_yaw_link.STL",
+      "source": "assets/scenes/meshes/g1/left_hip_yaw_link.STL",
+      "path": "assets/scenes/meshes/g1/left_hip_yaw_link.STL",
+      "name": "left_hip_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-left_knee_link.STL",
+      "source": "assets/scenes/meshes/g1/left_knee_link.STL",
+      "path": "assets/scenes/meshes/g1/left_knee_link.STL",
+      "name": "left_knee_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-left_shoulder_pitch_link.STL",
+      "source": "assets/scenes/meshes/g1/left_shoulder_pitch_link.STL",
+      "path": "assets/scenes/meshes/g1/left_shoulder_pitch_link.STL",
+      "name": "left_shoulder_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-left_shoulder_roll_link.STL",
+      "source": "assets/scenes/meshes/g1/left_shoulder_roll_link.STL",
+      "path": "assets/scenes/meshes/g1/left_shoulder_roll_link.STL",
+      "name": "left_shoulder_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-left_shoulder_yaw_link.STL",
+      "source": "assets/scenes/meshes/g1/left_shoulder_yaw_link.STL",
+      "path": "assets/scenes/meshes/g1/left_shoulder_yaw_link.STL",
+      "name": "left_shoulder_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-left_wrist_pitch_link.STL",
+      "source": "assets/scenes/meshes/g1/left_wrist_pitch_link.STL",
+      "path": "assets/scenes/meshes/g1/left_wrist_pitch_link.STL",
+      "name": "left_wrist_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-left_wrist_roll_link.STL",
+      "source": "assets/scenes/meshes/g1/left_wrist_roll_link.STL",
+      "path": "assets/scenes/meshes/g1/left_wrist_roll_link.STL",
+      "name": "left_wrist_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-left_wrist_yaw_link.STL",
+      "source": "assets/scenes/meshes/g1/left_wrist_yaw_link.STL",
+      "path": "assets/scenes/meshes/g1/left_wrist_yaw_link.STL",
+      "name": "left_wrist_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-logo_link.STL",
+      "source": "assets/scenes/meshes/g1/logo_link.STL",
+      "path": "assets/scenes/meshes/g1/logo_link.STL",
+      "name": "logo_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-pelvis.STL",
+      "source": "assets/scenes/meshes/g1/pelvis.STL",
+      "path": "assets/scenes/meshes/g1/pelvis.STL",
+      "name": "pelvis.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-pelvis_contour_link.STL",
+      "source": "assets/scenes/meshes/g1/pelvis_contour_link.STL",
+      "path": "assets/scenes/meshes/g1/pelvis_contour_link.STL",
+      "name": "pelvis_contour_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-right_ankle_pitch_link.STL",
+      "source": "assets/scenes/meshes/g1/right_ankle_pitch_link.STL",
+      "path": "assets/scenes/meshes/g1/right_ankle_pitch_link.STL",
+      "name": "right_ankle_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-right_ankle_roll_link.STL",
+      "source": "assets/scenes/meshes/g1/right_ankle_roll_link.STL",
+      "path": "assets/scenes/meshes/g1/right_ankle_roll_link.STL",
+      "name": "right_ankle_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-right_elbow_link.STL",
+      "source": "assets/scenes/meshes/g1/right_elbow_link.STL",
+      "path": "assets/scenes/meshes/g1/right_elbow_link.STL",
+      "name": "right_elbow_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-right_hip_pitch_link.STL",
+      "source": "assets/scenes/meshes/g1/right_hip_pitch_link.STL",
+      "path": "assets/scenes/meshes/g1/right_hip_pitch_link.STL",
+      "name": "right_hip_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-right_hip_roll_link.STL",
+      "source": "assets/scenes/meshes/g1/right_hip_roll_link.STL",
+      "path": "assets/scenes/meshes/g1/right_hip_roll_link.STL",
+      "name": "right_hip_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-right_hip_yaw_link.STL",
+      "source": "assets/scenes/meshes/g1/right_hip_yaw_link.STL",
+      "path": "assets/scenes/meshes/g1/right_hip_yaw_link.STL",
+      "name": "right_hip_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-right_knee_link.STL",
+      "source": "assets/scenes/meshes/g1/right_knee_link.STL",
+      "path": "assets/scenes/meshes/g1/right_knee_link.STL",
+      "name": "right_knee_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-right_shoulder_pitch_link.STL",
+      "source": "assets/scenes/meshes/g1/right_shoulder_pitch_link.STL",
+      "path": "assets/scenes/meshes/g1/right_shoulder_pitch_link.STL",
+      "name": "right_shoulder_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-right_shoulder_roll_link.STL",
+      "source": "assets/scenes/meshes/g1/right_shoulder_roll_link.STL",
+      "path": "assets/scenes/meshes/g1/right_shoulder_roll_link.STL",
+      "name": "right_shoulder_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-right_shoulder_yaw_link.STL",
+      "source": "assets/scenes/meshes/g1/right_shoulder_yaw_link.STL",
+      "path": "assets/scenes/meshes/g1/right_shoulder_yaw_link.STL",
+      "name": "right_shoulder_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-right_wrist_pitch_link.STL",
+      "source": "assets/scenes/meshes/g1/right_wrist_pitch_link.STL",
+      "path": "assets/scenes/meshes/g1/right_wrist_pitch_link.STL",
+      "name": "right_wrist_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-right_wrist_roll_link.STL",
+      "source": "assets/scenes/meshes/g1/right_wrist_roll_link.STL",
+      "path": "assets/scenes/meshes/g1/right_wrist_roll_link.STL",
+      "name": "right_wrist_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-right_wrist_yaw_link.STL",
+      "source": "assets/scenes/meshes/g1/right_wrist_yaw_link.STL",
+      "path": "assets/scenes/meshes/g1/right_wrist_yaw_link.STL",
+      "name": "right_wrist_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-torso_link_rev_1_0.STL",
+      "source": "assets/scenes/meshes/g1/torso_link_rev_1_0.STL",
+      "path": "assets/scenes/meshes/g1/torso_link_rev_1_0.STL",
+      "name": "torso_link_rev_1_0.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-waist_roll_link_rev_1_0.STL",
+      "source": "assets/scenes/meshes/g1/waist_roll_link_rev_1_0.STL",
+      "path": "assets/scenes/meshes/g1/waist_roll_link_rev_1_0.STL",
+      "name": "waist_roll_link_rev_1_0.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-scenes-meshes-g1-waist_yaw_link_rev_1_0.STL",
+      "source": "assets/scenes/meshes/g1/waist_yaw_link_rev_1_0.STL",
+      "path": "assets/scenes/meshes/g1/waist_yaw_link_rev_1_0.STL",
+      "name": "waist_yaw_link_rev_1_0.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    }
+  ],
+  "assetBase": "project",
+  "assetPaths": [
+    "assets/models/php_parkour_actor.onnx",
+    "assets/models/php_parkour_depth_backbone.onnx",
+    "assets/scenes/botworld_banner.png",
+    "assets/scenes/botworld_box_01.png",
+    "assets/scenes/botworld_box_02.png",
+    "assets/scenes/botworld_box_03.png",
+    "assets/scenes/botworld_box_04.png",
+    "assets/scenes/botworld_box_05.png",
+    "assets/scenes/botworld_box_06.png",
+    "assets/scenes/botworld_box_07.png",
+    "assets/scenes/botworld_box_08.png",
+    "assets/scenes/botworld_box_09.png",
+    "assets/scenes/botworld_box_10.png",
+    "assets/scenes/botworld_box_11.png",
+    "assets/scenes/botworld_box_12.png",
+    "assets/scenes/botworld_box_13.png",
+    "assets/scenes/botworld_box_14.png",
+    "assets/scenes/botworld_box_15.png",
+    "assets/scenes/botworld_box_16.png",
+    "assets/scenes/g1_with_terrain.xml",
+    "assets/scenes/meshes/g1/half_sphere.obj",
+    "assets/scenes/meshes/g1/head_link.STL",
+    "assets/scenes/meshes/g1/left_ankle_pitch_link.STL",
+    "assets/scenes/meshes/g1/left_ankle_roll_link.STL",
+    "assets/scenes/meshes/g1/left_elbow_link.STL",
+    "assets/scenes/meshes/g1/left_hip_pitch_link.STL",
+    "assets/scenes/meshes/g1/left_hip_roll_link.STL",
+    "assets/scenes/meshes/g1/left_hip_yaw_link.STL",
+    "assets/scenes/meshes/g1/left_knee_link.STL",
+    "assets/scenes/meshes/g1/left_shoulder_pitch_link.STL",
+    "assets/scenes/meshes/g1/left_shoulder_roll_link.STL",
+    "assets/scenes/meshes/g1/left_shoulder_yaw_link.STL",
+    "assets/scenes/meshes/g1/left_wrist_pitch_link.STL",
+    "assets/scenes/meshes/g1/left_wrist_roll_link.STL",
+    "assets/scenes/meshes/g1/left_wrist_yaw_link.STL",
+    "assets/scenes/meshes/g1/logo_link.STL",
+    "assets/scenes/meshes/g1/pelvis.STL",
+    "assets/scenes/meshes/g1/pelvis_contour_link.STL",
+    "assets/scenes/meshes/g1/right_ankle_pitch_link.STL",
+    "assets/scenes/meshes/g1/right_ankle_roll_link.STL",
+    "assets/scenes/meshes/g1/right_elbow_link.STL",
+    "assets/scenes/meshes/g1/right_hip_pitch_link.STL",
+    "assets/scenes/meshes/g1/right_hip_roll_link.STL",
+    "assets/scenes/meshes/g1/right_hip_yaw_link.STL",
+    "assets/scenes/meshes/g1/right_knee_link.STL",
+    "assets/scenes/meshes/g1/right_shoulder_pitch_link.STL",
+    "assets/scenes/meshes/g1/right_shoulder_roll_link.STL",
+    "assets/scenes/meshes/g1/right_shoulder_yaw_link.STL",
+    "assets/scenes/meshes/g1/right_wrist_pitch_link.STL",
+    "assets/scenes/meshes/g1/right_wrist_roll_link.STL",
+    "assets/scenes/meshes/g1/right_wrist_yaw_link.STL",
+    "assets/scenes/meshes/g1/torso_link_rev_1_0.STL",
+    "assets/scenes/meshes/g1/waist_roll_link_rev_1_0.STL",
+    "assets/scenes/meshes/g1/waist_yaw_link_rev_1_0.STL"
+  ]
+}

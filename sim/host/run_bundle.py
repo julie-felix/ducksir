@@ -141,13 +141,27 @@ def main() -> int:
     use_reference = any(int(p.get("mode", 0)) in (3, 4) for p in (con.get("policies") or []))
     _motion_all = (con.get("robot") or {}).get("motion")
     # UniSuperMimic：配方是单条目 mimic:uni，不走 reference，但要读动作
-    _is_uni = bool(_motion_all) and _motion_all.get("format") in ("unisupermimic", "instinct", "gmtrack", "parkour")
+    _is_uni = bool(_motion_all) and _motion_all.get("format") in (
+        "unisupermimic", "instinct", "gmtrack", "parkour", "parkour_php")
     motion_cfg = _motion_all if (use_reference or _is_uni) else None
     ref_angles = (con.get("robot") or {}).get("reference_joint_positions")
     motion_arrays = motion_meta = playhead = None
     uni_obs_mod = uni_motion = uni_hist = None
     inst_obs_mod = inst_motion = inst_hist = inst_cfg = inst_cam = None
+    php_mod = php_cam = php_enc = php_delay = php_cfg = None
     pk_mod = pk_cam = pk_enc = pk_state_hist = pk_depth_hist = pk_cfg = None
+    if motion_cfg and motion_cfg.get("format") == "parkour_php":
+        import onnxruntime as _ort
+        import php_obs as _PHP
+        from depth_camera import DepthCamera as _DC
+        php_mod = _PHP
+        php_cfg = dict(motion_cfg)
+        _cam_spec = dict(motion_cfg.get("camera") or {})
+        _cam_spec.setdefault("cropMode", "offset")
+        php_enc = _ort.InferenceSession(os.path.join(bdir, "php_enc.onnx") if os.path.isfile(
+            os.path.join(bdir, "php_enc.onnx")) else motion_cfg["encoder"], providers=["CPUExecutionProvider"])
+        php_delay = _PHP.LatentDelay(int(motion_cfg.get("latentDelay", 7)))
+        php_cfg["_cam_spec"] = _cam_spec
     if motion_cfg and motion_cfg.get("format") == "parkour":
         import onnxruntime as _ort
         import parkour_obs as _PK
@@ -278,12 +292,19 @@ def main() -> int:
     if pk_cfg is not None:
         from depth_camera import DepthCamera as _DepthCamera
         pk_cam = _DepthCamera(m, pk_cfg["_cam_spec"])
+    if php_cfg is not None:
+        from depth_camera import DepthCamera as _DepthCamera
+        php_cam = _DepthCamera(m, php_cfg["_cam_spec"])
     d = mujoco.MjData(m)
     m.opt.timestep = 1.0 / physics_hz
     d.qpos[:] = robot["initial_qpos"]
     _qvel0 = robot.get("initial_qvel")
     if _qvel0:
-        d.qvel[:] = _qvel0
+        _arr = np.asarray(_qvel0, dtype=np.float64)
+        if _arr.shape[0] == d.qvel.shape[0]:
+            d.qvel[:] = _arr
+        else:
+            print(f"[run] initial_qvel 长度 {_arr.shape[0]} 与 nv {d.qvel.shape[0]} 不符，忽略")
     mujoco.mj_forward(m, d)
 
     stream = None
@@ -444,6 +465,27 @@ def main() -> int:
                 last_anchor_quat=motion_arrays["body_quat"][last][0],
                 base_quat=d.qpos[3:7], pause=playhead.paused)
         mimic_obs = None
+        if php_mod is not None:
+            _pb = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
+            _R = _GM_mat(d.xquat[_pb])
+            _frame = php_cam.process(php_cam.render(d), 98, 58)      # 106×60 → 98×58
+            _frame = np.asarray(_frame, dtype=np.float64)
+            _r = php_cfg.get("resize") or [98, 58, 87, 58]
+            from depth_camera import resize_depth as _rz
+            _frame = _rz(_frame, int(_r[2]), int(_r[3]))
+            _sc, _off = php_cfg.get("affine") or [1.0, 0.0]
+            _frame = float(_sc) * _frame + float(_off)
+            _latent = php_enc.run(None, {"depth_image": _frame[None].astype("float32")})[0]
+            _latent = php_delay.push(_latent.reshape(-1), age_steps=0)
+            mimic_obs = php_mod.actor_obs(
+                gravity_b=_R.T @ np.array([0, 0, -1.0]),
+                angvel_b=np.asarray(d.cvel[_pb][:3], float) if False else np.asarray(d.qvel[3:6], float),
+                joint_pos=np.asarray(d.qpos[7:36], float)[np.asarray(preset["policyJointOrder"])],
+                default_angles=np.asarray(preset["defaultJointPositions"], float)[np.asarray(preset["policyJointOrder"])],
+                joint_vel=np.asarray(d.qvel[6:35], float)[np.asarray(preset["policyJointOrder"])],
+                last_action=last_action,
+                command=np.array([cmd[0], cmd[1], cmd[2], 0.0], float),
+                latent=_latent)
         if pk_mod is not None:
             _pb = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
             if _pb < 0:
@@ -531,6 +573,11 @@ def main() -> int:
         if len(in_names) > 1:
             st = rnn_state.setdefault(mode_key, {})
             for name, meta_in in zip(in_names[1:], sess.get_inputs()[1:]):
+                if name == "time_step":
+                    # PHP 的 actor 多一个常量输入 time_step（模板里 constant 0）
+                    st[name] = np.zeros((1, 1), dtype=np.float32)
+                    feed[name] = st[name]
+                    continue
                 if name not in st:
                     shape = [d if isinstance(d, int) else 1 for d in meta_in.shape]
                     st[name] = np.zeros(shape, dtype=np.float32)
@@ -554,6 +601,10 @@ def main() -> int:
             act = raw
         if playhead is not None and in_active_mode:
             playhead.advance()
+        if php_mod is not None:
+            _scale = np.asarray(preset.get("actionScale"), dtype=np.float64)
+            _def = np.asarray(preset["defaultJointPositions"], dtype=np.float64)
+            act = _def + (_scale * np.asarray(raw, dtype=np.float64))[np.asarray(preset["motorJointOrder"])]
         if pk_mod is not None:
             # 模板原式：target = default + action_scale * action[motor_order]
             # **整条再按 motor_order 重排是错的**（实测差 0.16 rad，复现不了他们的轨迹）：
@@ -595,12 +646,22 @@ def main() -> int:
             # 不能再走 ctrl_from_action（那会把 action 当原始动作再缩放一次）。
             target_deg = np.asarray(act, dtype=np.float64)
             for _ in range(decim):
-                q_now = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
-                qd_now = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)
+                if preset.get("actuatorJointOrder"):
+                    # PHP 这类模型的 qpos/qvel 就是原生关节序（preset 的 kp/default 也是原生序）
+                    q_now = np.asarray(d.qpos[7:7 + 29], dtype=np.float64)
+                    qd_now = np.asarray(d.qvel[6:6 + 29], dtype=np.float64)
+                else:
+                    q_now = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
+                    qd_now = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)
                 tau = _A.torque_from_target(target_deg, q_now, qd_now,
                                             kp=gains["kp"], kd=gains["kd"],
                                             effort_limit=gains["effortLimit"] or None)
-                d.ctrl[:] = tau
+                # 执行器槽位可能不是 qpos 序：botlab 写的是 ctrl[actuatorJointOrder[i]] = tau[i]
+                _ao = preset.get("actuatorJointOrder")
+                if _ao:
+                    d.ctrl[np.asarray(_ao, dtype=int)] = tau
+                else:
+                    d.ctrl[:] = tau
                 mujoco.mj_step(m, d)
         else:
             d.ctrl[:] = act

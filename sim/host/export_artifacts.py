@@ -68,6 +68,7 @@ SOURCE_BY_SLOT = {
     "mimic_instinct": lambda o: "mimic:instinct",
     "mimic_gmtrack": lambda o: "mimic:gmtrack",
     "mimic_parkour": lambda o: "mimic:parkour",
+    "mimic_parkour_php": lambda o: "mimic:parkour_php",
 }
 
 
@@ -227,7 +228,11 @@ def main() -> int:
         if os.path.isdir(src):
             if os.path.isdir(dst):
                 shutil.rmtree(dst)
-            if motion_cfg.get("format") == "parkour":
+            if motion_cfg.get("format") == "parkour_php":
+                enc = motion_cfg.get("encoder")
+                if enc and os.path.isfile(enc):
+                    shutil.copyfile(enc, os.path.join(bundle_dir, "php_enc.onnx"))
+            elif motion_cfg.get("format") == "parkour":
                 # 两段推理：编码器模型也要进 bundle
                 enc = motion_cfg.get("encoder")
                 if enc and os.path.isfile(enc):
@@ -409,6 +414,20 @@ def main() -> int:
             with open(os.path.join(out, inc), "w", encoding="utf-8") as f:
                 f.write(inc_txt)
             inc_meshes += re.findall(r'file="([^"]+\.(?:stl|STL|obj|OBJ))"', inc_txt)
+        # 纹理（botworld_*.png 之类）也要一起搬：MJCF 的 texture file 引用
+        tex = re.findall(r'file="([^"]+\.(?:png|jpg|jpeg|PNG|JPG))"', xml)
+        for _inc in re.findall(r'<include file="([^"]+)"', xml):
+            _ip = os.path.join(os.path.dirname(src), _inc)
+            if os.path.isfile(_ip):
+                tex += re.findall(r'file="([^"]+\.(?:png|jpg|jpeg|PNG|JPG))"', open(_ip, encoding="utf-8").read())
+        tex_copied = 0
+        for name in sorted(set(tex)):
+            path = os.path.join(assets_dir, name)
+            if not os.path.isfile(path):
+                path = os.path.join(os.path.dirname(src), name)   # 纹理常和场景 XML 同目录
+            if os.path.isfile(path):
+                shutil.copyfile(path, os.path.join(out, os.path.basename(name)))
+                tex_copied += 1
         meshes = sorted(set(re.findall(r'file="([^"]+\.(?:stl|STL|obj|OBJ))"', xml)) | set(inc_meshes))
         mesh_out = out          # 网格直接放 bundle 根：meshdir="." 对宿主和浏览器都成立
         copied = 0

@@ -1,0 +1,64 @@
+# G1 PHP parkour robot calibration. Preset data is asset calibration, so it lives with the
+# project instead of being copied into botlab.yaml.
+kind: robot
+label: PHP G1 Robot
+sourceType: url
+mujocoWasmVariant: official-3.3.8
+onnxRuntimeVariant: official-1.24.1
+autoActuators: false
+actionDimension: 29
+jointQposOffset: 7
+jointQvelOffset: 6
+policyJointOrder: [
+  0, 6, 12, 1, 7, 13, 2, 8, 14, 3, 9, 15, 22, 4, 10,
+  16, 23, 5, 11, 17, 24, 18, 25, 19, 26, 20, 27, 21, 28
+]
+motorJointOrder: [
+  0, 3, 6, 9, 13, 17, 1, 4, 7, 10, 14, 18, 2, 5, 8,
+  11, 15, 19, 21, 23, 25, 27, 12, 16, 20, 22, 24, 26, 28
+]
+# Model action scaling is policy ordered and is reordered only after the affine map.
+actionScale: [
+  0.548, 0.548, 0.548, 0.351, 0.351, 0.439, 0.548, 0.548, 0.439, 0.351,
+  0.351, 0.439, 0.439, 0.439, 0.439, 0.439, 0.439, 0.439, 0.439, 0.439,
+  0.439, 0.439, 0.439, 0.439, 0.439, 0.25, 0.25, 0.25, 0.25
+]
+# The learned reference pose and PD calibration below use native motor order.
+defaultJointPositions: [
+  -0.313, -0.003, -0.004, 0.661, -0.354, -0.001, -0.31, -0.007, 0.002, 0.66,
+  -0.358, 0.004, 0.007, 0.006, 0.004, 0.197, 0.208, -0.007, 0.602, 0.007,
+  0.007, -0.007, 0.204, -0.196, -0.002, 0.608, 0.007, 0.003, 0
+]
+kp: [
+  40.179, 99.098, 40.179, 99.098, 28.501, 28.501, 40.179, 99.098, 40.179, 99.098,
+  28.501, 28.501, 40.179, 28.501, 28.501, 14.251, 14.251, 14.251, 14.251,
+  14.251, 16.778, 16.778, 14.251, 14.251, 14.251, 14.251, 14.251, 16.778, 16.778
+]
+kd: [
+  2.558, 6.309, 2.558, 6.309, 1.814, 1.814, 2.558, 6.309, 2.558, 6.309,
+  1.814, 1.814, 2.558, 1.814, 1.814, 0.907, 0.907, 0.907, 0.907, 0.907,
+  1.068, 1.068, 0.907, 0.907, 0.907, 0.907, 0.907, 1.068, 1.068
+]
+effortLimit: [
+  88, 139, 88, 139, 50, 50, 88, 139, 88, 139, 50, 50, 88, 50, 50,
+  25, 25, 25, 25, 25, 5, 5, 25, 25, 25, 25, 25, 5, 5
+]
+# This MJCF's actuators use policy order while qpos and PD targets use native joint order.
+# Each native joint therefore needs its explicit local actuator ctrl slot.
+actuatorJointOrder: [
+  0, 3, 6, 9, 13, 17, 1, 4, 7, 10, 14, 18, 2, 5, 8,
+  11, 15, 19, 21, 23, 25, 27, 12, 16, 20, 22, 24, 26, 28
+]
+# Preserve the upstream stable spawn state. It intentionally differs from the learned
+# reference pose; the actor observes that delta and produces the matching recovery action.
+initialQpos: [
+  0, 0, 0.793, 1, 0, 0, 0, 0.162997201, -0.0361181423, -0.0214254409, 0.267154634,
+  -0.174296871, 0.212671682, 0.282425106, -0.0584460497, -0.556104779, 0.126711249,
+  -0.123827517, -0.190653816, 0.000492588617, -0.0195334535, 0.428676069, -0.00628881808,
+  0.161155701, 0.236345276, 0.980316162, 0.15456377, 0.0774896815, 0.0205286704, -0.128641531,
+  -0.0847690701, -0.255017966, 1.0953021, -0.134532213, 0.0875737667, 0.0601755157
+]
+initialQvel: [
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0
+]

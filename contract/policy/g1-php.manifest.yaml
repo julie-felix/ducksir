@@ -1,0 +1,32 @@
+# G1 PHP Parkour：两段推理（深度 backbone → actor），obs 140。
+kind: ducksir-policy-manifest
+version: 1
+policy_id: g1-php
+
+model:
+  file: build/models/g1-php.onnx
+  encoder: build/models/g1-php-enc.onnx
+  input: {name: obs, shape: [1, 140]}
+  output: {name: actions, shape: [1, 29]}
+
+policies:
+  - {key: g1-php, mode: 0, file: build/models/g1-php.onnx}
+
+obs:
+  - {slot: mimic_parkour_php, len: 140}
+
+history: {length: 0, layout: by-term}
+
+action:
+  mapping: default_plus_scale
+  order: motor
+  clip: ctrlrange
+
+rates: {control_hz: 50, physics_hz: 200, inference_decimation: 4}
+
+provenance:
+  source: botlab 模板 G1-PHP-Parkour（assets/models/*.onnx，2026-11-14 取）
+  obs_layout: grav 3 + angvel 3 + q 29 + qd 29 + action 29 + one_hot 11 + pad 4 + latent 32 = 140
+  depth: 106×60 → offset(4,0) 裁 98×58 → 缩 87×58 → affine(×1.1111 −0.6111) → backbone → latent 32（延迟 7 步）
+  action: target = default + (scale·action)[motor_order]；torque 执行器 + 引擎 PD（actuatorJointOrder 置换 ctrl 槽位）
+  note: 上游无根 LICENSE；仅本地兼容性对照用，不对外分发。

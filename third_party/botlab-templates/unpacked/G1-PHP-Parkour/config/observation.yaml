@@ -1,0 +1,8 @@
+depth_camera:
+  source: Robot
+  preset: depth-camera.preset.yaml
+  name: Depth Camera
+  config:
+    readbackMode: async
+    depthReadbackFormat: linear-float32
+    readbackPipelineDepth: 4
