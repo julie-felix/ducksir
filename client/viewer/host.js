@@ -66,6 +66,11 @@ function makeGeometry(g, model, meshBytes) {
     geo.computeVertexNormals();
     return geo;
   }
+  if (g.kind === 0) {
+    // MuJoCo 平面：局部 xy 平面、法线 +z；root 已整体转到 y-up，所以直接建就好
+    const geo = new THREE.PlaneGeometry(g.size[0] * 2, g.size[1] * 2);
+    return geo;
+  }
   if (g.kind === 2) return new THREE.SphereGeometry(g.size[0], 14, 10);
   if (g.kind === 3) return new THREE.CapsuleGeometry(g.size[0], g.size[1], 6, 14);
   if (g.kind === 6) return new THREE.BoxGeometry(g.size[0] * 2, g.size[1] * 2, g.size[2] * 2);
@@ -112,23 +117,34 @@ function buildScene(model, meshBytes) {
   // 如果按父子关系嵌套，父 body 的位姿会被子 body 再叠加一次，整机就散成碎片。
   for (const b of model.bodies) root.add(groupsById.get(b.id));
   let built = 0;
+  let sceneCount = 0;
   for (const g of model.geoms) {
     const geo = makeGeometry(g, model, meshBytes);
     if (!geo) continue;
     const rgba = g.rgba || [0.8, 0.8, 0.85, 1];
+    const isWorld = Boolean(g.world);
+    // 地面/地形压暗一点，别抢机器人的视觉重点
+    const tint = isWorld ? 0.55 : 1.0;
     const mat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(rgba[0], rgba[1], rgba[2]),
+      color: new THREE.Color(rgba[0] * tint, rgba[1] * tint, rgba[2] * tint),
       transparent: rgba[3] < 0.99, opacity: rgba[3],
-      metalness: 0.15, roughness: 0.6,
+      metalness: isWorld ? 0.05 : 0.15, roughness: isWorld ? 0.95 : 0.6,
+      side: isWorld ? THREE.DoubleSide : THREE.FrontSide,
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(g.pos[0], g.pos[1], g.pos[2]);
     mesh.quaternion.set(g.quat[1], g.quat[2], g.quat[3], g.quat[0]);
-    const host = groupsById.get(g.body);
-    (host || root).add(mesh);
-    built += 1;
+    if (isWorld) {
+      root.add(mesh);           // 世界几何直接挂 root（body 0 也有组，但这样更省事）
+      sceneCount += 1;
+    } else {
+      const host = groupsById.get(g.body);
+      (host || root).add(mesh);
+      built += 1;
+    }
   }
   meshCount = built;
+  window.__sceneGeoms = sceneCount;
   pelvisId = model.bodies.find((b) => b.name === 'pelvis')?.id
     ?? model.bodies.find((b) => /torso|trunk/.test(b.name))?.id ?? -1;
   console.log(`[host] 场景建好：${model.bodies.length} body / ${built} geom`);
@@ -200,6 +216,7 @@ window.__probe = {
       frames: poseSeen,
       z, upright,
       meshes: meshCount,
+      sceneGeoms: window.__sceneGeoms || 0,
       cmd: { forward: Number(($('fwd') || {}).value || 0), yaw: Number(($('yaw') || {}).value || 0) },
       paused,
       bodies: bodies.length,

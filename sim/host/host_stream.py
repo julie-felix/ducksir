@@ -215,8 +215,16 @@ def build_scene(model, mujoco) -> tuple[dict, bytes]:
     offset = 0
     geoms = []
     for g in range(model.ngeom):
-        if model.geom_contype[g] != 0 or model.geom_conaffinity[g] != 0:
-            continue                      # 只发视觉 geom（碰撞体会画出「薄壳脚」）
+        is_world = int(model.geom_bodyid[g]) == 0
+        is_visual = model.geom_contype[g] == 0 and model.geom_conaffinity[g] == 0
+        # 机器人的碰撞体不发（会画出「薄壳脚」）。
+        # 世界几何：只发**平面/盒子**这类地面（几百块地形 mesh 会把 SSE 撑到几 MB，
+        # 而且它们在 x≈500 远处，画面里根本看不到）。
+        kind = int(model.geom_type[g])
+        is_ground = is_world and kind in (int(mujoco.mjtGeom.mjGEOM_PLANE),
+                                          int(mujoco.mjtGeom.mjGEOM_BOX))
+        if not is_visual and not is_ground:
+            continue
         kind = int(model.geom_type[g])
         entry = {
             "body": int(model.geom_bodyid[g]),
@@ -225,6 +233,7 @@ def build_scene(model, mujoco) -> tuple[dict, bytes]:
             "pos": [round(float(pos[g][i]), 6) for i in range(3)],
             "quat": [round(float(quat[g][i]), 6) for i in range(4)],
             "rgba": [round(float(rgba[g][i]), 3) for i in range(4)],
+            "world": bool(is_ground),
         }
         if kind == int(mujoco.mjtGeom.mjGEOM_MESH):
             mid = int(model.geom_dataid[g])
