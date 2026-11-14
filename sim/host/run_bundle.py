@@ -456,9 +456,11 @@ def main() -> int:
             _state = pk_state_hist.push(pk_mod.state_terms(
                 angvel_b=_ang, gravity_b=_R.T @ np.array([0, 0, -1.0]),
                 command=np.array([cmd[0], cmd[1], cmd[2]], dtype=np.float64),
-                joint_pos=np.asarray(d.qpos[7:36], dtype=np.float64),
-                default_angles=np.asarray(preset["defaultJointPositions"], dtype=np.float64),
-                joint_vel=np.asarray(d.qvel[6:35], dtype=np.float64),
+                # 模板的 joint_position() 返回 **policy 顺序**（实测差 0.0000；
+                # qpos 顺序会差 0.32）
+                joint_pos=np.asarray(d.qpos[7:36], dtype=np.float64)[np.asarray(preset["policyJointOrder"])],
+                default_angles=np.asarray(preset["defaultJointPositions"], dtype=np.float64)[np.asarray(preset["policyJointOrder"])],
+                joint_vel=np.asarray(d.qvel[6:35], dtype=np.float64)[np.asarray(preset["policyJointOrder"])],
                 last_action=last_action))
             mimic_obs = pk_mod.actor_obs(_state, _latent)
         if gm_obs_mod is not None:
