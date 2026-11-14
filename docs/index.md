@@ -40,3 +40,8 @@
 - 参考动作来源：自采 / 视频 / 公开数据（LAFAN1 是 CC BY-NC-ND，SMPL-X 非商用）。
 - 开源版本到底给了哪些结构件、哪些要自己补。
 - `contract/robot/types/tienkung-lite.yaml` — 天工 Lite（官方 URDF 导入，22 link / 20 驱动），并联踝见 `specs/tienkung-lite-parallel.yaml`
+
+## 给 agent 的路标
+
+- [feature-map/](feature-map/README.md) —— 页面与 botlab 模板的「入口/控件/探针/已知坑」；
+  **接新模型前先看 [botlab-templates.md](feature-map/botlab-templates.md)**（键位、参数区间、obs 布局、动作公式、录制对拍）。

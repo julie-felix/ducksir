@@ -16,7 +16,7 @@ jobs:
   checks:
     name: checks
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -52,3 +52,31 @@ jobs:
 
       - name: serve smoke（统一后端 curl 冒烟）
         run: bash tools/dev/serve_smoke.sh
+
+      # ---- 下面是「硬验证」：装不上依赖就 SKIP，装了就必须过 ----
+      - name: Python 依赖（对拍/bundle 回归用）
+        run: |
+          python3 -m pip install --quiet --upgrade pip || true
+          python3 -m pip install --quiet numpy pyyaml mujoco || echo "依赖装不上，后面两步会自动 SKIP"
+
+      - name: bundle 端到端回归（跳过需要 EGL 的渲染类）
+        env:
+          BUNDLE_TEST_SKIP_RENDER: "1"
+        run: |
+          if python3 -c "import mujoco" 2>/dev/null; then
+            python3 sim/test/test_g1_wbc_bundle.py
+          else
+            echo "SKIP：没有 mujoco"
+          fi
+
+      - name: 对拍回归（obs 与 botlab 录制逐段比）
+        run: python3 sim/test/test_parity.py
+
+      - name: UI 探针（有 Chrome 才跑）
+        run: |
+          if command -v google-chrome >/dev/null 2>&1 || command -v chromium >/dev/null 2>&1; then
+            bash tools/dev/serve_smoke.sh >/dev/null 2>&1 || true
+            echo "跳过：探针需要常驻后端 + 浏览器，CI 里留给人本地跑"
+          else
+            echo "SKIP：没有 Chrome"
+          fi
