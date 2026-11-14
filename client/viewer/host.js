@@ -79,7 +79,28 @@ function base64ToArrayBuffer(b64) {
   return out.buffer;
 }
 
+/** 把上一台机器人的几何从场景里摘掉并释放显存。 */
+function clearScene() {
+  for (const g of groupsById.values()) {
+    g.traverse((o) => {
+      if (o.isMesh) {
+        o.geometry?.dispose?.();
+        if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose?.());
+        else o.material?.dispose?.();
+      }
+    });
+    root.remove(g);
+  }
+  groupsById = new Map();
+  bodies = [];
+  poseSeen = 0;
+  lastPose = null;
+  meshCount = 0;
+}
+
 function buildScene(model, meshBytes) {
+  clearScene();                 // 会清空 bodies；所以下面必须重新赋值（否则 applyPose 拿不到 body 列表）
+  bodies = model.bodies;
   // 先建 body 组，再按 parent 挂上去
   groupsById = new Map();
   for (const b of model.bodies) {
@@ -182,6 +203,7 @@ window.__probe = {
       cmd: { forward: Number(($('fwd') || {}).value || 0), yaw: Number(($('yaw') || {}).value || 0) },
       paused,
       bodies: bodies.length,
+      groups: groupsById.size,
       error: null,
     };
   },
@@ -245,6 +267,8 @@ addEventListener('resize', () => {
 });
 
 let currentJob = null;
+let currentEs = null;      // 同一时刻只允许一条流
+let sceneGen = 0;          // 每次启动 +1；旧流的回调一律作废
 let paused = false;
 
 /** 把当前滑杆值发给宿主（唯一控制入口）。 */
@@ -312,13 +336,19 @@ async function startBundle() {
     return;
   }
   const out = await r.json();
+  // 切模型/重启：把上一条流关掉，旧回调靠 gen 判断作废
+  if (currentEs) { try { currentEs.close(); } catch (e) { /* noop */ } currentEs = null; }
+  const gen = ++sceneGen;
+  clearScene();
   currentJob = out.id;
   paused = false;
   if ($('pause')) { $('pause').textContent = '⏸ 暂停'; $('pause').classList.remove('held'); }
   pushControl();
   $('status').textContent = `已启动（job ${out.id}），接流中…`;
   const es = new EventSource(`${API}/api/jobs/${out.id}/stream`);
+  currentEs = es;
   es.onmessage = (ev) => {
+    if (gen !== sceneGen) return;      // 旧作业的消息：忽略，别把画面/状态搅乱
     try {
       const wrap = JSON.parse(ev.data);
       if (wrap.type === 'end') {
@@ -330,7 +360,6 @@ async function startBundle() {
       if (typeof wrap.line !== 'string') return;
       const msg = JSON.parse(wrap.line);
       if (msg.type === 'scene') {
-        bodies = msg.bodies;
         buildScene(msg, msg.meshBase64 ? base64ToArrayBuffer(msg.meshBase64) : new ArrayBuffer(0));
         $('busy').classList.add('gone');
       } else if (msg.type === 'pose') {
@@ -348,6 +377,7 @@ async function startBundle() {
     } catch (e) { console.warn('[host] 消息解析失败', e); }
   };
   es.onerror = () => {
+    if (gen !== sceneGen) return;
     es.close();
     if (loopEnabled) {
       // 一次跑完（默认 120 s）就自动重来：不循环的话，600 s 的仿真在宿主里 20 秒就跑完了

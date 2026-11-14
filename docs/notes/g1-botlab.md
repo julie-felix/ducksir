@@ -1033,3 +1033,26 @@ PASS  业务指标合理（0.7647|0.9873）
 探针现在覆盖：滑杆可设置 → 指令已下发（`cmd.forward === 0.8`）→ 暂停状态同步 → 暂停后仿真不再前进。
 
 ![宿主直播：可交互](../images/host-live-controls.png)
+
+## 28. 连续切模型后「好多机器人 + 不能交互」：两条生命周期 bug
+
+庆喆反馈：连续切换模型后交互失灵、画面里出现多个机器人。两个独立的 bug：
+
+**A. 场景只加不清**：`buildScene()` 每次都往 `root` 里加新的 body 组，旧的一次都不删 →
+切三次就有三个机器人叠在一起，而且旧组的位姿还被 `applyPose` 继续写。
+
+**B. 每条流都是自己的回调**：`startBundle()` 每次 `new EventSource`，旧的没关；
+循环/重启时多条流同时推位姿，`currentJob` 又被后来的覆盖——**你拖滑杆，指令发给了另一台**。
+另外旧流的 `done` 回调还会再触发一次 `startBundle`，越滚越多。
+
+修法：
+
+1. `clearScene()`：切场景前 traverse 释放几何/材质并从 root 摘掉，`groupsById/bodies/poseSeen` 全清；
+2. `sceneGen` 代数 + `currentEs` 单流：每次启动 `gen = ++sceneGen`、关掉旧流，回调里 `gen !== sceneGen` 一律忽略；
+3. 顺手发现 `clearScene()` 把 `bodies` 清空后没重建 → `applyPose` 遍历空数组（**画面静止**），
+   现在 `buildScene` 里重新赋值 `bodies = model.bodies`。
+
+探针 `probes/host-switch.json`：切到第二个模型后断言
+`groups === bodies`（没有叠加）、指令仍可下发、帧仍在流。
+
+![切换模型后只有一个机器人](../images/host-switch-clean.png)

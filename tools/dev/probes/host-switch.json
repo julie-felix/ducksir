@@ -1,0 +1,53 @@
+{
+  "url": "/ducksir-static/client/viewer/host.html",
+  "steps": [
+    {
+      "await": "typeof window.__probe === 'object'",
+      "timeout": 20000,
+      "why": "页面暴露了 __probe"
+    },
+    {
+      "await": "__probe.state().frames > 30",
+      "timeout": 60000,
+      "why": "第一个模型跑起来"
+    },
+    {
+      "assert": "js",
+      "expr": "(() => { const s = document.getElementById('bundle'); s.value = s.options[1].value; document.getElementById('start').click(); return true; })()",
+      "why": "切到第二个模型"
+    },
+    {
+      "await": "__probe.state().frames > 30",
+      "timeout": 60000,
+      "why": "第二个模型跑起来"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().groups === __probe.state().bodies",
+      "why": "每台机器人只有一套 body 组（没有叠加）"
+    },
+    {
+      "assert": "js",
+      "expr": "(() => { const e = document.getElementById('fwd'); e.value = '0.6'; e.dispatchEvent(new Event('input')); return __probe.state().cmd.forward === 0.6; })()",
+      "why": "切换后指令仍可下发"
+    },
+    {
+      "capture": "f1",
+      "expr": "__probe.state().frames"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().frames > window.__cap.f1",
+      "why": "切换后帧仍在流"
+    },
+    {
+      "shot": "host-switch"
+    }
+  ]
+}
