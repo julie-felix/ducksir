@@ -515,6 +515,13 @@ def main() -> int:
             _slack = _due - _time_mod.time()
             if _slack > 0:
                 _time_mod.sleep(min(_slack, 0.5))
+        # 参考动作放完就结束这一轮：botlab 那边是 end_after_steps 直接停；
+        # 我们如果继续跑，策略失去参考会在一两秒内倒（Instinct case_08 约 10.45 s）。
+        if inst_cfg is not None:
+            _dur = float(inst_cfg.get("duration") or 0.0)
+            if _dur and sim_k * float(motion_cfg.get("dt", 0.02)) >= _dur:
+                print(f"  参考动作结束（{_dur:.2f} s），本轮到此为止")
+                break
         sim_k += 1
         if not np.isfinite(d.qpos).all():
             dead = True
