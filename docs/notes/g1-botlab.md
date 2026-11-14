@@ -1301,3 +1301,24 @@ step 2: obs 差 0.4846
 
 下一步要验的：把 PD 换成 MuJoCo 原生 `<position kp kv>`（export 已支持
 `actuatorMode: position`），看闭环能不能走起来。
+
+### 34.3 执行器三种方案都试过，扭矩 + 子步 PD 仍是最近的
+
+| 方案 | 开环重放误差（5 步） | 闭环 |
+|---|---|---|
+| 扭矩 + 子步显式 PD（当前） | **1.2e-01** | 500 步倒 |
+| MuJoCo 原生 `<position kp kv>`（模板原式） | 2.4e-01 ~ 4.3e-01 | 更差 |
+| 关掉 `motorJointOrder` 置换（identity） | 2.2e-01 | 倒 |
+
+顺带排除了「关节对应错位」：identity / MO / argMO / PO / argPO 五种置换都不会明显变好。
+
+**所以不是映射错，是动力学量级不一致**。剩下的可能（按怀疑度）：
+
+1. 他们的 `autoActuators` 可能不是简单的 kp/kd PD（带 gear 或不同 bias）；
+2. 我们的接触参数/地面与他们的场景不同（他们的地面来自 scene preset，我们用的是 MJCF 自带 plane）；
+3. 深度噪声（`depthNoiseStd=0.001`、`depthNoiseDistanceStd=0.002`）我们没有复现，
+   连续 8 帧的编码输入和他们的 latent 差 0.0088——这个量级不足以解释倒退走，
+   但会影响长期稳定性。
+
+**当前状态**：观测对齐（step0 action 0.395 vs 0.394），闭环会倒退走并倒。这条线我建议
+先停在这里，把 PHP 变体（106×60 深度 + 7 输出）和 Go2W 接完，再回头啃这个动力学差异。
