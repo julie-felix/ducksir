@@ -190,7 +190,10 @@ def _ui_from_commands(cmd: dict) -> dict:
         return default
 
     step = float(cmd.get("step") or 0.05)
-    fwd = _pair("forward", "forward", (-0.8, 2.5))
+    fwd = _pair("forward", "forward", (0.0, 2.5))
+    # 庆喆要求「不允许倒退」：除非 preset 明确 allowReverse，前进下限一律夹到 0
+    if not cmd.get("allowReverse"):
+        fwd = (max(0.0, fwd[0]), max(0.0, fwd[1]))
     yaw = _pair("yaw", "yaw", (-1.0, 1.0))
     if "yaw" in cmd and isinstance(cmd["yaw"], (list, tuple)):
         yaw = (float(cmd["yaw"][0]), float(cmd["yaw"][1]))

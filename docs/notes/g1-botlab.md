@@ -1570,3 +1570,23 @@ value = 朝 target 逼近 step                 // Bt()：够近就一步到位
 
 实测（php，上限 1.0）：按住 W 1 s → 值 0→1，松手保持 1；hiking（上限 0.5）按住 W 600 ms → 0.5，
 机器人随后按这个速度走。
+
+### 37.2 三条交互反馈：不许倒退 / 深度图 / 左右反了
+
+**A. 不允许倒退**：`robot.ui.forward.min` 一律夹到 0（除非 preset 写了 `allowReverse`）；
+runner 的控流线程也把 `forward` 夹到 `≥ 0`（防止绕过页面直接调 API）。
+键盘按住 S 只会退到 0，不会变负。
+
+**B. 深度图渲染**：`run_bundle` 每 3 个控制步把当前深度帧（parkour 32×18 / php 98×58）
+按 `0..255` 打包成 base64，随位姿流发一条 `{"type":"depth",w,h,b64}`；
+页面左上角画成小窗（近亮远暗，`image-rendering: pixelated`）。
+
+**C. 左右反了**：botlab 的绑定是 `A = yawLeft（+）`、`D = yawRight（−）`，
+我们之前写反了。现在：
+
+```
+按住 A → yaw 从 0 涨到 +1（左）
+按住 D → 从 +1 回到 0（右）
+```
+
+![深度相机小窗](../images/host-depth-panel.png)

@@ -377,6 +377,7 @@ def main() -> int:
     cmd = np.zeros(13, dtype=np.float32)
     cmd[0], cmd[2] = args.forward, args.yaw
     act = np.zeros(n, dtype=np.float32)
+    last_depth = None            # (kind, 2D 深度帧)；每 3 个控制步随位姿发一次
     heights, tilts, step_times, frames = [], [], [], []
     x0, y0 = float(d.qpos[0]), float(d.qpos[1])
     path_len, speed, prev_xy, speed_hist = 0.0, 0.0, (x0, y0), []
@@ -402,7 +403,9 @@ def main() -> int:
                 for key in ("forward", "yaw", "paused", "speedMode"):
                     if key in upd:
                         control[key] = upd[key]
-                cmd[0], cmd[2] = float(control["forward"]), float(control["yaw"])
+                # 不允许倒退：forward 夹到 [0, +∞)
+                control["forward"] = max(0.0, float(control.get("forward") or 0.0))
+                cmd[0], cmd[2] = max(0.0, float(control["forward"])), float(control["yaw"])
         threading.Thread(target=_read_control, daemon=True).start()
 
     _t_start = _time_mod.time() if args.pace else 0.0
@@ -470,6 +473,7 @@ def main() -> int:
             _pb = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
             _R = _GM_mat(d.xquat[_pb])
             _frame = php_cam.process(php_cam.render(d), 98, 58)      # 106×60 → 98×58
+            last_depth = ("php", _frame)
             _frame = np.asarray(_frame, dtype=np.float64)
             _r = php_cfg.get("resize") or [98, 58, 87, 58]
             from depth_camera import resize_depth as _rz
@@ -495,6 +499,7 @@ def main() -> int:
             _R = _GM_mat(d.xquat[_pb])
             _ang = _R.T @ np.asarray(d.cvel[_pb][:3], dtype=np.float64)
             _frame = pk_cam.process(pk_cam.render(d), pk_mod.DEPTH_SHAPE[2], pk_mod.DEPTH_SHAPE[1])
+            last_depth = ("parkour", _frame)
             _dhist = pk_depth_hist.push(_frame)
             _latent = pk_enc.run(None, {"input": _dhist[None].astype("float32")})[0]
             _state = pk_state_hist.push(pk_mod.state_terms(
@@ -671,6 +676,23 @@ def main() -> int:
                 mujoco.mj_step(m, d)
         if (stream is not None or stdio) and k % max(1, int(round(control_hz / 30))) == 0:
             _msg = _HS.pose_message(sim_k, sim_k / control_hz, d.xpos, d.xquat)
+            if last_depth is not None and sim_k % 3 == 0:
+                import base64 as _b64
+                _kind, _df = last_depth
+                _arr = np.clip(np.asarray(_df, dtype=np.float64), 0.0, 1.0)
+                _bytes = (_arr * 255).astype(np.uint8).tobytes()
+                _dm = json.dumps({"type": "depth", "kind": _kind,
+                                  "w": int(_arr.shape[1]), "h": int(_arr.shape[0]),
+                                  "b64": _b64.b64encode(_bytes).decode("ascii")},
+                                 separators=(",", ":"))
+                if stream is not None:
+                    stream.send(_dm)
+                if stdio:
+                    try:
+                        sys.stdout.write(_dm + "\n")
+                        sys.stdout.flush()
+                    except BrokenPipeError:
+                        stdio = False
             if stream is not None:
                 stream.send(_msg)
             if stdio:

@@ -156,6 +156,24 @@ function buildScene(model, meshBytes) {
 let follow = null;
 let poseApplied = 0;
 
+let depthCanvas = null;
+
+function drawDepth(msg) {
+  const box = $('depth-box');
+  if (box) box.style.display = '';
+  const cv = $('depth');
+  if (!cv) return;
+  if (cv.width !== msg.w || cv.height !== msg.h) { cv.width = msg.w; cv.height = msg.h; }
+  const bin = atob(msg.b64);
+  const img = new ImageData(msg.w, msg.h);
+  for (let i = 0; i < bin.length; i += 1) {
+    const v = bin.charCodeAt(i);            // 0 近（亮）… 255 远（暗）→ 反过来更像深度图
+    const g = 255 - v;
+    img.data[i * 4] = g; img.data[i * 4 + 1] = g; img.data[i * 4 + 2] = g; img.data[i * 4 + 3] = 255;
+  }
+  cv.getContext('2d').putImageData(img, 0, 0);
+}
+
 function updateCamera(wp) {
   if (!follow) return;
   // 直接跟随（不留 lerp）：机器人每帧移动，平滑会让画面落后一大截
@@ -274,6 +292,10 @@ function connect() {
       try { msg = JSON.parse(wrap.line); }
       catch (e) {          // 长行偶尔被截断（SSE 背压）：跳过这一条，别让整个页面挂掉
         window.__parseErrors = (window.__parseErrors || 0) + 1;
+        return;
+      }
+      if (msg.type === 'depth') {
+        drawDepth(msg);
         return;
       }
       if (msg.type === 'scene') {
@@ -398,7 +420,8 @@ function wireControls() {
       return Math.abs(next - cur);
     };
     const fwdDir = (held.has('w') ? 1 : 0) + (held.has('s') ? -1 : 0);
-    const yawDir = (held.has('d') ? 1 : 0) + (held.has('a') ? -1 : 0);
+    // botlab：A = yawLeft（增加），D = yawRight（减少）——之前反了
+    const yawDir = (held.has('a') ? 1 : 0) + (held.has('d') ? -1 : 0);
     const spec = uiSpec || { forward: { min: -0.8, max: 2.5 }, yaw: { min: -3.14, max: 3.14 } };
     const d1 = bump($('fwd'), fwdDir, spec.forward);
     const d2 = bump($('yaw'), yawDir, spec.yaw);
@@ -455,6 +478,10 @@ async function startBundle() {
       try { msg = JSON.parse(wrap.line); }
       catch (e) {          // 长行偶尔被截断（SSE 背压）：跳过这一条，别让整个页面挂掉
         window.__parseErrors = (window.__parseErrors || 0) + 1;
+        return;
+      }
+      if (msg.type === 'depth') {
+        drawDepth(msg);
         return;
       }
       if (msg.type === 'scene') {
