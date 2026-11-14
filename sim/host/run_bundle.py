@@ -400,12 +400,12 @@ def main() -> int:
                     upd = json.loads(raw)
                 except json.JSONDecodeError:
                     continue
-                for key in ("forward", "yaw", "paused", "speedMode"):
+                for key in ("forward", "yaw", "lateral", "paused", "speedMode"):
                     if key in upd:
                         control[key] = upd[key]
-                # 不允许倒退：forward 夹到 [0, +∞)
-                control["forward"] = max(0.0, float(control.get("forward") or 0.0))
-                cmd[0], cmd[2] = max(0.0, float(control["forward"])), float(control["yaw"])
+
+                cmd[0], cmd[2] = float(control["forward"]), float(control["yaw"])
+                cmd[1] = float(control.get("lateral") or 0.0)
         threading.Thread(target=_read_control, daemon=True).start()
 
     _t_start = _time_mod.time() if args.pace else 0.0

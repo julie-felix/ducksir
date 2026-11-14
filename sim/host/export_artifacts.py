@@ -191,17 +191,18 @@ def _ui_from_commands(cmd: dict) -> dict:
 
     step = float(cmd.get("step") or 0.05)
     fwd = _pair("forward", "forward", (0.0, 2.5))
-    # 庆喆要求「不允许倒退」：除非 preset 明确 allowReverse，前进下限一律夹到 0
-    if not cmd.get("allowReverse"):
-        fwd = (max(0.0, fwd[0]), max(0.0, fwd[1]))
+
     yaw = _pair("yaw", "yaw", (-1.0, 1.0))
     if "yaw" in cmd and isinstance(cmd["yaw"], (list, tuple)):
         yaw = (float(cmd["yaw"][0]), float(cmd["yaw"][1]))
     elif "yaw_max" in cmd:
         yaw = (-float(cmd["yaw_max"]), float(cmd["yaw_max"]))
     default_fwd = float(cmd.get("defaultForward", fwd[0]))
+    lat = cmd.get("lateral")
+    lat = (float(lat[0]), float(lat[1])) if isinstance(lat, (list, tuple)) and len(lat) >= 2 else (-1.0, 1.0)
     return {
         "forward": {"min": fwd[0], "max": fwd[1], "step": step, "default": default_fwd},
+        "lateral": {"min": lat[0], "max": lat[1], "step": step, "default": 0.0},
         "yaw": {"min": yaw[0], "max": yaw[1], "step": step, "default": 0.0},
         "speedMode": bool(cmd.get("speedMode")),
         # botlab 键盘指令是**速率**逼近：按住 W 以 rampRate（默认 4/s）往上限逼近，

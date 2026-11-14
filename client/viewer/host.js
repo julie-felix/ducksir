@@ -148,6 +148,8 @@ function buildScene(model, meshBytes) {
   }
   meshCount = built;
   window.__sceneGeoms = sceneCount;
+  window.__sceneDump = model.geoms.filter((g) => g.world)
+    .map((g) => ({ pos: g.pos, size: g.size, kind: g.kind }));
   pelvisId = model.bodies.find((b) => b.name === 'pelvis')?.id
     ?? model.bodies.find((b) => /torso|trunk/.test(b.name))?.id ?? -1;
   console.log(`[host] 场景建好：${model.bodies.length} body / ${built} geom`);
@@ -349,12 +351,15 @@ async function loadUiSpec(bundle) {
     const c = await r.json();
     uiSpec = (c.robot || {}).ui || null;
     if (!uiSpec) return;
-    for (const [id, key] of [['fwd', 'forward'], ['yaw', 'yaw']]) {
+    for (const [id, key] of [['fwd', 'forward'], ['yaw', 'yaw'], ['lat', 'lateral']]) {
       const el = $(id); const spec = uiSpec[key];
       if (!el || !spec) continue;
       el.min = spec.min; el.max = spec.max; el.step = spec.step;
       el.value = spec.default;
       if ($(`${id}-v`)) $(`${id}-v`).textContent = Number(spec.default).toFixed(2);
+    }
+    if (uiSpec.lateral && uiSpec.lateral.min === uiSpec.lateral.max) {
+      const lw = $('lat-wrap'); if (lw) lw.style.display = 'none';
     }
     const wrap = $('speed-wrap');
     if (wrap) wrap.style.display = uiSpec.speedMode ? '' : 'none';
@@ -368,6 +373,7 @@ async function pushControl(patch = {}) {
   const body = {
     forward: Number($('fwd') ? $('fwd').value : 0),
     yaw: Number($('yaw') ? $('yaw').value : 0),
+    lateral: Number($('lat') ? $('lat').value : 0),
     paused,
     speedMode: $('speed') && $('speed').checked ? 1 : 0,
     ...patch,
@@ -420,17 +426,19 @@ function wireControls() {
       return Math.abs(next - cur);
     };
     const fwdDir = (held.has('w') ? 1 : 0) + (held.has('s') ? -1 : 0);
-    // botlab：A = yawLeft（增加），D = yawRight（减少）——之前反了
-    const yawDir = (held.has('a') ? 1 : 0) + (held.has('d') ? -1 : 0);
-    const spec = uiSpec || { forward: { min: -0.8, max: 2.5 }, yaw: { min: -3.14, max: 3.14 } };
+    // botlab 默认绑定：W/S=前进后退，A/D=**横向平移**，Q/E=转向
+    const yawDir = (held.has('q') ? 1 : 0) + (held.has('e') ? -1 : 0);
+    const latDir = (held.has('a') ? 1 : 0) + (held.has('d') ? -1 : 0);
+    const spec = uiSpec || { forward: { min: -0.8, max: 2.5 }, yaw: { min: -3.14, max: 3.14 }, lateral: { min: -1, max: 1 } };
     const d1 = bump($('fwd'), fwdDir, spec.forward);
     const d2 = bump($('yaw'), yawDir, spec.yaw);
-    if (d1 > 0 || d2 > 0) pushControl();
+    const d3 = bump($('lat'), latDir, spec.lateral);
+    if (d1 > 0 || d2 > 0 || d3 > 0) pushControl();
   };
   setInterval(tick, 60);
   addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
-    if (['w', 'a', 's', 'd'].includes(k)) { held.add(k); e.preventDefault(); }
+    if (['w', 'a', 's', 'd', 'q', 'e'].includes(k)) { held.add(k); e.preventDefault(); }
   });
   addEventListener('keyup', (e) => { held.delete(e.key.toLowerCase()); });
   addEventListener('blur', () => held.clear());
