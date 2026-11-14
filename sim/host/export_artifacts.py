@@ -207,7 +207,9 @@ def _ui_from_commands(cmd: dict) -> dict:
         "speedMode": bool(cmd.get("speedMode")),
         # botlab 键盘指令是**速率**逼近：按住 W 以 rampRate（默认 4/s）往上限逼近，
         # 松手停在当前值（巡航），按住 S 反向。页面照这个实现。
-        "rampRate": float(cmd.get("rampRate") or 4.0),
+        "rampRate": float(cmd.get("rampRate", 4.0)),
+        # 键位来自模板的 config/io.yaml（没写就用 botlab 默认：W/S 前后、A/D 横移、Q/E 转向）
+        "bindings": cmd.get("bindings") or {"forward": ["w", "s"], "yaw": ["q", "e"], "lateral": ["a", "d"]},
     }
 
 

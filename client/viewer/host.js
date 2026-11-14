@@ -419,8 +419,8 @@ function wireControls() {
     const now = performance.now();
     const dt = Math.min(Math.max(now - lastTick, 0), 250) / 1000;
     lastTick = now;
-    const rate = (uiSpec && uiSpec.rampRate) || 4;
-    const step = rate * dt;
+    const rate = uiSpec && uiSpec.rampRate !== undefined ? uiSpec.rampRate : 4;
+    const step = rate === 0 ? Infinity : rate * dt;   // 模板写 ramp_rate: 0 就是按键瞬时到位
     const bump = (el, dir, spec) => {
       if (!el || !spec || dir === 0) return 0;
       const target = dir > 0 ? spec.max : spec.min;
@@ -429,20 +429,19 @@ function wireControls() {
       if (next !== cur) el.value = String(next);
       return Math.abs(next - cur);
     };
-    const fwdDir = (held.has('w') ? 1 : 0) + (held.has('s') ? -1 : 0);
-    // botlab 默认绑定：W/S=前进后退，A/D=**横向平移**，Q/E=转向
-    const yawDir = (held.has('q') ? 1 : 0) + (held.has('e') ? -1 : 0);
-    const latDir = (held.has('a') ? 1 : 0) + (held.has('d') ? -1 : 0);
     const spec = uiSpec || { forward: { min: -0.8, max: 2.5 }, yaw: { min: -3.14, max: 3.14 }, lateral: { min: -1, max: 1 } };
-    const d1 = bump($('fwd'), fwdDir, spec.forward);
-    const d2 = bump($('yaw'), yawDir, spec.yaw);
-    const d3 = bump($('lat'), latDir, spec.lateral);
+    // 键位按契约：{forward:[增,减], yaw:[增,减], lateral:[增,减]}（模板 io.yaml 优先）
+    const b = (spec.bindings) || { forward: ['w', 's'], yaw: ['q', 'e'], lateral: ['a', 'd'] };
+    const dir = (pair) => (pair && pair[0] && held.has(pair[0]) ? 1 : 0) + (pair && pair[1] && held.has(pair[1]) ? -1 : 0);
+    const d1 = bump($('fwd'), dir(b.forward), spec.forward);
+    const d2 = bump($('yaw'), dir(b.yaw), spec.yaw);
+    const d3 = bump($('lat'), dir(b.lateral), spec.lateral);
     if (d1 > 0 || d2 > 0 || d3 > 0) pushControl();
   };
   setInterval(tick, 60);
   addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
-    if (['w', 'a', 's', 'd', 'q', 'e'].includes(k)) { held.add(k); e.preventDefault(); }
+    if ('wasdqerf'.includes(k)) { held.add(k); e.preventDefault(); }
   });
   addEventListener('keyup', (e) => { held.delete(e.key.toLowerCase()); });
   addEventListener('blur', () => held.clear());

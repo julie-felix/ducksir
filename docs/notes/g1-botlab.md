@@ -1676,3 +1676,43 @@ t=4.8 z=1.13  近处(<0) 像素占  2.3%   ← 已经踩上箱子，近处被踩
 也就是说 0.38/0.58/0.76 三档它都能上。**翻不过去那次不是深度的问题**，
 是截图里的 `forward −0.30` 属于训练分布外（PHP 的范围是 0…1），
 它会原地打转、蹭到箱子倒。用 **0.4～0.6** 再试就能翻上去。
+
+### 37.6 键位以模板 `config/io.yaml` 为准（每个 bundle 不一样）
+
+我上次按 botlab 的**全局默认**（W/S 前后、A/D 横移、Q/E 转向）配键位，但模板可以自己覆盖。
+Hiking 和 PHP 就不一样：
+
+```yaml
+# G1-PHP-Parkour/config/io.yaml
+command:
+  ramp_rate: 0                     # ← 0 = 按键瞬时到位，没有渐变
+  bindings:
+    target_velocity:  {increase: KeyW, decrease: false}
+    target_yaw_rate:  {increase: KeyA, decrease: KeyD}   # ← A/D 就是转向
+```
+
+```yaml
+# G1-Hiking-Parkour/config/io.yaml —— 没写 bindings，用全局默认
+velocity_command:
+  parameters: [target_velocity, target_lateral_velocity, target_yaw_rate]
+```
+
+所以现在 `contract.json` 的 `robot.ui.bindings` 直接写每个 bundle 的键位，
+页面按它映射：
+
+| bundle | 前进 | 转向 | 横移 | ramp |
+|---|---|---|---|---|
+| g1-php | W / S | **A / D** | —（无绑定） | **0（瞬时）** |
+| g1-hiking | W / S | Q / E | A / D（但 lateral 区间是 0，滑杆隐藏） | 4/s |
+
+刚测过：PHP 按 A → yaw 立刻到 +1（瞬时）、横向不动、Q 无绑定；
+Hiking 按 A 不动、按 Q 转向到 +1。
+
+### 「前进太慢」
+
+一半原因是 ramp：PHP 模板写的是 `ramp_rate: 0`（按键直接到上限），
+我按全局默认 4/s 做了渐变，所以感觉「按了不走」。现在按模板来，PHP 是瞬时的；
+hiking 仍是 4/s（模板没写，用默认）。
+
+另外实测速度不是上限问题：PHP `forward 1.0` 跑 20 秒，路程 17 m（均速 0.85 m/s），
+最高基座 1.488 m，最后直立 0.942 —— 它是能持续爬的。
