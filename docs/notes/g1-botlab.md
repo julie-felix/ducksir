@@ -1744,3 +1744,43 @@ hiking 仍是 4/s（模板没写，用默认）。
 **「平地抬脚像翻墙」**：这是 parkour 策略本身的步态（它训练时就是高抬腿跨障碍），
 只要深度里出现近处障碍物它就会做攀爬动作。要确认是「误判有障碍」还是「正常步态」，
 看那一刻的深度面板即可——现在面板和模型输入同源（只差 affine 那一步缩放）。
+
+## 38. 按「信任曲线」那场分享重排流程：把对拍变成 CI 硬门
+
+对照 Lauren Tan 那场分享（verification → feature map → skills → evals → 硬约束），
+我们的短板不是验证能力，而是**知识没被机器管住**：A/D 键位改了三次、楼梯几何试了八种、
+四类 obs/动作坑每个模型重踩一遍。这一轮把它们落成三样东西：
+
+### 38.1 对拍进 CI（`sim/test/test_parity.py`）
+
+- 从 botlab 录制里切 3 步样本：`tools/dev/make_parity_sample.py` → `third_party/parity/<bundle>.json`；
+- manifest 声明 `parity: {sample, obs_tol}`；
+- 测试按格式装配 obs、逐段比：gravity 严格、angvel 放宽（cvel 慢一个子步）、其余全严格。
+
+```
+PASS  g1-gmtrack：obs 最大差 1.50e-05（阈值 2.0e-05）
+```
+
+（hiking/php 目前 SKIP：需要 encoder + 渲染，CI 无 GPU；本地手动跑得起来。）
+
+### 38.2 bundle 回归与探针进 CI
+
+CI 新增三步：装 numpy/pyyaml/mujoco → 跑 `test_g1_wbc_bundle.py`（`BUNDLE_TEST_SKIP_RENDER=1`
+跳过三个带深度相机的）→ 跑 `test_parity.py`。没依赖就 SKIP，装了就必须过。
+
+### 38.3 feature map（给 agent 的路标）
+
+`docs/feature-map/`：`host-live.md` / `play.md` / `studio.md` / **`botlab-templates.md`**。
+最后这张是这次最该有的表——键位（PHP 的 A/D 就是转向）、参数区间、obs 布局、
+动作公式、录制对拍命令、站点资源位置，一页全在。
+
+### 38.4 技能（repo 内）
+
+`.agents/skills/ducksir-add-bundle/` 与 `ducksir-parity/`：七步接模板、四类必踩的坑、
+验收数字。下次换 agent 接手不用读三千行 notes。
+
+### 还没做的
+
+- php/hiking 的对拍（需要 encoder 推理 + 渲染，想在 CI 里跑得先装 onnxruntime + 无头 GL）；
+- `bundle_eval.mjs` 的 scorecard（0–10 分）；
+- UI 侧的单源断言（`client/viewer` 里禁止硬编码键位/区间）。
