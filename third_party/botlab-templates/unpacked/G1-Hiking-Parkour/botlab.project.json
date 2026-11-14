@@ -1,0 +1,35 @@
+{
+  "format": "botlab-project",
+  "version": 1,
+  "files": [
+    "config/io.yaml",
+    "config/observation.yaml",
+    "config/parameters.yaml",
+    "config/runtime.yaml",
+    "controller.py",
+    "main.py"
+  ],
+  "assets": [
+    {
+      "resourceId": "workspace-asset-assets-models-parkour_actor.onnx",
+      "source": "assets/models/parkour_actor.onnx",
+      "path": "assets/models/parkour_actor.onnx",
+      "name": "parkour_actor.onnx",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-models-parkour_depth_encoder.onnx",
+      "source": "assets/models/parkour_depth_encoder.onnx",
+      "path": "assets/models/parkour_depth_encoder.onnx",
+      "name": "parkour_depth_encoder.onnx",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    }
+  ],
+  "assetBase": "project",
+  "assetPaths": [
+    "assets/models/parkour_actor.onnx",
+    "assets/models/parkour_depth_encoder.onnx"
+  ]
+}

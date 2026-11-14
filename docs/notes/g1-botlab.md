@@ -1164,3 +1164,45 @@ bundle g1-gmtrack｜330/330 步｜基座 终 +0.770 最低 +0.568｜直立 +0.98
 `run_bundle` 无条件给场景补一块地面；GMTrack 的 `scene.xml` **自带 plane**，
 于是两层地面同时接触 → 接触力翻倍（实测第 1 步 qpos 就差 0.0195）。
 现在只在 MJCF 里没有 `type="plane"` 时才补。
+
+## 33. Parkour 的三个「站点资源」找到了：在编辑器的内置预设库里
+
+Hiking / PHP Parkour 依赖的 preset 不是模板文件，也不在 python SDK 里——它们在**前端 bundle 的内置预设表**里。
+路径：`https://botlab.enkeebot.com/assets/low-code-<hash>.js`，里面是：
+
+```js
+"g1-hiking-robot": {kind:'robot', config:{actionScale:ie, kp:ae, kd:oe, effortLimit:se, ...}}
+"g1-parkour-depth-camera": {kind:'sensor', config:{width:32, height:18, fullWidth:64, fullHeight:36,
+                              cropX:16, cropY:18, fov:58.29, near:.1, far:2.5, depthScale:2.5,
+                              depthGaussianKernelSize:3, depthGaussianSigma:1, ...}}
+"starter-parkour-stairs": {kind:'scene', config:{terrainKind:'stairs', position:[1.6,0,0],
+                              stepDepth:.28, stepHeight:.06, stepWidth:1.4, stepCount:5, ...}}
+"g1-php-depth-camera": {... width:106, height:60, near:.3, far:3, depthScale:3 ...}
+```
+
+取法（可复现）：
+
+1. 打开站点，`Network` 抓 `assets/low-code-*.js`；
+2. 在里面找 `"<preset 名>":{kind:`，以及它引用的数组变量（`ne/re/ie/ae/oe/se/te`）；
+3. 用 node `eval` 那几段数组表达式（actionScale 是 `.25*effort/kp` 这类算式，不是字面量）。
+
+产物落在 `third_party/g1-parkour/presets/`（robot / camera / stairs 三份 + `_arrays.json`）。
+
+### 用这三份 preset，botlab 模板能跑了
+
+把 `Robot(preset="g1-hiking-robot")` 改成项目内 `preset="hiking-robot.preset.yaml"`、
+`Sensor(source=robot, preset=...)`、`Scene(preset="stairs.preset.yaml")`，
+再把机器人 MJCF 放到 `models/g1/instinctmj/`，`botlab run --headless` 就能跑完 5 步。
+
+录到了对拍数据（`third_party/g1-parkour/record_trace.py`）：
+
+```
+encoder 输入 (1, 8, 18, 32)   ← 8 帧深度历史（stride 5）
+actor   输入 (1, 896)         ← state 768 + latent 128
+```
+
+### 下一步（未做）
+
+- 在我们这边生成同样的**楼梯地形**（5 级、0.06 m 高、0.28 m 深、宽 1.4、x 偏移 1.6）；
+- 深度相机按这套 preset 重配（64×36 渲染 → 裁 32×18，fov 58.29，near .1 far 2.5，scale 2.5，3×3 高斯）；
+- runner 支持 **encoder+actor 两段推理**（现在只支持单个 ONNX）。
