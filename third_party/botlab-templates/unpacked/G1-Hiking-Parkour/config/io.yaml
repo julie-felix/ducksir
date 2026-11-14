@@ -1,0 +1,2 @@
+velocity_command:
+  parameters: [target_velocity, target_lateral_velocity, target_yaw_rate]

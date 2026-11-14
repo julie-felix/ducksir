@@ -15,6 +15,8 @@ window.__ModuleLoader__.load({
     var React = require('react')
 
     var PANEL_ID = 'ducksir-robot'
+    // 页面加了?v=：不然浏览器会一直用缓存里的旧 host.js（「改了没生效」的经典原因）
+    var VIEWER_VERSION = '20261113a'
     var STYLE_ID = 'ducksir-robot-style'
     var BASE = '/ducksir-static/client/viewer/'
     // 面板里能切四个页面：都是 client/viewer/ 下的静态页，共用同一条只读路由。
@@ -24,6 +26,7 @@ window.__ModuleLoader__.load({
       { id: 'live', label: '自算比对', file: 'live.html', hint: '浏览器算一遍 action，和宿主比' },
       { id: 'inspect', label: '实验台', file: 'inspect.html', hint: '面板指标 / 判据 / 摘要链 / Python 用法' },
       { id: 'studio', label: '工作台', file: 'studio.html', hint: '起仿真 → 实时 3D + 参数滑杆 + 文件树' },
+      { id: 'host', label: '宿主直播', file: 'host.html', query: 'api=/ducksir-live', hint: '宿主算物理+推理，浏览器只看：所有 bundle 都能动' },
       { id: 'selftest', label: '自检', file: 'selftest.html', hint: '页面与接口逐项探测；出问题先看这页' },
     ]
 
@@ -72,7 +75,7 @@ window.__ModuleLoader__.load({
       var [nonce, setNonce] = React.useState(0)
       var [page, setPage] = React.useState('desc')
       var current = PAGES.find(function (p) { return p.id === page }) || PAGES[0]
-      var src = BASE + current.file + '?embed=1&_=' + nonce
+      var src = BASE + current.file + '?embed=1&_=' + nonce + (current.query ? '&' + current.query : '')
       return React.createElement('div', { className: 'ducksir-robot-panel' },
         React.createElement('div', { className: 'ducksir-robot-bar' },
           PAGES.map(function (p) {

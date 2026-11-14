@@ -119,6 +119,7 @@
   <div class="title">浏览器里跑物理 + 推理</div>
   <div class="line" id="stat">载入中…</div>
   <div class="line" id="vx">vx 0.00 · yaw 0.00</div>
+  <div class="line" id="howto">点一下画面 → 按 <kbd>W</kbd> 走，或用下面「自动走」</div>
   <div class="sub" id="perf"></div>
   <select id="policy" aria-label="选择策略"></select>
 </div>
@@ -131,13 +132,17 @@
     <button id="btn-right" type="button">↱<span>右转</span></button>
   </div>
   <div class="row">
+    <button id="btn-play" type="button" class="wide">▶ 开始</button>
+    <button id="btn-auto" type="button" class="wide">自动走</button>
+  </div>
+  <div class="row">
     <button id="btn-sit" type="button">坐 / 站</button>
     <button id="btn-kick" type="button">踢腿</button>
     <button id="btn-roll" type="button">翻滚</button>
     <button id="btn-reset" type="button" class="ghost wide">复位</button>
   </div>
   <div id="hint">
-    <kbd>W</kbd>/<kbd>S</kbd> 前进 ±0.05（上限 0.25）· <kbd>A</kbd>/<kbd>D</kbd> 转向 ·
+    <kbd>W</kbd>/<kbd>S</kbd> <span id="hint-vx">前进 ±0.05（上限 0.25）</span> · <kbd>A</kbd>/<kbd>D</kbd> 转向 ·
     <kbd>X</kbd> 坐/站 · <kbd>Z</kbd> 左踢 · <kbd>C</kbd> 右踢 · <kbd>V</kbd> 翻滚 · <kbd>B</kbd> 拾取 · <kbd>R</kbd> 复位
   </div>
 </div>

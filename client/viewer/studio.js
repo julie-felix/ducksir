@@ -18,8 +18,21 @@ const $ = (id) => document.getElementById(id);
 //   2) `ducksir run` 直接打开：页面由 runner 的显示服务提供，端点在根路径
 const BUILD = '2026-11-11 01:10';   // 改这个文件就 bump：诊断页签会显示，用来判断「页面是不是旧的」
 
-const IN_PANEL = location.pathname.startsWith('/ducksir-static/');
-const API = IN_PANEL ? '/ducksir-live' : '';
+// 后端前缀不再靠猜路径：启动时探一次 /api/health，谁答应用谁。
+//   直连 python 后端        → ''
+//   经 DSH 插件反代（iframe）→ '/ducksir-live'
+let API = '';
+async function pickApi() {
+  for (const base of ['', '/ducksir-live']) {
+    try {
+      const r = await fetch(base + '/api/health', { cache: 'no-store' });
+      if (r.ok) { API = base; return base; }
+    } catch { /* 试下一个 */ }
+  }
+  return '';
+}
+// 统一后端（ADR-001）：工程仿真的兼容前缀
+const PAPI = () => API + '/api/project';
 // 静态资源全部走**相对路径**（相对页面所在目录）：面板里是 /ducksir-static/client/viewer/，
 // runner 直开时是 `/`（显示服务把 vendor/data/assets 挂在根下）。这样不需要探测、也不会拼错根。
 const assets = (rel) => rel.replace(/^\.\//, '');
@@ -32,7 +45,8 @@ const glb = (rel) => rel;   // duck-hd1910.json 里的 mesh 本来就是 ../../a
 const bootConn = document.getElementById('conn');
 if (bootConn) bootConn.textContent = '页面已加载';
 const canvas = $('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+// 探针读像素需要（ADR-002）
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
 
 const scene = new THREE.Scene();
@@ -103,6 +117,8 @@ function applyFrame(f) {
     group.quaternion.set(f.quat[q + 1], f.quat[q + 2], f.quat[q + 3], f.quat[q]);
   }
   frames += 1; hzFrames += 1;
+  window.__lastFrame = { t: f.t, pos: f.pos, stats: f.stats };
+  window.__frameCount = frames;
   const now = performance.now();
   if (now - hzSince > 1000) { hz = (hzFrames * 1000) / (now - hzSince); hzSince = now; hzFrames = 0; }
   const s = f.stats || {};
@@ -150,7 +166,16 @@ async function loadDiag() {
   } catch (e) {
     $('diag').innerHTML += `<tr><th>后端自检</th><td class="bad">取不到 /diag：${e?.message || e}</td></tr>`;
   }
-  const sc = await (await fetch(`${API}/scene`)).json();
+  // 场景可能比作业晚一点就绪：重试几次，别静默拿空场景（否则 groups 全是 (0,0,0)）
+  let sc = null;
+  for (let i = 0; i < 10; i += 1) {
+    try {
+      const r = await fetch(`${PAPI()}/scene`);
+      if (r.ok) { sc = await r.json(); break; }
+    } catch { /* 再试 */ }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  if (!sc) { $('conn').textContent = '场景读不到（仿真还没起？）'; return; }
   $('diag').innerHTML = [
     ['项目', sc.project || '—'],
     ['策略', sc.policy || '—'],
@@ -254,6 +279,19 @@ function wireTabs() {
 
 // 3D 区的消息层：出错时把原因写在画面上（手机看不到控制台）。
 // 注意：它必须声明在**第一次使用之前**，否则会撞 TDZ（`Cannot access 'msg' before initialization`）。
+let noticeTimer = null;
+/** 轻提示：停在画面上方几秒自动消失，不挡画面（挡画面的是 showMsg，只给真正的错误用）。 */
+function notice(text, ms = 7000) {
+  const el = $('notice');
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = text ? 'block' : 'none';
+  if (noticeTimer) clearTimeout(noticeTimer);
+  if (text) noticeTimer = setTimeout(() => { el.style.display = 'none'; }, ms);
+}
+
+if (typeof window !== 'undefined') window.__ducksirNotice = notice;
+
 function showMsg(text) {
   const el = $('view-msg');
   if (!el) return;
@@ -304,7 +342,10 @@ async function wireBundles() {
       showMsg('bundle 探测失败：' + (e?.message || e));
       return;
     }
+    showMsg('');
     frame.src = `/ducksir-static/client/viewer/play.html?bundle=${encodeURIComponent(base)}&embed=1`;
+    notice('已载入：点一下画面 → 按 W/S 走、A/D 转向；没有键盘就点下面的「自动走」');
+    showMsg('');   // 载入成功就把错误遮罩收掉，别挡住机器人
     frame.style.display = 'block';
     canvas.style.display = 'none';
     document.body.classList.add('browser-mode');   // 收起 host 专属控件
@@ -339,7 +380,7 @@ async function wireBundles() {
 async function refreshConn() {
   if (document.body.classList.contains('browser-mode')) return false;   // 浏览器模式不关心宿主动态
   try {
-    const st = await (await fetch(`${API}/status`)).json();
+    const st = await (await fetch(`${PAPI()}/status`)).json();
     $('conn').textContent = st.running ? `运行中 :${st.port}` : '未运行';
     $('conn').className = 'pill ' + (st.running ? 'ok' : '');
     return st.running;
@@ -353,17 +394,23 @@ function wireRunControls() {
   $('btn-start').onclick = async () => {
     const project = $('project-path').value.trim() || 'sim/test/fixtures/project_demo.py';
     $('conn').textContent = '启动中…';
-    const res = await fetch(`${API}/start`, {
+    // 统一后端：作业模型（op:'sim'），不再走插件的 /start
+    const res = await fetch(`${API}/api/jobs`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ project, seconds: 600 }),
+      body: JSON.stringify({ op: 'sim', args: { project, seconds: 600 } }),
     });
-    const out = await res.json();
-    if (!out.ok) { $('conn').textContent = '启动失败：' + (out.error || ''); return; }
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok || !out.id) {
+      const e = out.error || {};
+      $('conn').textContent = `启动失败：HTTP ${res.status} · ${e.code || ''} ${e.message || ''}`;
+      return;
+    }
     await refreshConn();
     startStream();
   };
   $('btn-stop').onclick = async () => {
-    await fetch(`${API}/stop`, { method: 'POST' });
+    const st = await (await fetch(`${PAPI()}/status`)).json().catch(() => ({}));
+    if (st.job) await fetch(`${API}/api/jobs/${st.job}/cancel`, { method: 'POST' });
     await refreshConn();
   };
 }
@@ -371,12 +418,44 @@ function wireRunControls() {
 let streamSrc = null;
 function startStream() {
   if (streamSrc) streamSrc.close();
-  streamSrc = new EventSource(`${API}/stream`);
-  streamSrc.onmessage = (ev) => { try { applyFrame(JSON.parse(ev.data)); } catch (e) { console.warn(e); } };
+  streamSrc = new EventSource(`${PAPI()}/stream`);
+  streamSrc.onmessage = (ev) => {
+    try {
+      const raw = JSON.parse(ev.data);
+      // 后端 SSE 有两条形状：`{"line": "<原始帧>"}`（作业日志）和裸帧
+      const f = raw && typeof raw.line === 'string' ? JSON.parse(raw.line) : raw;
+      if (!f || typeof f.t !== 'number') return;      // 启动日志行之类，跳过
+      applyFrame(f);
+    } catch (e) { console.warn('[studio] 帧解析失败', e); }
+  };
   streamSrc.onerror = () => { $('conn').textContent = '断开了'; };
 }
 
+// ADR-002：探针自述（只读数字）
+// 调试：给探针看“几何到底有没有被更新”（真机上很难区分“没动”和“没渲染”）
+window.__dbg = { state() {
+  const out = {};
+  for (const [name, g] of groups) { out[name] = [Number(g.position.x.toFixed(3)), Number(g.position.y.toFixed(3)), Number(g.position.z.toFixed(3))]; if (Object.keys(out).length > 3) break; }
+  return { groups: groups.size, bodies: bodyIndex.size, sample: out, frame: window.__lastFrame ? Number(window.__lastFrame.t.toFixed(2)) : 0 };
+} };
+
+window.__probe = {
+  state() {
+    const last = (window.__lastFrame || null);
+    return {
+      sim: last ? Number(last.t.toFixed(3)) : 0,
+      running: Boolean($('conn') && /运行中/.test($('conn').textContent || '')),
+      z: last ? Number((last.stats?.base_height ?? null)) : null,
+      upright: last ? Number((last.stats?.upright ?? null)) : null,
+      speed: last ? Number((last.stats?.speed ?? null)) : null,
+      frames: window.__frameCount || 0,
+      error: null,
+    };
+  },
+};
+
 async function main() {
+  await pickApi();
   wireTabs();
   wireParams();
   wireRunControls();
@@ -392,7 +471,16 @@ async function main() {
 
   try {
     const running = document.body.classList.contains('browser-mode') ? false : await refreshConn();
-    const sc = await (await fetch(`${API}/scene`)).json();
+    // 场景可能比作业晚一点就绪：重试几次，别静默拿空场景（否则 groups 全是 (0,0,0)）
+  let sc = null;
+  for (let i = 0; i < 10; i += 1) {
+    try {
+      const r = await fetch(`${PAPI()}/scene`);
+      if (r.ok) { sc = await r.json(); break; }
+    } catch { /* 再试 */ }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  if (!sc) { $('conn').textContent = '场景读不到（仿真还没起？）'; return; }
     (sc.bodies || []).forEach((n, i) => bodyIndex.set(n, i));
     if (running) startStream();
     await loadDiag().catch(fail('诊断'));

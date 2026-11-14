@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>宿主直播 · ducksir</title>
+<style>
+  :root { --bg:#0b0f14; --ink:#e6ebf2; --dim:#8b97a7; --line:#222b36; --accent:#4da3ff; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--ink);
+    font: 13px/1.5 system-ui, -apple-system, "Noto Sans CJK SC", sans-serif; overflow:hidden; }
+  canvas { display:block; width:100%; height:100%; }
+  #hud { position:fixed; left:12px; top:12px; padding:9px 12px; border-radius:10px;
+    background:rgba(17,21,26,.88); border:1px solid var(--line); max-width:min(92vw,420px);
+    font-size:12.5px; line-height:1.55; }
+  #hud b { color:#fff; font-weight:600; }
+  #hud .dim { color:var(--dim); }
+  #status { color:var(--accent); }
+  #busy { position:fixed; inset:0; display:grid; place-items:center; color:var(--dim);
+    background:var(--bg); z-index:9; transition:opacity .2s; text-align:center; padding:20px; }
+  #busy.gone { opacity:0; pointer-events:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">
+  <div><b>宿主直播</b> <span class="dim" id="bundle-name"></span></div>
+  <div style="display:flex;gap:6px;margin:6px 0">
+    <select id="bundle" style="flex:1;background:#1b2531;color:#e6ebf2;border:1px solid #2a3441;border-radius:6px;padding:4px 6px;font:inherit"></select>
+    <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#8b97a7">
+      <input id="loop" type="checkbox" checked> 循环
+    </label>
+    <button id="start" style="background:#1e252d;color:#c8ccd0;border:1px solid #2a3441;border-radius:6px;padding:4px 10px;font:inherit;cursor:pointer">启动</button>
+  </div>
+  <div id="status">选一个 bundle 后点「启动」</div>
+  <div class="dim" id="line">等第一帧…</div>
+  <div class="ctl">
+    <label>前进 <input id="fwd" type="range" min="0" max="1" step="0.05" value="0"><span id="fwd-v">0.00</span></label>
+    <label>转向 <input id="yaw" type="range" min="0" max="1" step="0.05" value="0"><span id="yaw-v">0.00</span></label>
+    <label id="lat-wrap">横向 <input id="lat" type="range" min="0" max="1" step="0.05" value="0"><span id="lat-v">0.00</span></label>
+  </div>
+  <div id="depth-box" style="display:none;margin-top:8px">
+    <div class="dim" style="font-size:11px;margin-bottom:3px">深度相机（近亮远暗）</div>
+    <canvas id="depth" width="174" height="116" style="width:174px;height:116px;border:1px solid #2a3441;border-radius:4px;image-rendering:pixelated"></canvas>
+  </div>
+  <div class="ctl">
+    <label id="speed-wrap" style="display:none"><input id="speed" type="checkbox"> 高速模式</label>
+    <span class="dim" id="cmd-tip"></span>
+  </div>
+  <div class="ctl">
+    <button id="pause" type="button">⏸ 暂停</button>
+    <button id="zero" type="button">归零</button>
+    <span class="dim" id="ctl-tip">W/S 前进后退 · A/D 横移 · Q/E 转向</span>
+  </div>
+</div>
+<div id="busy">连接宿主…</div>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/" } }
+</script>
+<script type="module" src="./host.js?v=20261113a"></script>
+</body>
+</html>

@@ -24,6 +24,8 @@ from __future__ import annotations
 import argparse
 import ctypes
 import json
+import threading
+import time as _time_mod
 import os
 import sys
 import time
@@ -65,6 +67,29 @@ class Plan:
         return int(s[0]), int(s[1])
 
 
+def _GM_mat(q):
+    """四元数 → 旋转矩阵（GMTrack 的 pelvis 局部角速度要用）。"""
+    w, x, y, z = (float(v) for v in q)
+    n = w * w + x * x + y * y + z * z
+    s = 2.0 / n
+    return np.array([
+        [1 - s * (y * y + z * z), s * (x * y - z * w), s * (x * z + y * w)],
+        [s * (x * y + z * w), 1 - s * (x * x + z * z), s * (y * z - x * w)],
+        [s * (x * z - y * w), s * (y * z + x * w), 1 - s * (x * x + y * y)],
+    ], dtype=np.float64)
+
+
+def _with_gains(preset: dict, n: int) -> dict:
+    """把 preset 里可能缺的 kp/kd/effortLimit/actionScale/default 按 n 补齐。"""
+    out = dict(preset)
+    for key, default in (("kp", 0.0), ("kd", 0.0), ("effortLimit", 0.0),
+                         ("actionScale", 1.0), ("defaultJointPositions", 0.0)):
+        v = out.get(key) or []
+        if len(v) != n:
+            out[key] = [default] * n
+    return out
+
+
 def run_plan(core, plan: Plan, values) -> np.ndarray:
     n_in = plan.entry["input_dim"]
     n_out = plan.entry["output_dim"]
@@ -82,12 +107,21 @@ def main() -> int:
     ap.add_argument("--mjcf", help="物理模型（默认 bundle/duck.xml，没有就用 build/mjcf/duck-hd1910-all.xml）")
     ap.add_argument("--seconds", type=float, default=20.0)
     ap.add_argument("--steps", type=int)
+    ap.add_argument("--pace", action="store_true",
+                    help="按实时速度跑（直播用；否则宿主会几十倍速跑完）")
+    ap.add_argument("--control", action="store_true",
+                    help="从 stdin 读 JSONL 指令（{\"forward\":0.3,\"yaw\":0,\"paused\":true}），直播时用")
+    ap.add_argument("--stdio", action="store_true",
+                    help="把场景和每帧位姿按 JSONL 打到 stdout（插件宿主用它转 SSE）")
+    ap.add_argument("--stream", type=int, metavar="PORT",
+                    help="把每帧位姿推给浏览器（0 = 随机端口）：ws://127.0.0.1:PORT/")
     ap.add_argument("--forward", type=float, default=0.0)
     ap.add_argument("--yaw", type=float, default=0.0)
     ap.add_argument("--fsm", action="store_true", help="用 fsm.blob 驱动（否则单策略常值指令）")
     ap.add_argument("--pulses", default="", help="FSM 指令脉冲，格式 秒:值,秒:值")
     ap.add_argument("--report")
     ap.add_argument("--trajectory")
+    ap.add_argument("--trace", help="逐步落 JSONL（obs/action/ctrl/qpos），用于和 botlab 对拍")
     args = ap.parse_args()
 
     import mujoco
@@ -95,6 +129,123 @@ def main() -> int:
 
     bdir = os.path.join(ROOT, args.bundle) if not os.path.isabs(args.bundle) else args.bundle
     con = C.load(os.path.join(bdir, "contract.json"))
+    # preset 决定执行器语义：位置（MuJoCo 算 PD）还是扭矩（我们在控制步算 PD）
+    preset_path = os.path.join(bdir, "preset.yaml")
+    preset = {}
+    if os.path.exists(preset_path):
+        import yaml as _yaml
+        preset = _yaml.safe_load(open(preset_path, encoding="utf-8")) or {}
+    torque_mode = str(preset.get("actuatorMode") or "").lower() == "torque"
+    # 动作参考（WBC / AMP）：契约里有 robot.motion 才启用；播放头 + 参考目标角
+    # 只有 WBC(3)/AMP(4) 用动作参考；loco(2)/mjamp(5) 不读参考段，也不该把目标基准换掉
+    use_reference = any(int(p.get("mode", 0)) in (3, 4) for p in (con.get("policies") or []))
+    _motion_all = (con.get("robot") or {}).get("motion")
+    # UniSuperMimic：配方是单条目 mimic:uni，不走 reference，但要读动作
+    _is_uni = bool(_motion_all) and _motion_all.get("format") in (
+        "unisupermimic", "instinct", "gmtrack", "parkour", "parkour_php")
+    motion_cfg = _motion_all if (use_reference or _is_uni) else None
+    ref_angles = (con.get("robot") or {}).get("reference_joint_positions")
+    motion_arrays = motion_meta = playhead = None
+    uni_obs_mod = uni_motion = uni_hist = None
+    inst_obs_mod = inst_motion = inst_hist = inst_cfg = inst_cam = None
+    php_mod = php_cam = php_enc = php_delay = php_cfg = None
+    pk_mod = pk_cam = pk_enc = pk_state_hist = pk_depth_hist = pk_cfg = None
+    if motion_cfg and motion_cfg.get("format") == "parkour_php":
+        import onnxruntime as _ort
+        import php_obs as _PHP
+        from depth_camera import DepthCamera as _DC
+        php_mod = _PHP
+        php_cfg = dict(motion_cfg)
+        _cam_spec = dict(motion_cfg.get("camera") or {})
+        _cam_spec.setdefault("cropMode", "offset")
+        php_enc = _ort.InferenceSession(os.path.join(bdir, "php_enc.onnx") if os.path.isfile(
+            os.path.join(bdir, "php_enc.onnx")) else motion_cfg["encoder"], providers=["CPUExecutionProvider"])
+        php_delay = _PHP.LatentDelay(int(motion_cfg.get("latentDelay", 7)))
+        php_cfg["_cam_spec"] = _cam_spec
+    if motion_cfg and motion_cfg.get("format") == "parkour":
+        import onnxruntime as _ort
+        import parkour_obs as _PK
+        from depth_camera import DepthCamera as _DepthCamera
+        pk_mod = _PK
+        pk_cfg = dict(motion_cfg)
+        _cam_spec = dict(motion_cfg.get("camera") or {})
+        _cam_spec.setdefault("cropMode", "offset")
+        pk_cfg["_cam_spec"] = _cam_spec     # 相机要等模型编译完才能建
+        _enc_path = motion_cfg.get("encoder")
+        if not os.path.isabs(_enc_path):
+            _enc_path = os.path.join(bdir, os.path.basename(_enc_path)) if os.path.isfile(
+                os.path.join(bdir, os.path.basename(_enc_path))) else _enc_path
+        pk_enc = _ort.InferenceSession(_enc_path, providers=["CPUExecutionProvider"])
+        pk_state_hist = _PK.StateHistory(int(motion_cfg.get("stateHistory", 8)))
+        _dh = motion_cfg.get("depthHistory") or {}
+        pk_depth_hist = _PK.DepthHistory(int(_dh.get("frames", 8)), int(_dh.get("stride", 5)))
+    gm_obs_mod = gm_motion = gm_ph = gm_ah = gm_cfg = None
+    if motion_cfg and motion_cfg.get("format") == "gmtrack":
+        import numpy as _np
+        import gmtrack_obs as _GM
+        _mp = motion_cfg["path"]
+        if not os.path.isabs(_mp):
+            _mp = os.path.join(bdir, _mp)
+        z = _np.load(os.path.join(_mp, f"{motion_cfg['clip']}.npz"), allow_pickle=True)
+        gm_motion = {k: z[k] for k in ("joint_pos", "joint_vel", "body_pos_w", "body_quat_w",
+                                       "body_lin_vel_w", "body_ang_vel_w")}
+        gm_motion["fps"] = float(z["fps"][0])
+        gm_obs_mod = _GM
+        gm_ph = _GM.TermHistory()
+        gm_ah = _GM.ActionHistory()
+        gm_cfg = dict(motion_cfg)
+    elif motion_cfg and motion_cfg.get("format") == "instinct":
+        import numpy as _np
+        import instinct_obs as _IN
+        import depth_camera as _DC
+        _DC_DepthCamera = _DC.DepthCamera
+        _mp = motion_cfg["path"]
+        if not os.path.isabs(_mp):
+            _mp = os.path.join(bdir, _mp)
+        _clip = motion_cfg["clip"]
+        z = _np.load(os.path.join(_mp, f"{_clip}.npz"), allow_pickle=True)
+        inst_motion = {k: z[k] for k in ("joint_pos", "joint_vel", "body_pos_w", "body_quat_w")}
+        inst_motion["fps"] = float(z["fps"][0])
+        _dof = [str(x) for x in z["dof_names"]]
+        inst_cfg = dict(motion_cfg["config"])
+        inst_cfg["joint_order"] = [_dof.index(n) for n in inst_cfg["joint_names"]]
+        inst_cfg["torso_index"] = [str(b) for b in z["body_names"]].index("torso_link")
+        inst_obs_mod = _IN
+        inst_hist = _IN.TermHistory()
+        # 模型要到后面才建（这里只解析动作），相机延迟到循环里创建
+    elif motion_cfg and motion_cfg.get("format") == "unisupermimic":
+        import numpy as _np
+        import unisupermimic_obs as _U
+        _mp = motion_cfg["path"]
+        if not os.path.isabs(_mp):
+            _mp = os.path.join(bdir, _mp)      # bundle 内相对路径（导出时写 motion/）
+        z = _np.load(os.path.join(_mp, f"{motion_cfg['clip']}.npz"), allow_pickle=True)
+        uni_motion = {k: z[k] for k in ("joint_pos", "joint_vel", "body_pos_w", "body_quat_w",
+                                        "body_lin_vel_w", "body_ang_vel_w")}
+        uni_motion["fps"] = float(z["fps"][0])
+        uni_obs_mod = _U
+        uni_hist = _U.History()
+    elif motion_cfg and motion_cfg.get("path"):
+        import sys as _sys
+        _sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "plan"))
+        import motion as _M
+        import wbc_obs as _W
+        base = motion_cfg["path"]
+        if not os.path.isabs(base):
+            base = os.path.join(bdir, base)   # bundle 里的相对路径（导出时写成 motion/）
+        meta_path = os.path.join(base, "metadata.json")
+        names = (json.load(open(meta_path, encoding="utf-8")).get("body_names")
+                 if os.path.exists(meta_path) else None)
+        motion_arrays = {
+            "joint_pos": _M.load_motion(base, "joint_pos")["data"],
+            "joint_vel": _M.load_motion(base, "joint_vel")["data"],
+            "body_pos": _M.load_motion(base, "body_pos_w", indices=names)["data"].reshape(-1, len(names), 3),
+            "body_quat": _M.load_motion(base, "body_quat_w", indices=names)["data"].reshape(-1, len(names), 4),
+        }
+        motion_meta = motion_cfg
+        playhead = _W.Playhead(motion_arrays["joint_pos"].shape[0],
+                               start=0, frame_interval=int(motion_cfg.get("frame_interval", 5)))
+        playhead.pause(True)   # 进 WBC 之前参考停在起点（botlab: active_mode=3）
 
     mjcf = args.mjcf or (os.path.join(bdir, "duck.xml") if os.path.exists(os.path.join(bdir, "duck.xml"))
                          else "build/mjcf/duck-hd1910-all.xml")
@@ -113,6 +264,7 @@ def main() -> int:
         raise SystemExit("契约里没有策略")
     mode_to_key = {int(p["mode"]): p["key"] for p in policies}
     sessions = {}
+    rnn_state = {}      # 多输入模型（loco 的 h/c）跨步保持
     for p in policies:
         path = os.path.join(bdir, p["file"])
         if not os.path.exists(path):
@@ -129,15 +281,48 @@ def main() -> int:
         steps = min(steps, args.steps)
 
     spec = mujoco.MjSpec.from_file(mjcf)
-    geom = spec.worldbody.add_geom()
-    geom.type = mujoco.mjtGeom.mjGEOM_PLANE
-    geom.size = [6.0, 6.0, 0.1]
-    geom.condim = 3
+    # 有些上游场景自带地面（GMTrack 的 scene.xml 就有一块 plane）。
+    # 再叠一块会变成「两层地面」→ 接触力翻倍，第 1 步就偏（实测 qpos 差 0.0195）。
+    if 'type="plane"' not in open(mjcf, encoding="utf-8", errors="replace").read():
+        geom = spec.worldbody.add_geom()
+        geom.type = mujoco.mjtGeom.mjGEOM_PLANE
+        geom.size = [6.0, 6.0, 0.1]
+        geom.condim = 3
     m = spec.compile()
+    if pk_cfg is not None:
+        from depth_camera import DepthCamera as _DepthCamera
+        pk_cam = _DepthCamera(m, pk_cfg["_cam_spec"])
+    if php_cfg is not None:
+        from depth_camera import DepthCamera as _DepthCamera
+        php_cam = _DepthCamera(m, php_cfg["_cam_spec"])
     d = mujoco.MjData(m)
     m.opt.timestep = 1.0 / physics_hz
     d.qpos[:] = robot["initial_qpos"]
+    _qvel0 = robot.get("initial_qvel")
+    if _qvel0:
+        _arr = np.asarray(_qvel0, dtype=np.float64)
+        if _arr.shape[0] == d.qvel.shape[0]:
+            d.qvel[:] = _arr
+        else:
+            print(f"[run] initial_qvel 长度 {_arr.shape[0]} 与 nv {d.qvel.shape[0]} 不符，忽略")
     mujoco.mj_forward(m, d)
+
+    stream = None
+    stdio = bool(args.stdio)
+    _HS = None
+    if stdio or args.stream is not None:
+        import host_stream as _HS
+    if stdio:
+        sys.stdout.write(_HS.build_scene_b64(m, mujoco) + "\n")
+        sys.stdout.flush()
+        print("  直播（stdio）：场景已发", file=sys.stderr)
+    if args.stream is not None:
+        import host_stream as _HS
+        stream = _HS.HostStream(args.stream)
+        _scene, _blob = _HS.build_scene(m, mujoco)
+        stream.set_scene(json.dumps(_scene, separators=(",", ":")), _blob)
+        stream.send(json.dumps(_scene, separators=(",", ":")), _blob)
+        print(f"  直播 ws://127.0.0.1:{stream.port}/（{len(_scene['geoms'])} 个视觉 geom）")
 
     driven = robot["joints"]
     n = len(driven)
@@ -192,15 +377,53 @@ def main() -> int:
     cmd = np.zeros(13, dtype=np.float32)
     cmd[0], cmd[2] = args.forward, args.yaw
     act = np.zeros(n, dtype=np.float32)
+    last_depth = None            # (kind, 2D 深度帧)；每 3 个控制步随位姿发一次
     heights, tilts, step_times, frames = [], [], [], []
     x0, y0 = float(d.qpos[0]), float(d.qpos[1])
     path_len, speed, prev_xy, speed_hist = 0.0, 0.0, (x0, y0), []
     states, pulse = [], 0.0
     t0 = time.time()
     dead = False
+    trace_fh = open(args.trace, "w", encoding="utf-8") if args.trace else None
     mode_key = policies[0]["key"]
 
-    for k in range(steps):
+    # 运行期指令（直播用）：一次性读 stdin，主循环取最新的
+    control = {"forward": float(args.forward), "yaw": float(args.yaw), "paused": False,
+               "speedMode": float(os.environ.get("DUCK_SPEED_MODE", "0"))}
+    if args.control:
+        def _read_control():
+            for raw in sys.stdin:
+                raw = raw.strip()
+                if not raw:
+                    continue
+                try:
+                    upd = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                for key in ("forward", "yaw", "lateral", "paused", "speedMode"):
+                    if key in upd:
+                        control[key] = upd[key]
+
+                cmd[0], cmd[2] = float(control["forward"]), float(control["yaw"])
+                cmd[1] = float(control.get("lateral") or 0.0)
+        threading.Thread(target=_read_control, daemon=True).start()
+
+    _t_start = _time_mod.time() if args.pace else 0.0
+    sim_k = 0            # 真正步进过的步数（暂停时不动，直播时间轴才不会继续走）
+    k = 0                # 循环计数（含暂停期间的轮询）
+    while sim_k < steps:
+        k = sim_k
+        if args.control:
+            if control.get("paused"):
+                # 暂停：不步进、时间轴不动，但继续推当前位姿（否则画面冻住看不出是暂停）
+                if stdio:
+                    try:
+                        sys.stdout.write(_HS.pose_message(sim_k, sim_k / control_hz, d.xpos, d.xquat) + "\n")
+                        sys.stdout.flush()
+                    except BrokenPipeError:
+                        stdio = False
+                _time_mod.sleep(0.02)
+                continue
         if k in pulses:
             pulse = pulses[k]
         t_step = time.perf_counter()
@@ -223,20 +446,274 @@ def main() -> int:
             if out[off_clr]:
                 last_action = np.zeros(n, dtype=np.float32)
 
-        obs = CO.make_obs(con, view, last_action=last_action, command=cmd)
+        motion_ref = None
+        in_active_mode = False
+        if playhead is not None:
+            import wbc_obs as _W
+            active = int(motion_meta.get("active_mode", 3))
+            in_active_mode = (fsm is None) or (int(out[off_m]) == active)
+            # 起步先让参考停几帧（机器人从初始位形settle），再到点开播——
+            # 直接开播会让策略第 0 帧就吃到参考速度尖峰（实测会倒）。
+            settle = int(os.environ.get("DUCK_WBC_SETTLE", "10"))
+            if in_active_mode and playhead.paused and k >= settle:
+                playhead.pause(False)
+            if not in_active_mode:
+                playhead.pause(True)
+            idx, last = playhead.current()
+            motion_ref = _W.reference_block(
+                joint_pos=motion_arrays["joint_pos"][idx],
+                joint_vel=motion_arrays["joint_vel"][idx],
+                anchor_pos=motion_arrays["body_pos"][idx][0],
+                anchor_quat=motion_arrays["body_quat"][idx][0],
+                last_anchor_pos=motion_arrays["body_pos"][last][0],
+                last_anchor_quat=motion_arrays["body_quat"][last][0],
+                base_quat=d.qpos[3:7], pause=playhead.paused)
+        mimic_obs = None
+        if php_mod is not None:
+            _pb = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
+            _R = _GM_mat(d.xquat[_pb])
+            _frame = php_cam.process(php_cam.render(d), 98, 58)      # 106×60 → 98×58
+            _frame = np.asarray(_frame, dtype=np.float64)
+            _r = php_cfg.get("resize") or [98, 58, 87, 58]
+            from depth_camera import resize_depth as _rz
+            _frame = _rz(_frame, int(_r[2]), int(_r[3]))
+            last_depth = ("php", _frame.copy())   # 面板显示原始归一化深度（人眼友好）
+            _sc, _off = php_cfg.get("affine") or [1.0, 0.0]
+            _frame = float(_sc) * _frame + float(_off)
+            _latent = php_enc.run(None, {"depth_image": _frame[None].astype("float32")})[0]
+            _latent = php_delay.push(_latent.reshape(-1), age_steps=0)
+            mimic_obs = php_mod.actor_obs(
+                gravity_b=_R.T @ np.array([0, 0, -1.0]),
+                angvel_b=np.asarray(d.cvel[_pb][:3], float) if False else np.asarray(d.qvel[3:6], float),
+                joint_pos=np.asarray(d.qpos[7:36], float)[np.asarray(preset["policyJointOrder"])],
+                default_angles=np.asarray(preset["defaultJointPositions"], float)[np.asarray(preset["policyJointOrder"])],
+                joint_vel=np.asarray(d.qvel[6:35], float)[np.asarray(preset["policyJointOrder"])],
+                last_action=last_action,
+                command=np.array([cmd[0], cmd[1], cmd[2], 0.0], float),
+                latent=_latent)
+        cmd[3] = float(control.get("speedMode") or 0.0)
+        if pk_mod is not None:
+            _pb = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
+            if _pb < 0:
+                _pb = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "pelvis")
+            _R = _GM_mat(d.xquat[_pb])
+            _ang = _R.T @ np.asarray(d.cvel[_pb][:3], dtype=np.float64)
+            _frame = pk_cam.process(pk_cam.render(d), pk_mod.DEPTH_SHAPE[2], pk_mod.DEPTH_SHAPE[1])
+            last_depth = ("parkour", _frame)
+            _dhist = pk_depth_hist.push(_frame)
+            _latent = pk_enc.run(None, {"input": _dhist[None].astype("float32")})[0]
+            _state = pk_state_hist.push(pk_mod.state_terms(
+                angvel_b=_ang, gravity_b=_R.T @ np.array([0, 0, -1.0]),
+                command=np.array([cmd[0], cmd[1], cmd[2]], dtype=np.float64),
+                # 模板的 joint_position() 返回 **policy 顺序**（实测差 0.0000；
+                # qpos 顺序会差 0.32）
+                joint_pos=np.asarray(d.qpos[7:36], dtype=np.float64)[np.asarray(preset["policyJointOrder"])],
+                default_angles=np.asarray(preset["defaultJointPositions"], dtype=np.float64)[np.asarray(preset["policyJointOrder"])],
+                joint_vel=np.asarray(d.qvel[6:35], dtype=np.float64)[np.asarray(preset["policyJointOrder"])],
+                last_action=last_action))
+            mimic_obs = pk_mod.actor_obs(_state, _latent)
+        if gm_obs_mod is not None:
+            _pb = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "pelvis")
+            _R = _GM_mat(d.xquat[_pb])
+            # 模板的 joint_position() 读的是 **qpos 顺序**（= 模型的关节定义顺序 = policyJointOrder），
+            # 不是契约里 driven 的顺序；用 qpos_off 会错位（实测 q 段差 0.23）。
+            _q = np.asarray(d.qpos[7:7 + 29], dtype=np.float64)
+            _qd = np.asarray(d.qvel[6:6 + 29], dtype=np.float64)
+            _local_ang = _R.T @ np.asarray(d.cvel[_pb][:3], dtype=np.float64)
+            mimic_obs = gm_obs_mod.assemble(
+                motion=gm_motion, t=sim_k * 0.02 + float(gm_cfg.get("reference_lead", 0.02)),
+                joint_order=preset.get("policyJointOrder"),
+                default_angles=np.asarray(preset["defaultJointPositions"]),
+                joint_pos=_q, joint_vel=_qd,
+                gravity_b=_R.T @ np.array([0, 0, -1.0]),
+                base_ang_vel_local=_local_ang,
+                last_action=last_action,
+                proprio_hist=gm_ph, action_hist=gm_ah)
+        if inst_obs_mod is not None:
+            if inst_cam is None:
+                inst_cam = _DC_DepthCamera(m, motion_cfg["camera"])
+            _bid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
+            _w, _x, _y, _z = d.xquat[_bid]
+            _R = np.array([
+                [1 - 2 * (_y * _y + _z * _z), 2 * (_x * _y - _z * _w), 2 * (_x * _z + _y * _w)],
+                [2 * (_x * _y + _z * _w), 1 - 2 * (_x * _x + _z * _z), 2 * (_y * _z - _x * _w)],
+                [2 * (_x * _z - _y * _w), 2 * (_y * _z + _x * _w), 1 - 2 * (_x * _x + _y * _y)]])
+            _q = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
+            _qd = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)
+            _block, _terms = inst_obs_mod.build_terms(
+                motion=inst_motion, t=k * 0.02, duration=float(inst_cfg["duration"]),
+                joint_order=inst_cfg["joint_order"],
+                config_defaults=np.asarray(inst_cfg["default_angles"]),
+                robot_joint_pos=_q - np.asarray(preset["defaultJointPositions"]),
+                robot_joint_vel=_qd, gravity_b=_R.T @ np.array([0, 0, -1.0]),
+                base_ang_vel=d.qvel[3:6], last_action=last_action,
+                torso_index=inst_cfg["torso_index"], robot_torso_quat=d.xquat[_bid].copy())
+            _hist990 = inst_hist.push(_terms)
+            _depth = inst_cam.process(inst_cam.render(d)).reshape(-1)
+            mimic_obs = np.concatenate([_block, _depth, _hist990]).astype(np.float32)
+        if uni_obs_mod is not None:
+            q_now = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
+            qd_now = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)
+            w, xq, yq, zq = d.qpos[3:7]
+            Rm = np.array([
+                [1 - 2 * (yq * yq + zq * zq), 2 * (xq * yq - zq * w), 2 * (xq * zq + yq * w)],
+                [2 * (xq * yq + zq * w), 1 - 2 * (xq * xq + zq * zq), 2 * (yq * zq - xq * w)],
+                [2 * (xq * zq - yq * w), 2 * (yq * zq + xq * w), 1 - 2 * (xq * xq + yq * yq)]])
+            per_frame = uni_obs_mod.build_obs(
+                motion=uni_motion, joint_pos=q_now, joint_vel=qd_now,
+                base_ang_vel=d.qvel[3:6], gravity_b=Rm.T @ np.array([0, 0, -1.0]),
+                last_action=last_action, qpos_quat=d.qpos[3:7],
+                default_angles=np.asarray(preset["defaultJointPositions"]),
+                t=(k - 1) * float(motion_cfg.get("dt", 0.02)),
+                joint_order=preset.get("policyJointOrder"))
+            hist990 = uni_hist.push(per_frame[:99])
+            mimic_obs = np.concatenate([hist990, per_frame[99:]]).astype(np.float32)
+        obs = CO.make_obs(con, view, last_action=last_action, command=cmd,
+                          motion_ref=motion_ref, mimic_obs=mimic_obs)
+        obs_raw = obs.copy()
         if "pre" in plans:
             obs = run_plan(core, plans["pre"], obs)
         sess = sessions[mode_key]
-        feed = {sess.get_inputs()[0].name: obs.reshape(1, -1).astype(np.float32)}
-        raw = np.asarray(sess.run(None, feed)[0]).reshape(-1).astype(np.float32)
+        # 多输入模型（loco 的 h_in/c_in）要跨步保持递归状态；其余输入喂 0 初始化
+        in_names = [i.name for i in sess.get_inputs()]
+        feed = {in_names[0]: obs.reshape(1, -1).astype(np.float32)}
+        if len(in_names) > 1:
+            st = rnn_state.setdefault(mode_key, {})
+            for name, meta_in in zip(in_names[1:], sess.get_inputs()[1:]):
+                if name == "time_step":
+                    # PHP 的 actor 多一个常量输入 time_step（模板里 constant 0）
+                    st[name] = np.zeros((1, 1), dtype=np.float32)
+                    feed[name] = st[name]
+                    continue
+                if name not in st:
+                    shape = [d if isinstance(d, int) else 1 for d in meta_in.shape]
+                    st[name] = np.zeros(shape, dtype=np.float32)
+                feed[name] = st[name]
+        out_names = [o.name for o in sess.get_outputs()]
+        results = sess.run(None, feed)
+        raw = np.asarray(results[0]).reshape(-1).astype(np.float32)
+        if len(out_names) > 1:
+            # 递归状态按**位置**回填：out[1] → in[1]（h_out → h_in），
+            # 按名字会错位（h_out 存进去、下一步却读 h_in → 永远吃全零）。
+            st = rnn_state.setdefault(mode_key, {})
+            for in_name, value in zip(in_names[1:], results[1:]):
+                st[in_name] = np.asarray(value, dtype=np.float32)
+        # botlab 的控制器对动作做 ±100 截断（`policy_bank(...).clip(-100, 100)`），
+        # 少了这一步，扭矩模式会把超界的动作直接放大成力矩。
+        raw = np.clip(raw, -100.0, 100.0)
         last_action = raw
         if "post" in plans:
             act = run_plan(core, plans["post"], raw)
         else:
             act = raw
-        d.ctrl[:] = act
-        for _ in range(decim):
-            mujoco.mj_step(m, d)
+        if playhead is not None and in_active_mode:
+            playhead.advance()
+        if php_mod is not None:
+            _scale = np.asarray(preset.get("actionScale"), dtype=np.float64)
+            _def = np.asarray(preset["defaultJointPositions"], dtype=np.float64)
+            act = _def + (_scale * np.asarray(raw, dtype=np.float64))[np.asarray(preset["motorJointOrder"])]
+        if pk_mod is not None:
+            # 模板原式：target = default + action_scale * action[motor_order]
+            # **整条再按 motor_order 重排是错的**（实测差 0.16 rad，复现不了他们的轨迹）：
+            # 先把 action 换到 motor 序，再和 default/scale 逐项算，不再动输出顺序。
+            _scale = np.asarray(preset.get("actionScale"), dtype=np.float64)
+            _def = np.asarray(preset["defaultJointPositions"], dtype=np.float64)
+            _raw = np.asarray(raw, dtype=np.float64)
+            act = _def + _scale * _raw[np.asarray(preset["motorJointOrder"])]
+        if gm_obs_mod is not None:
+            # 模板：target = q_ref(t+lead) + scale·action（policy 序），再按 motor_order 重排
+            _tref = sim_k * 0.02 + float(gm_cfg.get("reference_lead", 0.02))
+            _qref = gm_obs_mod.sample(gm_motion, _tref, "joint_pos")
+            _scale = np.asarray(preset.get("actionScale"), dtype=np.float64)
+            _raw = np.asarray(raw, dtype=np.float64)
+            _tgt = _qref + _scale * _raw
+            act = np.asarray(_tgt, dtype=np.float64)[np.asarray(preset["motorJointOrder"])]
+        if playhead is not None and ref_angles is not None and in_active_mode:
+            # WBC 的目标基准是 referenceJointPositions（不是 default），
+            # post 已按 default 算好，这里补上差值即可（缩放不变）
+            act = np.asarray(act, dtype=np.float64) + (np.asarray(ref_angles, np.float64)
+                                                       - np.asarray(preset.get("defaultJointPositions"), np.float64))
+        if trace_fh is not None:
+            trace_fh.write(json.dumps({
+                "step": sim_k, "t": sim_k / control_hz,
+                "obs": [round(float(x), 6) for x in obs],
+                "action": [round(float(x), 6) for x in raw],
+                "ctrl": [round(float(x), 6) for x in act],
+                "qpos": [round(float(x), 6) for x in d.qpos],
+                "qvel": [round(float(x), 6) for x in d.qvel],
+            }) + "\n")
+            trace_fh.flush()
+        if torque_mode:
+            # **每个物理子步都重算 PD**（不是每个控制步算一次）。
+            # 实测：控制步算一次只能撑 20 步，子步重算能撑 104 步——
+            # 这也正是 MuJoCo 位置执行器的语义（它每个子步按 kp/kv 算力矩）。
+            import actuators as _A
+            gains = _with_gains(preset, len(driven))
+            # 注意：`act` 已经是 **目标角**（post 里做过 default + scale×action），
+            # 不能再走 ctrl_from_action（那会把 action 当原始动作再缩放一次）。
+            target_deg = np.asarray(act, dtype=np.float64)
+            for _ in range(decim):
+                if preset.get("actuatorJointOrder"):
+                    # PHP 这类模型的 qpos/qvel 就是原生关节序（preset 的 kp/default 也是原生序）
+                    q_now = np.asarray(d.qpos[7:7 + 29], dtype=np.float64)
+                    qd_now = np.asarray(d.qvel[6:6 + 29], dtype=np.float64)
+                else:
+                    q_now = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
+                    qd_now = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)
+                tau = _A.torque_from_target(target_deg, q_now, qd_now,
+                                            kp=gains["kp"], kd=gains["kd"],
+                                            effort_limit=gains["effortLimit"] or None)
+                # 执行器槽位可能不是 qpos 序：botlab 写的是 ctrl[actuatorJointOrder[i]] = tau[i]
+                _ao = preset.get("actuatorJointOrder")
+                if _ao:
+                    d.ctrl[np.asarray(_ao, dtype=int)] = tau
+                else:
+                    d.ctrl[:] = tau
+                mujoco.mj_step(m, d)
+        else:
+            d.ctrl[:] = act
+            for _ in range(decim):
+                mujoco.mj_step(m, d)
+        if (stream is not None or stdio) and k % max(1, int(round(control_hz / 30))) == 0:
+            _msg = _HS.pose_message(sim_k, sim_k / control_hz, d.xpos, d.xquat)
+            if last_depth is not None and sim_k % 3 == 0:
+                import base64 as _b64
+                _kind, _df = last_depth
+                _arr = np.clip(np.asarray(_df, dtype=np.float64), 0.0, 1.0)
+                _bytes = (_arr * 255).astype(np.uint8).tobytes()
+                _dm = json.dumps({"type": "depth", "kind": _kind,
+                                  "w": int(_arr.shape[1]), "h": int(_arr.shape[0]),
+                                  "b64": _b64.b64encode(_bytes).decode("ascii")},
+                                 separators=(",", ":"))
+                if stream is not None:
+                    stream.send(_dm)
+                if stdio:
+                    try:
+                        sys.stdout.write(_dm + "\n")
+                        sys.stdout.flush()
+                    except BrokenPipeError:
+                        stdio = False
+            if stream is not None:
+                stream.send(_msg)
+            if stdio:
+                try:
+                    sys.stdout.write(_msg + "\n")
+                    sys.stdout.flush()
+                except BrokenPipeError:
+                    stdio = False       # 页面关了就别再写，也别打一堆 traceback
+        if args.pace:
+            _due = _t_start + (k + 1) / control_hz
+            _slack = _due - _time_mod.time()
+            if _slack > 0:
+                _time_mod.sleep(min(_slack, 0.5))
+        # 参考动作放完就结束这一轮：botlab 那边是 end_after_steps 直接停；
+        # 我们如果继续跑，策略失去参考会在一两秒内倒（Instinct case_08 约 10.45 s）。
+        if inst_cfg is not None:
+            _dur = float(inst_cfg.get("duration") or 0.0)
+            if _dur and sim_k * float(motion_cfg.get("dt", 0.02)) >= _dur:
+                print(f"  参考动作结束（{_dur:.2f} s），本轮到此为止")
+                break
+        sim_k += 1
         if not np.isfinite(d.qpos).all():
             dead = True
             break
@@ -304,6 +781,16 @@ def main() -> int:
 
     for p in plans.values():
         core.ds_free(p.handle)
+    if stream is not None or stdio:
+        # 跑完了也别立刻断：页面还在看最后一帧。Ctrl-C 或超时再关。
+        import time as _time
+        hold = float(os.environ.get("DUCK_STREAM_HOLD", "180"))
+        print(f"  直播保持中 {hold:.0f}s（关掉页面或 Ctrl-C 即可结束）")
+        try:
+            _time.sleep(hold)
+        except KeyboardInterrupt:
+            pass
+
     return 0 if report["verdict"]["pass"] else 1
 
 

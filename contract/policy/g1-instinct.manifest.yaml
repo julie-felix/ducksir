@@ -1,0 +1,35 @@
+# G1 的 Instinct-SuperMimic（深度感知的动作模仿）：obs 1990。
+# 逐项对齐模板 g1-instinct-supermimic 的 controller.py：
+#   jp10(290) + jv10(290) + pos10(30) + rot10(60) + depth(576) + hist(744)
+#   hist = 5 个 term × 8 帧：[gravity(torso), base_ang_vel, jp−default, jv, last_action]
+kind: ducksir-policy-manifest
+version: 1
+policy_id: g1-instinct
+
+model:
+  file: build/models/g1-instinct.onnx
+  input: {name: obs, shape: [1, 1990]}
+  output: {name: actions, shape: [1, 29]}
+
+policies:
+  - {key: g1-instinct, mode: 0, file: build/models/g1-instinct.onnx}
+
+obs:
+  - {slot: mimic_instinct, len: 1990}
+
+history: {length: 0, layout: by-frame}
+
+action:
+  mapping: default_plus_scale
+  order: policy
+  clip: ctrlrange
+
+rates: {control_hz: 50, physics_hz: 200, inference_decimation: 4}
+
+provenance:
+  source: botlab 模板 g1-instinct-supermimic · assets/models/policy.onnx（2026-11-12 取）
+  upstream: https://botlab.enkeebot.com/templates/g1-instinct-supermimic/
+  obs_layout: controller.py 的 observations() —— 290+290+30+60+576+744 = 1990
+  depth: 相机 spec 来自 camera.preset.yaml（44×23 → 32×18，depthScale=2）
+  action_scale: 逐关节（0.0745 / 0.351 / 0.439 / 0.548）
+  note: 上游无根 LICENSE；仅本地兼容性对照用，不对外分发。

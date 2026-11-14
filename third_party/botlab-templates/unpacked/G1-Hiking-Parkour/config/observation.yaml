@@ -1,0 +1,4 @@
+depth_camera:
+  source: Robot
+  preset: g1-parkour-depth-camera
+  name: Parkour Depth Camera

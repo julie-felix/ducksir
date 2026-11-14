@@ -1,0 +1,126 @@
+{
+  "format": "botlab-project",
+  "version": 1,
+  "files": [
+    "config/io.yaml",
+    "config/parameters.yaml",
+    "config/runtime.yaml",
+    "controller.py",
+    "g1-wbc.preset.yaml",
+    "main.py",
+    "wbc_policy.py"
+  ],
+  "assets": [
+    {
+      "resourceId": "workspace-asset-assets-models-Unitree-G1-AMP-Flat_model_30000.onnx",
+      "source": "assets/models/Unitree-G1-AMP-Flat_model_30000.onnx",
+      "path": "assets/models/Unitree-G1-AMP-Flat_model_30000.onnx",
+      "name": "Unitree-G1-AMP-Flat_model_30000.onnx",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-models-amp_0309_1.onnx",
+      "source": "assets/models/amp_0309_1.onnx",
+      "path": "assets/models/amp_0309_1.onnx",
+      "name": "amp_0309_1.onnx",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-models-dance12_0207_1.onnx",
+      "source": "assets/models/dance12_0207_1.onnx",
+      "path": "assets/models/dance12_0207_1.onnx",
+      "name": "dance12_0207_1.onnx",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-models-loco_0731.onnx",
+      "source": "assets/models/loco_0731.onnx",
+      "path": "assets/models/loco_0731.onnx",
+      "name": "loco_0731.onnx",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-motions-dance12-body_ang_vel_w.bin",
+      "source": "assets/motions/dance12/body_ang_vel_w.bin",
+      "path": "assets/motions/dance12/body_ang_vel_w.bin",
+      "name": "body_ang_vel_w.bin",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-motions-dance12-body_lin_vel_w.bin",
+      "source": "assets/motions/dance12/body_lin_vel_w.bin",
+      "path": "assets/motions/dance12/body_lin_vel_w.bin",
+      "name": "body_lin_vel_w.bin",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-motions-dance12-body_pos_w.bin",
+      "source": "assets/motions/dance12/body_pos_w.bin",
+      "path": "assets/motions/dance12/body_pos_w.bin",
+      "name": "body_pos_w.bin",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-motions-dance12-body_quat_w.bin",
+      "source": "assets/motions/dance12/body_quat_w.bin",
+      "path": "assets/motions/dance12/body_quat_w.bin",
+      "name": "body_quat_w.bin",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-motions-dance12-fps.bin",
+      "source": "assets/motions/dance12/fps.bin",
+      "path": "assets/motions/dance12/fps.bin",
+      "name": "fps.bin",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-motions-dance12-joint_pos.bin",
+      "source": "assets/motions/dance12/joint_pos.bin",
+      "path": "assets/motions/dance12/joint_pos.bin",
+      "name": "joint_pos.bin",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-motions-dance12-joint_vel.bin",
+      "source": "assets/motions/dance12/joint_vel.bin",
+      "path": "assets/motions/dance12/joint_vel.bin",
+      "name": "joint_vel.bin",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-motions-dance12-metadata.json",
+      "source": "assets/motions/dance12/metadata.json",
+      "path": "assets/motions/dance12/metadata.json",
+      "name": "metadata.json",
+      "mimeType": "application/json",
+      "role": "mesh"
+    }
+  ],
+  "assetBase": "project",
+  "assetPaths": [
+    "assets/models/Unitree-G1-AMP-Flat_model_30000.onnx",
+    "assets/models/amp_0309_1.onnx",
+    "assets/models/dance12_0207_1.onnx",
+    "assets/models/loco_0731.onnx",
+    "assets/motions/dance12/body_ang_vel_w.bin",
+    "assets/motions/dance12/body_lin_vel_w.bin",
+    "assets/motions/dance12/body_pos_w.bin",
+    "assets/motions/dance12/body_quat_w.bin",
+    "assets/motions/dance12/fps.bin",
+    "assets/motions/dance12/joint_pos.bin",
+    "assets/motions/dance12/joint_vel.bin",
+    "assets/motions/dance12/metadata.json"
+  ]
+}

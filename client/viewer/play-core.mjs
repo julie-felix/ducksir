@@ -4,6 +4,8 @@
 // 契约由 `sim/host/export_artifacts.py` 生成到 `data/live/contract.json`，
 // 这里只做「按配方取数」——改观测顺序、加策略、改 fsm 输出维度，都不用动本文件。
 
+import { quatToMat as q2m } from './motion.mjs';
+
 let CONTRACT = null;
 
 /** 契约自检：与 Python 侧 `contract.validate_contract()` 同一套规则（端侧也要会挑错）。 */
@@ -115,7 +117,7 @@ export function checkPlanAgainstContract(planName, info) {
  * 以及对齐 botlab `Robot.body_*` / `base_height` 的 `body:pos|quat|vel|angvel:<body>`、`base:z`。
  * `contact:` 暂只在宿主端支持（浏览器侧要算 mjContact 的偏移，没核对前不猜）。
  */
-export function makeObs(duck, { lastAction, vx, command } = {}) {
+export function makeObs(duck, { lastAction, vx, command, motionRef: motionRefValue } = {}) {
   const { model, data, jointId, sensorId, bodyId } = duck;
   const c = getContract();
   const robot = c.robot;
@@ -140,13 +142,18 @@ export function makeObs(duck, { lastAction, vx, command } = {}) {
       ];
       for (let r = 0; r < 3; r++) obs[off + r] = -R[2][r];
     } else if (src === 'qpos:joints') {
+      // order=policy：策略训练时用的是策略序（G1 的 dof_mapping 不是恒等），按 motor_order 取
       for (let k = 0; k < len; k++) {
-        const qa = read(model.jnt_qposadr, jointId(robot.joints[k]));
-        obs[off + k] = read(data.qpos, qa) - (item.minus === 'default' ? robot.default_q[k] : 0);
+        const idx = item.order === 'policy' ? robot.motor_order[k] : k;
+        const qa = read(model.jnt_qposadr, jointId(robot.joints[idx]));
+        const base = item.minus === 'default' ? (robot.default_q[idx] || 0)
+          : item.minus === 'reference' ? ((robot.reference_joint_positions || [])[idx] || 0) : 0;
+        obs[off + k] = read(data.qpos, qa) - base;
       }
     } else if (src === 'qvel:joints') {
       for (let k = 0; k < len; k++) {
-        const va = read(model.jnt_dofadr, jointId(robot.joints[k]));
+        const idx = item.order === 'policy' ? robot.motor_order[k] : k;
+        const va = read(model.jnt_dofadr, jointId(robot.joints[idx]));
         obs[off + k] = read(data.qvel, va);
       }
     } else if (src.startsWith('body:')) {
@@ -161,7 +168,18 @@ export function makeObs(duck, { lastAction, vx, command } = {}) {
       } else if (kind === 'vel') {
         for (let k = 0; k < 3; k++) obs[off + k] = read(data.cvel, bid * 6 + 3 + k);
       } else if (kind === 'angvel') {
-        for (let k = 0; k < 3; k++) obs[off + k] = read(data.cvel, bid * 6 + k);
+        // 与宿主同语义：默认转机体系（botlab 的 body_angular_velocity(frame="local")）
+        const w = [0, 1, 2].map((k) => read(data.cvel, bid * 6 + k));
+        const mode = item.frame || 'local';
+        if (mode === 'local') {
+          const q = [0, 1, 2, 3].map((k) => read(data.xquat, bid * 4 + k));
+          const R = q2m(q);
+          for (let r = 0; r < 3; r++) {
+            obs[off + r] = R[0][r] * w[0] + R[1][r] * w[1] + R[2][r] * w[2];
+          }
+        } else {
+          for (let k = 0; k < 3; k++) obs[off + k] = w[k];
+        }
       } else {
         throw new Error(`不认识的 body 观测：${src}`);
       }
@@ -170,6 +188,12 @@ export function makeObs(duck, { lastAction, vx, command } = {}) {
       throw new Error(`浏览器端暂不支持 ${src}（contact 仅在宿主端点可用）`);
     } else if (src === 'base:z') {
       obs[off] = read(data.qpos, 2);
+    } else if (src === 'command:velocity') {
+      const c = command || [];
+      for (let k = 0; k < 3; k++) obs[off + k] = c[k] || 0;
+    } else if (src === 'motion_ref') {
+      if (!motionRefValue) throw new Error('观测配方需要 motion_ref，但调用方没给');
+      for (let k = 0; k < len; k++) obs[off + k] = motionRefValue[k] || 0;
     } else if (src === 'last_action') {
       for (let k = 0; k < len; k++) obs[off + k] = lastAction ? lastAction[k] || 0 : 0;
     } else if (src.startsWith('fsm_slot:')) {

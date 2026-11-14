@@ -12,6 +12,7 @@
 
 import { createRequire } from 'node:module'
 import { spawn } from 'node:child_process'
+import fsSync from 'node:fs'
 import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
@@ -131,6 +132,87 @@ export function createLive({ repo, python = 'python3' }) {
     return { ok: true, stopped: true }
   }
 
+  /**
+   * 纯反代：插件不再持有业务逻辑（ADR-001）。
+   * `/ducksir-live/api/*` → 后端 `http://127.0.0.1:${backendPort}/api/*`，SSE 直接 pipe。
+   * 这样「作业长什么样」只有 python 一处定义。
+   */
+  const BACKEND_PORT = Number(process.env.DUCKSIR_BACKEND_PORT || 8899)
+  const SECRET_FILE = path.join(os.homedir(), '.local/share/ducksir/serve.secret')
+  let backendStarting = null
+
+  function backendSecret() {
+    try { return fsSync.readFileSync(SECRET_FILE, 'utf8').trim() } catch { return '' }
+  }
+
+  /** 等后端 ready（最多 8 s）。 */
+  function waitBackend(deadline = Date.now() + 8000) {
+    return new Promise((resolve) => {
+      const tick = () => {
+        const req = http.get({ host: '127.0.0.1', port: BACKEND_PORT, path: '/api/health', timeout: 500 }, (res) => {
+          res.resume()
+          resolve(res.statusCode === 200)
+        })
+        req.on('error', retry); req.on('timeout', () => { req.destroy(); retry() })
+        function retry() {
+          if (Date.now() > deadline) resolve(false)
+          else setTimeout(tick, 120)
+        }
+      }
+      tick()
+    })
+  }
+
+  /**
+   * 懒启动后端：面板打开时如果 127.0.0.1:8899 没在跑，就 spawn 一个（detached）。
+   * 这样「重启 dsh 之后页面直接能用」，不需要人记得先起 serve.py。
+   */
+  async function ensureBackend() {
+    if (await waitBackend(Date.now() + 300)) return true
+    if (!backendStarting) {
+      console.log('[ducksir-live] 后端没起，自动启动 serve.py')
+      const child = spawn(python, [path.join(repo, 'sim/host/serve.py'), '--port', String(BACKEND_PORT)], {
+        cwd: repo,
+        env: { ...process.env, PYTHONPATH: pythonPath(), MUJOCO_GL: process.env.MUJOCO_GL || 'egl' },
+        detached: true, stdio: 'ignore',
+      })
+      child.unref()
+      backendStarting = waitBackend(Date.now() + 8000).finally(() => { backendStarting = null })
+    }
+    return backendStarting
+  }
+
+  function proxyBackend(req, res, rest) {
+    const send = (retried) => {
+      const headers = { ...req.headers, host: `127.0.0.1:${BACKEND_PORT}` }
+      const secret = backendSecret()
+      if (secret) headers['x-ducksir-secret'] = secret     // 后端起 secret 时由插件代填
+      const upstream = http.request({
+        host: '127.0.0.1', port: BACKEND_PORT, path: rest, method: req.method, headers,
+      }, (up) => {
+        res.writeHead(up.statusCode || 502, up.headers)
+        up.pipe(res)
+      })
+      upstream.on('error', async () => {
+        if (!retried) {
+          await ensureBackend()
+          send(true)
+          return
+        }
+        res.writeHead(502, { 'content-type': 'application/json; charset=utf-8' })
+        res.end(JSON.stringify({
+          error: {
+            code: 'backend_down',
+            message: `连不上后端 127.0.0.1:${BACKEND_PORT}`,
+            detail: { hint: 'python3 sim/host/serve.py --port 8899' },
+          },
+        }))
+      })
+      req.pipe(upstream)
+    }
+    send(false)
+  }
+
   function status() {
     return { running: Boolean(session), port: session?.port ?? null, project: session?.project ?? null, error: lastError }
   }
@@ -223,7 +305,7 @@ export function createLive({ repo, python = 'python3' }) {
     return json(404, { error: '没这个端点', path: pathname })
   }
 
-  return { handle, start, stop, status }
+  return { handle, start, stop, status, proxyBackend }
 }
 
 export { PROXY_PATHS }

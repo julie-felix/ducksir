@@ -1,0 +1,35 @@
+kind: sensor
+outputMode: depth
+targetKind: body
+target: torso_link
+rayAlignment: body
+cameraOffsetFrame: body
+depthBackend: render
+width: 44
+height: 23
+fullWidth: 48
+fullHeight: 27
+cropX: 2
+cropY: 2
+fov: 58
+horizontalFov: 87
+near: 0.05
+far: 100
+depthScale: 2
+readbackMode: sync
+depthReadbackFormat: linear-float32
+raycastGeomGroups:
+- 0
+- 2
+cameraOffset:
+- 0.0487988662332928
+- 0.015
+- 0.4378029937970051
+cameraRotationMode: xyaxes
+cameraXyaxes:
+- -0.0035494243630093793
+- -0.999961923184099
+- -0.007972061756506022
+- 0.74313541067776
+- -0.007972061756506022
+- 0.6690935716535825

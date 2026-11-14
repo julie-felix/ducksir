@@ -1,0 +1,34 @@
+kind: sensor
+outputMode: depth
+targetKind: body
+rayAlignment: body
+cameraOffsetFrame: body
+depthBackend: render
+target: torso_link
+width: 98
+height: 58
+fullWidth: 106
+fullHeight: 60
+cropX: 4
+cropY: 0
+fov: 58.4
+near: 0.3
+far: 3
+depthScale: 3
+depthGaussianKernelSize: 0
+depthGaussianSigma: 1
+depthNoiseStd: 0
+depthNoiseDistanceStd: 0
+depthDropoutProbability: 0
+depthDropoutPatchCount: 0
+depthDropoutPatchRadius: 0
+depthNoiseSeed: 1
+raycastGeomGroups: [0, 2, 3]
+excludeGeoms: [head_link]
+excludeBodies: [finish_marker, arena_boundary]
+cameraOffset: [0.01, 0.01, 0.44]
+cameraRotationMode: xyaxes
+cameraXyaxes: [
+  0.009527728376936606, -0.9998336928825623, -0.015550207998406673,
+  0.4541568068569846, -0.009527728376936967, 0.890870819579047
+]

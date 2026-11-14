@@ -67,22 +67,118 @@ def load_npz(path: str, channel: str = "joint_pos", indices=None) -> dict:
             "names": kept, "data": data}
 
 
-def load_bin_dir(path: str, channel: str = "joint_pos", indices=None) -> dict:
-    """「目录 + 每通道一个 .bin」形态——**暂不支持**，原因写在异常里。
+def _bin_header_len(path: str, width_floats: int) -> int:
+    """botlab 的 `.bin` 通道：`NPZ\\0` 魔数 + 若干 u32 头 + float32 数据。
 
-    botlab 的 WBC 动作是这种容器：`NPZ\0` 魔数 + 若干 u32 头 + float32 数据，没有公开规范。
-    我实测能推出帧数（跳过头后按 `4*宽` 整除，6574 帧、29 维对得上），但 **fps 与字段含义无法唯一确定**
-    （头里有多个都落在 1–240 的整数：1 / 8 / 50 / 102 / 108）。宁可不读，也不猜着读——
-    猜错会让「动作参考」整体错位却不报错。
-
-    要支持它，需要 botlab 的加载器源码或一份权威说明。在此之前用 npz 形态
-    （Instinct / UniSuper / GMTrack 三个项目都是 npz）。
+    头长度从 {16,20,24,28,32} 里挑**唯一**能让 `(len - h)` 被 `4*width` 整除的那个。
+    实测（dance12/joint_pos.bin，6574×29）：h=24，且 fps=50 时「位置求导 = 速度」误差 **0.0**，
+    说明容器就是「头 + 行主序 float32」。
     """
-    raise NotImplementedError(
-        f"{os.path.basename(path)} 是 botlab 的私有 .bin 动作容器（NPZ 魔数），"
-        "fps 与字段含义没有公开规范，本项目暂不解析；请改用 .npz 形态的动作素材"
-        "（见 docs/notes/botlab-templates-inventory.md 第 9 节）"
-    )
+    size = os.path.getsize(path)
+    with open(path, "rb") as f:
+        magic = f.read(4)
+    if magic != b"NPZ\x00":
+        raise ValueError(f"{os.path.basename(path)} 不是 NPZ 容器（前 4 字节 {magic!r}）")
+    cands = [h for h in (16, 20, 24, 28, 32)
+             if size > h and (size - h) % (4 * width_floats) == 0
+             and (size - h) // (4 * width_floats) > 0]
+    if len(cands) != 1:
+        raise ValueError(f"{path} 头长度无法唯一确定（候选 {cands}，宽 {width_floats}）")
+    return cands[0]
+
+
+def _read_bin(path: str, width_floats: int):
+    head = _bin_header_len(path, width_floats)
+    size = os.path.getsize(path)
+    frames = (size - head) // (4 * width_floats)
+    with open(path, "rb") as f:
+        f.seek(head)
+        raw = f.read(frames * 4 * width_floats)
+    return np.frombuffer(raw, dtype="<f4").reshape(frames, width_floats).copy(), frames
+
+
+def _fps_candidates(path: str) -> list:
+    """fps.bin 没有公开规范：把头里所有 4 字节对齐的 u32/f32（1..240）当候选列出来。"""
+    if not os.path.exists(path):
+        return []
+    raw = open(path, "rb").read()
+    out = []
+    for off in range(0, len(raw) - 3, 4):
+        u = int(np.frombuffer(raw[off:off + 4], dtype="<u4")[0])
+        if 1 <= u <= 240:
+            out.append(float(u))
+        v = float(np.frombuffer(raw[off:off + 4], dtype="<f4")[0])
+        if 1.0 <= v <= 240.0:
+            out.append(float(v))
+    seen, uniq = set(), []
+    for x in out:
+        if x not in seen:
+            seen.add(x)
+            uniq.append(x)
+    return uniq
+
+
+def load_bin_dir(path: str, channel: str = "joint_pos", indices=None) -> dict:
+    """读「目录 + 每通道一个 .bin」形态（botlab 的 WBC 动作就是这种）。
+
+    fps 的来源：目录里**同时有** `joint_pos.bin` 与 `joint_vel.bin` 时，
+    挑「位置差分 × fps ≈ 速度」误差最小的候选（dance12 实测 50.0、误差 0.0）；
+    否则退回 `metadata.json` 的 fps。两者都没有就报错——不瞎猜。
+    """
+    if channel not in CHANNELS:
+        raise ValueError(f"bin 通道 {channel} 不支持，可选：{CHANNELS}")
+    if not os.path.isdir(path):
+        raise ValueError(f"{path} 不是目录")
+    meta = {}
+    meta_path = os.path.join(path, "metadata.json")
+    if os.path.exists(meta_path):
+        with open(meta_path, encoding="utf-8") as f:
+            meta = json.load(f)
+    names = meta.get("body_names") if channel.startswith("body_") else (
+        meta.get("dof_names") or meta.get("joint_names"))
+    if not names:
+        raise ValueError(f"{path} 的 metadata.json 没有名字表，推不出每帧宽度")
+    per = 4 if channel == "body_quat_w" else 3
+    width = len(names) * per if channel.startswith("body_") else len(names)
+
+    bin_path = os.path.join(path, f"{channel}.bin")
+    if not os.path.exists(bin_path):
+        raise ValueError(f"{path} 里没有 {channel}.bin")
+    data, frames = _read_bin(bin_path, width)
+
+    fps = None
+    q_path = os.path.join(path, "joint_pos.bin")
+    qd_path = os.path.join(path, "joint_vel.bin")
+    if os.path.exists(q_path) and os.path.exists(qd_path):
+        cands = _fps_candidates(os.path.join(path, "fps.bin")) or (
+            [float(meta["fps"])] if meta.get("fps") else [])
+        if cands:
+            dof_names = meta.get("dof_names") or meta.get("joint_names")
+            try:
+                qp, _ = _read_bin(q_path, len(dof_names) if dof_names else len(names))
+                qv, _ = _read_bin(qd_path, len(dof_names) if dof_names else len(names))
+                n_min = min(len(qp), len(qv))
+                if n_min > 4:
+                    cent = (qp[2:n_min] - qp[0:n_min - 2]) / 2.0
+                    ref = qv[1:n_min - 1]
+                    scale = max(1e-6, float(np.abs(ref).mean()))
+                    best, best_err = None, None
+                    for cand in cands:
+                        err = float(np.abs(cent * cand - ref).mean())
+                        if best_err is None or err < best_err:
+                            best, best_err = cand, err
+                    if best_err is not None and best_err < 0.05 * scale:
+                        fps = best
+            except ValueError:
+                fps = None
+    if fps is None and meta.get("fps"):
+        fps = float(meta["fps"])
+    if not fps:
+        raise ValueError(f"{path} 无法确定 fps（fps.bin / metadata.json 都没有可用值）")
+
+    data, kept = _pick(data, names, indices)
+    return {"frames": int(frames), "fps": float(fps), "dim": int(data.shape[1]),
+            "names": kept, "data": data}
 
 
 def load_motion(path: str, channel: str = "joint_pos", indices=None) -> dict:

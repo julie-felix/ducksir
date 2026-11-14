@@ -1,0 +1,20 @@
+target_velocity:
+  label: {en: Forward speed, zh: 前进速度}
+  default: 0.4
+  range: [0, 0.5]
+  step: 0.05
+  unit: m/s
+
+target_lateral_velocity:
+  label: {en: Lateral speed, zh: 横向速度}
+  default: 0
+  range: [0, 0]
+  step: 0.1
+  unit: m/s
+
+target_yaw_rate:
+  label: {en: Yaw rate, zh: 转向速度}
+  default: 0
+  range: [-1, 1]
+  step: 0.1
+  unit: rad/s

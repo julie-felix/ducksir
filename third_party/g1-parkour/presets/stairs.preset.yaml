@@ -1,0 +1,21 @@
+kind: scene
+label: Starter Parkour Stairs
+terrainKind: stairs
+position:
+- 1.6
+- 0
+- 0
+yaw: 0
+stepDepth: 0.28
+stepHeight: 0.06
+stepWidth: 1.4
+stepCount: 5
+rgba:
+- 0.68
+- 0.62
+- 0.52
+- 1
+friction:
+- 1.5
+- 0.005
+- 0.0001

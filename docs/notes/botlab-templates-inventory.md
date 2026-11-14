@@ -203,7 +203,7 @@ action = actor(state, latent).clip(-100, 100).action()   # [1,896] → [1,29]
 - 语义：输入 1 维秒数 → `t*fps` 取相邻两帧线性插值，`loop` 控制回绕，越界夹住；
 - 数据编进 blob 参数表，**不需要运行时文件 IO**，宿主与浏览器吃同一份；
 - 实现：`engine/include/ducksim.h`（DS_NODE_MOTION=16）+ `engine/src/core.cpp` + `sim/plan/ir.py` + `sim/plan/oracle.py` + `sim/plan/graph.py`；
-- 素材加载：`sim/plan/motion.py`（npz 可用；WBC 的 `.bin` 私有容器按「不猜」原则显式拒绝，理由写在异常里）；
+- 素材加载：`sim/plan/motion.py`（npz 可用；WBC 的 `.bin` 私有容器**已解码**，见文末补记）；
 - 测试：`sim/test/test_motion_node.py`（核 ↔ numpy 参考、整数帧/半帧/回绕/越界/参数校验）、
   `sim/test/test_motion_load.py`（用下载下来的真实 npz 验 417 帧 × 29 维、fps=50）。
 
@@ -235,3 +235,26 @@ action = actor(state, latent).clip(-100, 100).action()   # [1,896] → [1,29]
 wasm 核也重新编过了（`make wasm`，emsdk 在 `~/emsdk`），`test_wasm_parity` 仍是 **0.000e+00**。
 还没跑过真实的递归 bundle（我们还没有这样的包），节点与适配层的单测有：
 `test_model_io.mjs`、`test_rnn_host_model.py`。
+
+### 补：`.bin` 容器解码了（2026-11-12）
+
+WBC 的 `dance12/` 用私有容器：`NPZ\0` 魔数 + 若干 u32 头 + 行主序 float32。
+两件事都是**可验证**地定下来的，不是猜：
+
+1. **头长度**：从 {16,20,24,28,32} 里挑唯一能让 `(文件长 − h)` 被 `4×宽` 整除的那个
+   （joint_pos.bin：762608 B、宽 29 → h=24、6574 帧）；
+2. **fps**：不猜 `fps.bin` 的字段语义（没有公开规范），改用**物理一致性**反推——
+   取候选 fps 让「关节位置差分 × fps ≈ 关节速度」误差最小。
+   dance12 实测 **fps = 50.0，误差 0.00e+00**（逐位相等，不是近似）。
+
+验证（`sim/test/test_motion_load.py`）：
+
+```
+PASS  bin：读出 joint_pos  6574 帧 × 29
+PASS  bin：fps 反推出 50  50.0
+PASS  bin：位置求导 = 速度（容器解码正确）  平均误差 0.00e+00
+PASS  bin：四元数 4 列且是单位四元数  |q0|=1.0000
+PASS  bin：pelvis 高度合理  z=0.780
+```
+
+于是 4/8 个模板用到的动作素材（3 个 npz + 1 个 bin）现在都能读了。

@@ -13,6 +13,8 @@ import { loadDuck, makeObs, stepPhysics, read, setContract, getContract, slot, r
          checkPlanAgainstContract, obsDim, upright } from './play-core.mjs';
 import { planPath, policyPath } from './assets-map.mjs';
 import { tensorLens, splitPacked, concatOutputs, isSingleTensor } from './model-io.mjs';
+import { isTorque, ctrlFromAction, torqueFromTarget } from './actuators.mjs';
+import { loadMotion, Playhead, motionRef } from './motion.mjs';
 
 const $ = (id) => document.getElementById(id);
 
@@ -55,7 +57,9 @@ async function json(url) { return (await fetch(url)).json(); }
 // ---------- 场景 ----------
 const canvas = $('c');
 const isTouch = matchMedia('(hover: none) and (pointer: coarse)').matches;
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isTouch, powerPreference: 'high-performance' });
+/** preserveDrawingBuffer：探针要读 canvas 像素（ADR-002），否则采样到全 0 */
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isTouch,
+  powerPreference: 'high-performance', preserveDrawingBuffer: true });
 // 手机上像素比给到 1.5 就够（2 及以上在 60 Hz 下很吃 GPU）；桌面保留 2
 // 手机上 1.0 就够：AGL/GLB 多、像素比一高帧率就塌，而帧率会反过来拖慢仿真（循环是 rAF 驱动）
 let pixelRatio = Math.min(devicePixelRatio || 1, isTouch ? 1.0 : 2);
@@ -90,9 +94,12 @@ if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
 // ---------- 载入 ----------
 // 指令范围照上游 app/src/game/constants.js：VEL_FWD 0.25 / VEL_BACK -0.2 / VEL_ANG 1.0。
 // 超出这个范围策略没见过——它会一边走一边拐（用户看到的就是「走得歪」）。
-const LIM = { fwd: 0.25, back: -0.2, ang: 1.0 };
+// 速度指令范围：从契约读（鸭子 0.25、G1 能到 2.5），加载契约后覆盖
+let LIM = { fwd: 0.25, back: -0.2, ang: 1.0, step: 0.05 };
 // 关节数来自契约（载入后按契约重设这个数组），这里先占位
-const state = { vx: 0, wz: 0, lastAction: new Float32Array(0), simTime: 0, error: null };
+let ctrlCounter = 0;
+const state = { vx: 0, wz: 0, lastAction: new Float32Array(0), simTime: 0, error: null,
+                paused: false, autoWalk: false, focused: false };
 
 async function main() {
   try {
@@ -104,10 +111,36 @@ async function main() {
       import('./vendor/ort/ort.wasm.min.mjs'),
       json(DATA + 'contract.json'),
       json('./data/duck-hd1910.json'),
-      fetch('./data/mjcf-browser/duck.xml').then((r) => r.text()),
+      // bundle 自带 robot.xml + meshes/（G1 这种），否则退回手搓素材的 duck.xml
+      fetch(BUNDLE ? DATA + 'robot.xml' : './data/mjcf-browser/duck.xml')
+        .then((r) => (r.ok ? r.text() : fetch('./data/mjcf-browser/duck.xml').then((x) => x.text()))),
     ]), 30000);
     setContract(contract);
+    // 宿主专属的观测来源（mimic:instinct / mimic:uni 需要深度渲染或 1720 维拼装），浏览器还没有实现。
+    // 早点说清楚，别让它去下载几百个网格之后才报错。
+    const unsupported = (contract.obs || []).find((o) => /^mimic:/.test(o.source || ''));
+    if (unsupported) {
+      throw new Error(`这个 bundle 的观测（${unsupported.source}）目前只有宿主支持：`
+        + '请用「启动仿真」在宿主里跑，浏览器版本还在做');
+    }
     const meta = contract.robot;
+    if (meta.commands) {
+      const c = meta.commands;
+      LIM = {
+        fwd: c.forward_max ?? LIM.fwd,
+        back: c.forward_min ?? c.back_max ?? LIM.back,
+        ang: c.yaw_max ?? LIM.ang,
+        step: c.step ?? LIM.step,
+      };
+      const hint = document.getElementById('hint-vx');
+      if (hint) hint.textContent = `前进 ±${LIM.step}（${LIM.back} … ${LIM.fwd}）`;
+      const howto = document.getElementById('howto');
+      if (howto) {
+        howto.textContent = meta.commands
+          ? '点一下画面 → 按 W/S 走、A/D 转向；没有键盘就点「自动走」'
+          : '这个策略按自己的动作参考跑，不需要按键';
+      }
+    }
     const rates = contract.rates;
     state.lastAction = new Float32Array(meta.joints.length);
     CONTROL_HZ = rates.control_hz;
@@ -120,11 +153,14 @@ async function main() {
     const stlNames = [...new Set(xml.match(/\b[a-zA-Z0-9_]+\.stl\b/g) || [])];
     const assets = {};
     let done = 0;
-    await step(`下载 ${stlNames.length} 个 STL（约 21 MB）`, Promise.all(stlNames.map(async (n) => {
-      assets[n] = await bytes('./assets/mjcf/' + n);
+    // bundle 里网格在 DATA + 'meshes/'，手搓素材在 ./assets/mjcf/
+    const meshBase = BUNDLE ? DATA : './assets/mjcf/';
+    const needFetch = BUNDLE ? await json(DATA + 'meshes.json') : stlNames;
+    await step(`下载 ${needFetch.length} 个 STL`, Promise.all(needFetch.map(async (n) => {
+      assets[n] = await bytes(meshBase + n);
       done += 1;
-      stage(`下载 STL ${done}/${stlNames.length}`);
-    })), 120000);
+      stage(`下载 STL ${done}/${needFetch.length}`);
+    })), 180000);
 
     const duck = await step('MuJoCo 解析 MJCF + 网格（这步最慢，十几秒正常）',
       loadDuck({ loadMujoco, xml, assets }), 60000);
@@ -144,7 +180,37 @@ async function main() {
       robotGroup.add(group);
       bodyOf[name] = { group, bid };
     }
-    const geoms = viewData.links.reduce((acc, l) => acc + (l.geoms || []).length, 0);
+    // bundle 里没有手搓的 GLB 索引（G1 这种）：直接用 MuJoCo 自带的网格数据建 mesh
+    const useMujocoMeshes = bodies.some((n) => mj.mj_name2id(model, duck.objId('mjOBJ_BODY'), n) < 0)
+      || !viewData.links || viewData.links.length === 0;
+    if (useMujocoMeshes) {
+      const built = renderFromModel({ THREE, mj, model, data, duck, robotGroup, scene });
+      // 让渲染循环沿用同一套 bodyOf：每个 body 一个 group，直接读 xpos/xquat
+      for (let b = 1; b < model.nbody; b += 1) {
+        const nm = mj.mj_id2name(model, duck.objId('mjOBJ_BODY'), b);
+        if (nm) bodyOf[nm] = { group: built.groups[b], bid: b };
+      }
+      // 相机按模型大小取景：body 原点在 Z-up 系里，先换到世界系（robotGroup 有 -90° 绕 X）
+      mj.mj_forward(model, data);   // 取景前先刷一次前向，geom_xpos 才是有效值
+      const bbox = new THREE.Box3();
+      for (let gi = 0; gi < model.ngeom; gi += 1) {
+        if (model.geom_contype[gi] !== 0 || model.geom_conaffinity[gi] !== 0) continue;
+        bbox.expandByPoint(new THREE.Vector3(
+          read(data.geom_xpos, gi * 3), read(data.geom_xpos, gi * 3 + 1), read(data.geom_xpos, gi * 3 + 2)));
+      }
+      const size3 = bbox.isEmpty() ? new THREE.Vector3(0.4, 0.4, 1.3) : bbox.getSize(new THREE.Vector3());
+      const zSpan = Math.max(0.9, Math.max(size3.x, size3.y, size3.z));
+      const localCenter = bbox.isEmpty() ? new THREE.Vector3(0, 0, 0.7) : bbox.getCenter(new THREE.Vector3());
+      robotGroup.updateMatrixWorld(true);          // 不刷新的话 localToWorld 用的是过期矩阵
+      const worldCenter = robotGroup.localToWorld(localCenter.clone());
+      controls.target.copy(worldCenter);
+      const dist = zSpan * 1.9;
+      camera.position.set(worldCenter.x + dist * 0.85, worldCenter.y + dist * 0.42, worldCenter.z + dist * 1.15);
+      camera.updateProjectionMatrix();
+      controls.update();
+      stage('渲染：用 MuJoCo 网格');
+    }
+    const geoms = useMujocoMeshes ? 0 : viewData.links.reduce((acc, l) => acc + (l.geoms || []).length, 0);
     let gdone = 0;
     const loadGeoms = Promise.all(viewData.links.flatMap((link) => (link.geoms || []).map(async (g) => {
       const entry = bodyOf[link.name];
@@ -179,6 +245,26 @@ async function main() {
     };
     // plan 的形状全部来自契约：文件、维度、具名槽位。加载后立刻对一次维度——
     // 不一致就报错，而不是用旧偏移去读新 blob。
+    // 动作参考（WBC/AMP）：契约里有 robot.motion 就从 bundle 的 motion/ 读
+    let motion = null;
+    let playhead = null;
+    const motionCfg = contract.robot && contract.robot.motion;
+    if (motionCfg && motionCfg.path) {
+      try {
+        const base = motionCfg.path.startsWith('/') ? motionCfg.path : DATA + motionCfg.path.replace(/\/?$/, '/');
+        motion = await loadMotion(base);
+        playhead = new Playhead(motion.jointPos.frames,
+          { start: 0, frameInterval: motionCfg.frame_interval || 5 });
+        playhead.pause(true);   // 进 WBC 前参考停在起点
+        state.motion = motion;
+        state.playhead = playhead;
+      } catch (err) {
+        console.warn('[motion] 动作参考加载失败：', err && err.message);
+        motion = null;
+        playhead = null;
+      }
+    }
+
     const pre = loadPlan(await bytes(planPath(contract, 'pre', DATA)));
     const post = loadPlan(await bytes(planPath(contract, 'post', DATA)));
     const fsm = loadPlan(await bytes(planPath(contract, 'fsm', DATA)));
@@ -242,8 +328,8 @@ async function main() {
     // 键盘
     addEventListener('keydown', (e) => {
       const k = e.key.toLowerCase();
-      if (k === 'w') state.vx = Math.min(LIM.fwd, state.vx + 0.05);
-      else if (k === 's') state.vx = Math.max(LIM.back, state.vx - 0.05);
+      if (k === 'w') state.vx = Math.min(LIM.fwd, state.vx + LIM.step);
+      else if (k === 's') state.vx = Math.max(LIM.back, state.vx - LIM.step);
       // 实测：策略的 +yaw 是向右（+1.0 → yaw −151°），所以「左转」发负值
       else if (k === 'a') state.wz = -LIM.ang;
       else if (k === 'd') state.wz = LIM.ang;
@@ -266,9 +352,32 @@ async function main() {
       state.vx = 0; state.lastAction.fill(0); state.simTime = 0;
       mj.mj_forward(model, data);
     };
-    $('btn-slow').onclick = () => bump(-0.05);
-    $('btn-fast').onclick = () => bump(+0.05);
+    $('btn-slow').onclick = () => bump(-LIM.step);
+    $('btn-fast').onclick = () => bump(+LIM.step);
     $('btn-reset').onclick = resetSim;
+    // 「开始 / 暂停」：默认就在跑，这个按钮给「被嵌进 iframe 后不知道从哪开始」的人一个显式入口
+    const playBtn = $('btn-play');
+    const syncPlayBtn = () => {
+      if (!playBtn) return;
+      playBtn.textContent = state.paused ? '▶ 继续' : '⏸ 暂停';
+      playBtn.classList.toggle('ghost', state.paused);
+    };
+    if (playBtn) playBtn.onclick = () => { state.paused = !state.paused; syncPlayBtn(); };
+    syncPlayBtn();
+    // 「自动走」：没有键盘 / 在 iframe 里拿不到焦点时，用它让机器人自己走起来
+    const autoBtn = $('btn-auto');
+    if (autoBtn) autoBtn.onclick = () => {
+      state.autoWalk = !state.autoWalk;
+      autoBtn.classList.toggle('held', state.autoWalk);
+      if (!state.autoWalk) state.vx = 0;
+    };
+    // iframe 里键盘事件要求文档有焦点：点一下就主动 focus，并给出提示
+    const grabFocus = () => {
+      try { window.focus(); } catch (_) {}
+      state.focused = true;
+    };
+    document.addEventListener('pointerdown', grabFocus, { passive: true });
+    window.addEventListener('focus', () => { state.focused = true; });
     // 触屏上的动作键 = 发一次策略脉冲（和键盘 X / Z / V 等价）
     $('btn-sit').onclick = () => { pendingCmd = 1; manual = null; };
     $('btn-kick').onclick = () => { pendingCmd = 2; manual = null; };
@@ -327,12 +436,42 @@ async function main() {
       if (!manual) active = modeToKey[mode] || active;
 
       // 2) obs（61 维）：指令段用状态机给的 command
-      const obs = makeObs(duck, { lastAction: state.lastAction, vx: state.vx, command: cmd13 });
+      // 动作参考：进入 WBC 后播放（起步先停几帧让机器人站住，和宿主一致）
+      let motionRefValue = null;
+      if (motion && playhead) {
+        // 起步先停 10 个控制步让机器人站稳，再放参考（和宿主 DUCK_WBC_SETTLE 一致）
+        if (playhead.paused && ctrl >= 10) playhead.pause(false);
+        const baseQuat = [0, 1, 2, 3].map((k) => read(duck.data.qpos, 3 + k));
+        motionRefValue = motionRef(motion, playhead, baseQuat);
+        playhead.advance();
+      }
+      const obs = makeObs(duck, { lastAction: state.lastAction, vx: state.vx, command: cmd13,
+                                  motionRef: motionRefValue });
       const policyInput = runPlan(pre, obs);
       const sess = await getSession(active);
       const packed = Float32Array.from(policyInput);
       let action;
-      if (!sess.duckInLens || isSingleTensor(sess.duckInLens)) {
+      // 递归策略（loco 的 h/c）：输入不止一个时，把上一拍的 h/c 回填进去
+      const extraInputs = sess.inputNames.slice(1);
+      if (extraInputs.length > 0) {
+        if (!sess.recurrent) sess.recurrent = {};
+        const feeds = { [sess.inputNames[0]]: new ort.Tensor('float32', packed, [1, packed.length]) };
+        extraInputs.forEach((name, i) => {
+          if (!sess.recurrent[name]) {
+            const meta = sess.inputMetadata?.[sess.inputNames.indexOf(name)];
+            const dims = meta && meta.dims && meta.dims.length ? meta.dims.map((d) => (d > 0 ? d : 1)) : [1, 1, 256];
+            sess.recurrent[name] = new ort.Tensor('float32', new Float32Array(dims.reduce((a, b) => a * b, 1)), dims);
+          }
+          feeds[name] = sess.recurrent[name];
+        });
+        const res = await sess.run(feeds);
+        // 按位置回填：out[1] → in[1]（宿主 run_bundle 同规则）
+        extraInputs.forEach((name, i) => {
+          const key = sess.outputNames[i + 1];
+          if (key && res[key]) sess.recurrent[name] = res[key];
+        });
+        action = Array.from(res[sess.outputNames[0]].data);
+      } else if (!sess.duckInLens || isSingleTensor(sess.duckInLens)) {
         const res = await sess.run({ [sess.inputNames[0]]:
           new ort.Tensor('float32', packed, [1, packed.length]) });
         action = sess.duckOutLens
@@ -349,16 +488,47 @@ async function main() {
           ? Array.from(concatOutputs(res, sess.duckOutLens))
           : Array.from(res[sess.outputNames[0]].data);
       }
-      const ctrlOut = runPlan(post, action);
-      for (let j = 0; j < model.nu; j++) data.ctrl[j] = ctrlOut[j];
+      let ctrlOut = runPlan(post, action);
+      const robotCfg = getContract().robot;
+      // WBC：目标基准是 referenceJointPositions（不是 default）。post 按 default 算好了，这里补差值。
+      if (motion && robotCfg.reference_joint_positions && robotCfg.reference_joint_positions.length) {
+        const ref = robotCfg.reference_joint_positions;
+        const def = robotCfg.default_q || [];
+        ctrlOut = ctrlOut.map((v, i) => v + ((ref[i] ?? 0) - (def[i] ?? 0)));
+      }
+      // 物理：两种执行器语义分开写，**每个控制步恰好 DECIM 个物理子步**（不多不少）
+      for (let sub = 0; sub < DECIM; sub += 1) {
+        if (isTorque(getContract())) {
+          // 扭矩：每个子步用最新 q/qd 重新算 PD（控制步算一次会很快倒）
+          const q = new Float64Array(model.nu);
+          const qd = new Float64Array(model.nu);
+          for (let j = 0; j < model.nu; j += 1) {
+            const jid = duck.jointId(robotCfg.joints[j]);
+            q[j] = read(data.qpos, read(model.jnt_qposadr, jid));
+            qd[j] = read(data.qvel, read(model.jnt_dofadr, jid));
+          }
+          // ctrlOut 已经是目标角（post 里做过 default + scale×action），不能再缩放一次
+          const ctrl = torqueFromTarget(ctrlOut, q, qd, {
+            kp: robotCfg.kp, kd: robotCfg.kd, effortLimit: robotCfg.effort_limit,
+          });
+          for (let j = 0; j < model.nu; j += 1) data.ctrl[j] = ctrl[j];
+        } else {
+          for (let j = 0; j < model.nu; j += 1) data.ctrl[j] = ctrlOut[j];
+        }
+        stepPhysics(mj, model, data, 1);
+      }
+      for (let i = 0; i < action.length; i += 1) {
+        action[i] = Math.max(-100, Math.min(100, action[i]));
+      }
       state.lastAction.set(action);
 
-      // 3) 恰好 DECIM 步物理
-      stepPhysics(mj, model, data, DECIM);
       state.simTime += STEP_DT;
       ctrl += 1;
     }
 
+    // 相机跟随：机器人会跳/走，静止相机很快就出画。保持用户当前的观察偏移，只平移目标点。
+    const pelvisId = mj.mj_name2id(model, duck.objId('mjOBJ_BODY'), 'pelvis');
+    const followTarget = new THREE.Vector3();
     function render() {
       for (const name of Object.keys(bodyOf)) {
         const { group, bid } = bodyOf[name];
@@ -366,12 +536,22 @@ async function main() {
         group.quaternion.set(read(data.xquat, bid * 4 + 1), read(data.xquat, bid * 4 + 2),
                              read(data.xquat, bid * 4 + 3), read(data.xquat, bid * 4));
       }
+      if (pelvisId >= 0) {
+        robotGroup.updateMatrixWorld(true);
+        followTarget.set(read(data.xpos, pelvisId * 3), read(data.xpos, pelvisId * 3 + 1),
+                         read(data.xpos, pelvisId * 3 + 2));
+        robotGroup.localToWorld(followTarget);
+        const offset = camera.position.clone().sub(controls.target);
+        controls.target.lerp(followTarget, 0.08);
+        camera.position.copy(controls.target).add(offset);
+      }
       resize();
       controls.update();
       renderer.render(scene, camera);
 
       const z = read(data.qpos, 2);
       const wall = (performance.now() - t0) / 1000;
+      ctrlCounter = ctrl;
       $('stat').textContent = `基座 ${z.toFixed(3)} m · 仿真 ${state.simTime.toFixed(1)} s · ${ctrl} 次推理`;
       const fs = state.fsm || { state: '—', mode: '—' };
       $('vx').textContent = `vx ${state.vx.toFixed(2)} · yaw ${state.wz.toFixed(2)} · 状态 ${fs.state} · 策略 ${active}`
@@ -395,19 +575,47 @@ async function main() {
       }
     }
 
+    // ADR-002：给探针自述状态（只读数字，不做“看起来对不对”的判断）
+    window.__probe = {
+      state() {
+        const z = read(data.qpos, 2);
+        return {
+          sim: Number(state.simTime.toFixed(3)),
+          vx: Number(state.vx.toFixed(3)),
+          wz: Number(state.wz.toFixed(3)),
+          paused: Boolean(state.paused),
+          autoWalk: Boolean(state.autoWalk),
+          ctrl: ctrlCounter,
+          z: Number(z.toFixed(4)),
+          // MuJoCo 是 z-up：直立度直接看基座四元数的 roll/pitch 分量
+          upright: Number((1 - 2 * (data.qpos[4] * data.qpos[4] + data.qpos[5] * data.qpos[5])).toFixed(4)),
+          strategy: active || null,
+          error: state.error ? String(state.error.message || state.error) : null,
+        };
+      },
+    };
+
     async function tick() {
+      if (state.autoWalk && !state.paused) {
+        const goal = Math.min(LIM.fwd, 0.4);
+        state.vx = Math.min(goal, state.vx + LIM.step * 0.25);
+      }
       const now = performance.now();
       acc += Math.min(0.25, (now - last) / 1000);
       last = now;
       // 每帧最多补的步数：手机上渲染只有 10–20 fps 时，预算太小会让仿真「越跑越慢」。
       // 8 步 ≈ 160 ms 仿真，仍能挡住「一次补几千步」的雪崩。
       let budget = isTouch ? 8 : 4;
-      while (acc >= STEP_DT && budget-- > 0) {
+      while (!state.paused && acc >= STEP_DT && budget-- > 0) {
         acc -= STEP_DT;
         try {
           await controlStep();
         } catch (e) {
           console.error(e);
+          // 把错误摆到 HUD 上：不要让页面看起来「在跑但其实没步进」
+          const line = document.getElementById('view-msg') || document.getElementById('stat');
+          if (line) line.textContent = `仿真出错：${e && e.message ? e.message : e}`;
+          state.error = e;
           break;
         }
         ctrlWindowCount += 1;
@@ -429,3 +637,73 @@ async function main() {
 }
 
 main();
+
+/**
+ * 兜底渲染：把 MuJoCo 的网格几何体直接建成 three.js Mesh（bundle 里没有手搓 GLB 索引时用）。
+ * 数据都在 model 里：geom_type / geom_dataid / mesh_vertadr / mesh_vertnum / mesh_faceadr / mesh_facenum。
+ */
+function renderFromModel({ THREE, mj, model, data, duck, robotGroup, scene }) {
+  const objId = duck.objId;
+  const bodyCount = model.nbody;
+  const groups = [];
+  for (let b = 0; b < bodyCount; b += 1) {
+    const g = new THREE.Group();
+    const nm = mj.mj_id2name(model, objId('mjOBJ_BODY'), b);
+    g.name = nm || `body_${b}`;
+    robotGroup.add(g);
+    groups.push(g);
+  }
+  const meshCache = new Map();
+  const mjGEOM_MESH = mj.mjtGeom.mjGEOM_MESH.value ?? 7;
+  for (let gi = 0; gi < model.ngeom; gi += 1) {
+    // 只画视觉 geom（contype = conaffinity = 0）。碰撞体会把「脚」画成薄壳/方块，看着像残影。
+    if (model.geom_contype[gi] !== 0 || model.geom_conaffinity[gi] !== 0) continue;
+    const type = model.geom_type[gi];
+    const bodyId = model.geom_bodyid[gi];
+    const group = groups[bodyId];
+    if (!group) continue;
+    let geometry = null;
+    if (type === mjGEOM_MESH) {
+      const mid = model.geom_dataid[gi];
+      if (mid >= 0) {
+        if (!meshCache.has(mid)) {
+          const vAdr = model.mesh_vertadr[mid];
+          const vNum = model.mesh_vertnum[mid];
+          const fAdr = model.mesh_faceadr[mid];
+          const fNum = model.mesh_facenum[mid];
+          const pos = new Float32Array(vNum * 3);
+          for (let i = 0; i < vNum * 3; i += 1) pos[i] = model.mesh_vert[vAdr * 3 + i];
+          const idx = new Uint32Array(fNum * 3);
+          for (let i = 0; i < fNum * 3; i += 1) idx[i] = model.mesh_face[fAdr * 3 + i];
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+          geo.setIndex(new THREE.BufferAttribute(idx, 1));
+          geo.computeVertexNormals();
+          meshCache.set(mid, geo);
+        }
+        geometry = meshCache.get(mid);
+      }
+    } else if (type === (mj.mjtGeom.mjGEOM_SPHERE.value ?? 2)) {
+      geometry = new THREE.SphereGeometry(model.geom_size[gi * 3], 12, 8);
+    } else if (type === (mj.mjtGeom.mjGEOM_CAPSULE.value ?? 3)) {
+      geometry = new THREE.CapsuleGeometry(model.geom_size[gi * 3], model.geom_size[gi * 3 + 1], 6, 12);
+    } else if (type === (mj.mjtGeom.mjGEOM_BOX.value ?? 6)) {
+      geometry = new THREE.BoxGeometry(model.geom_size[gi * 3] * 2,
+        model.geom_size[gi * 3 + 1] * 2, model.geom_size[gi * 3 + 2] * 2);
+    }
+    if (!geometry) continue;
+    const rgba = [0, 1, 2, 3].map((k) => model.geom_rgba[gi * 4 + k]);
+    const mat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(rgba[0], rgba[1], rgba[2]),
+      transparent: rgba[3] < 0.99, opacity: rgba[3],
+      metalness: 0.15, roughness: 0.65,
+    });
+    const mesh = new THREE.Mesh(geometry, mat);
+    // 几何体在 body 系里的位姿（geom_pos / geom_quat）
+    mesh.position.set(model.geom_pos[gi * 3], model.geom_pos[gi * 3 + 1], model.geom_pos[gi * 3 + 2]);
+    mesh.quaternion.set(model.geom_quat[gi * 4 + 1], model.geom_quat[gi * 4 + 2],
+      model.geom_quat[gi * 4 + 3], model.geom_quat[gi * 4]);
+    group.add(mesh);
+  }
+  return { groups, count: meshCache.size };
+}

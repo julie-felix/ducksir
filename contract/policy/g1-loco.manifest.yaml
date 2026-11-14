@@ -1,0 +1,49 @@
+# G1 的 loco（mode 2，行走/零速平衡）：obs 96，action 29，**带 h/c 递归状态**。
+# 逐项对齐 botlab 模板 `g1-wbc` 的 wbc_policy.policies() 里的 loco 条目：
+#   loco: {fields: state_fields(default)}   ← q 减 defaultJointPositions、策略序、**含速度指令**
+# 与 wbc/amp 的差别：没有动作参考、没有历史、模型有两个额外的递归输入 h/c（256 维）。
+kind: ducksir-policy-manifest
+version: 1
+policy_id: g1-loco
+
+model:
+  file: build/models/g1-loco.onnx
+  input: {name: obs, shape: [1, 96]}
+  # 递归状态（h_in/c_in → h_out/c_out）：运行期要跨步保持
+  inputs:
+    - {name: h_in, shape: [1, 1, 256]}
+    - {name: c_in, shape: [1, 1, 256]}
+  output: {name: actions, shape: [1, 29]}
+  outputs:
+    - {name: h_out, shape: [1, 1, 256]}
+    - {name: c_out, shape: [1, 1, 256]}
+
+policies:
+  - {key: g1-loco, mode: 2, file: build/models/g1-loco.onnx}
+
+# 96：角速度 3 + 投影重力 3 + 速度指令 3 + q29（减 default、策略序）+ qd29（策略序）+ last29
+obs:
+  - {slot: body_angvel, len: 3, target: pelvis}
+  - {slot: projected_gravity, len: 3, target: pelvis}
+  - {slot: velocity_command, len: 3}
+  - {slot: joint_pos, len: 29, minus: default, order: policy, scale: 1.0}
+  - {slot: joint_vel, len: 29, order: policy, scale: 1.0}
+  - {slot: last_action, len: 29, scale: 1.0}
+
+history: {length: 0, layout: by-frame}
+
+action:
+  # mode 2：目标 = defaultJointPositions + 0.25 × action（action 在策略序，post 里换回电机序）
+  mapping: default_plus_scale
+  order: policy
+  clip: ctrlrange
+
+rates: {control_hz: 50, physics_hz: 200, inference_decimation: 4}
+
+provenance:
+  source: botlab 模板 g1-wbc · assets/models/loco_0731.onnx（2026-11-12 取）
+  upstream: https://botlab.enkeebot.com/templates/g1-wbc/
+  obs_layout: wbc_policy.policies() 的 loco 条目 —— state_fields(default) = 96
+  action_scale: 0.25（统一值）
+  gains: balanceStiffness / balanceDamping（不是 robot.kp/kd）
+  note: 上游无根 LICENSE；仅本地兼容性对照用，不对外分发。

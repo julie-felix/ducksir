@@ -22,6 +22,7 @@ const opt = (name, def) => {
 const mobile = args.includes('--mobile');
 const waitMs = Number(opt('--wait', '8000'));
 const shot = opt('--shot', null);
+const save = opt('--save', null);
 const evalJs = opt('--eval', null);
 const clicks = (opt('--clicks', '') || '').split(';').filter(Boolean).map((pair) => {
   const [x, y] = pair.split(',').map(Number);
@@ -35,7 +36,9 @@ const chrome = spawn('/usr/bin/google-chrome', [
   '--headless=new',
   `--remote-debugging-port=${PORT}`,
   `--user-data-dir=${userDir}`,
-  '--no-first-run', '--no-default-browser-check', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage',
+  '--no-first-run', '--no-default-browser-check', '--no-sandbox', '--disable-dev-shm-usage',
+  // 允许软件 WebGL：headless 里加了 --disable-gpu 之后，依赖 WebGL 的应用会一直卡在启动
+  ...(process.env.CHROME_GPU === '0' ? ['--disable-gpu'] : ['--enable-unsafe-swiftshader', '--use-gl=angle']),
   '--ignore-certificate-errors',
   ...(mobile ? ['--window-size=390,844'] : ['--window-size=1280,900']),
   'about:blank',
@@ -162,8 +165,15 @@ const main = async () => {
   console.log('== DOM/布局 ==');
   console.log(info.result.value);
   if (extra !== null) {
-    console.log('== eval ==');
-    console.log(typeof extra === 'string' ? extra : JSON.stringify(extra));
+    const text = typeof extra === 'string' ? extra : JSON.stringify(extra);
+    if (save) {
+      const { writeFileSync } = await import('node:fs');
+      writeFileSync(save, text);
+      console.log(`== eval == 已写入 ${save}（${text.length} 字符）`);
+    } else {
+      console.log('== eval ==');
+      console.log(text);
+    }
   }
   console.log('== 控制台/异常 ==');
   console.log(logs.length ? logs.slice(-30).join('\n') : '（无）');

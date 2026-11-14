@@ -149,6 +149,10 @@ def export(doc: dict, mesh_dir: str | None = None, mesh_ext: str | None = None,
                 a = {"type": item["type"], "group": "3"}
                 if item.get("size"):
                     a["size"] = _vec(item["size"])
+                # 基本体也要带位姿，否则会全部塌到 link 原点（G1 的肩部圆柱、足底摩擦球都靠这个）
+                if item.get("origin"):
+                    a["pos"] = _vec(item["origin"].get("xyz") or [0, 0, 0])
+                    a["quat"] = _vec(item["origin"].get("quat") or [1, 0, 0, 0])
                 ET.SubElement(body, "geom", **a)
 
         for child in children.get(link["name"], []):
@@ -181,16 +185,21 @@ def export(doc: dict, mesh_dir: str | None = None, mesh_ext: str | None = None,
     if actuators:
         act = ET.SubElement(root, "actuator")
         for a in actuators:
+            # kind=motor（G1 站点模型那种）：MuJoCo 里是**扭矩**执行器，ctrl 就是力矩，
+            # PD 由宿主/浏览器在控制步里算（= botlab 的 position_pd 语义）。
+            # kind=position：MuJoCo 自己在物理子步里做 PD（鸭子那套）。
+            kind = "motor" if a.get("kind") == "motor" else "position"
             attrs = {"name": a["name"], "joint": a["joint"]}
-            if a.get("kp") is not None:
-                attrs["kp"] = _f(a["kp"])
-            if a.get("kv") is not None:
-                attrs["kv"] = _f(a["kv"])
+            if kind == "position":
+                if a.get("kp") is not None:
+                    attrs["kp"] = _f(a["kp"])
+                if a.get("kv") is not None:
+                    attrs["kv"] = _f(a["kv"])
             if a.get("forcerange"):
                 attrs["forcerange"] = _vec(a["forcerange"])
             if a.get("ctrlrange"):
                 attrs["ctrlrange"] = _vec(a["ctrlrange"])
-            ET.SubElement(act, "position", **attrs)
+            ET.SubElement(act, kind, **attrs)
     return ET.ElementTree(root)
 
 

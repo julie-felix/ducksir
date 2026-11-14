@@ -1,0 +1,358 @@
+{
+  "format": "botlab-project",
+  "version": 1,
+  "files": [
+    "README.md",
+    "config/runtime.yaml",
+    "controller.py",
+    "g1.preset.yaml",
+    "main.py"
+  ],
+  "assets": [
+    {
+      "resourceId": "workspace-asset-assets-models-stage2_actor.onnx",
+      "source": "assets/models/stage2_actor.onnx",
+      "path": "assets/models/stage2_actor.onnx",
+      "name": "stage2_actor.onnx",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-motions-current.npz",
+      "source": "assets/motions/current.npz",
+      "path": "assets/motions/current.npz",
+      "name": "current.npz",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-head_link.STL",
+      "source": "assets/robot/assets/head_link.STL",
+      "path": "assets/robot/assets/head_link.STL",
+      "name": "head_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_ankle_pitch_link.STL",
+      "source": "assets/robot/assets/left_ankle_pitch_link.STL",
+      "path": "assets/robot/assets/left_ankle_pitch_link.STL",
+      "name": "left_ankle_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_ankle_roll_link.STL",
+      "source": "assets/robot/assets/left_ankle_roll_link.STL",
+      "path": "assets/robot/assets/left_ankle_roll_link.STL",
+      "name": "left_ankle_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_elbow_link.STL",
+      "source": "assets/robot/assets/left_elbow_link.STL",
+      "path": "assets/robot/assets/left_elbow_link.STL",
+      "name": "left_elbow_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_hip_pitch_link.STL",
+      "source": "assets/robot/assets/left_hip_pitch_link.STL",
+      "path": "assets/robot/assets/left_hip_pitch_link.STL",
+      "name": "left_hip_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_hip_roll_link.STL",
+      "source": "assets/robot/assets/left_hip_roll_link.STL",
+      "path": "assets/robot/assets/left_hip_roll_link.STL",
+      "name": "left_hip_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_hip_yaw_link.STL",
+      "source": "assets/robot/assets/left_hip_yaw_link.STL",
+      "path": "assets/robot/assets/left_hip_yaw_link.STL",
+      "name": "left_hip_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_knee_link.STL",
+      "source": "assets/robot/assets/left_knee_link.STL",
+      "path": "assets/robot/assets/left_knee_link.STL",
+      "name": "left_knee_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_rubber_hand.STL",
+      "source": "assets/robot/assets/left_rubber_hand.STL",
+      "path": "assets/robot/assets/left_rubber_hand.STL",
+      "name": "left_rubber_hand.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_shoulder_pitch_link.STL",
+      "source": "assets/robot/assets/left_shoulder_pitch_link.STL",
+      "path": "assets/robot/assets/left_shoulder_pitch_link.STL",
+      "name": "left_shoulder_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_shoulder_roll_link.STL",
+      "source": "assets/robot/assets/left_shoulder_roll_link.STL",
+      "path": "assets/robot/assets/left_shoulder_roll_link.STL",
+      "name": "left_shoulder_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_shoulder_yaw_link.STL",
+      "source": "assets/robot/assets/left_shoulder_yaw_link.STL",
+      "path": "assets/robot/assets/left_shoulder_yaw_link.STL",
+      "name": "left_shoulder_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_wrist_pitch_link.STL",
+      "source": "assets/robot/assets/left_wrist_pitch_link.STL",
+      "path": "assets/robot/assets/left_wrist_pitch_link.STL",
+      "name": "left_wrist_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_wrist_roll_link.STL",
+      "source": "assets/robot/assets/left_wrist_roll_link.STL",
+      "path": "assets/robot/assets/left_wrist_roll_link.STL",
+      "name": "left_wrist_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-left_wrist_yaw_link.STL",
+      "source": "assets/robot/assets/left_wrist_yaw_link.STL",
+      "path": "assets/robot/assets/left_wrist_yaw_link.STL",
+      "name": "left_wrist_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-logo_link.STL",
+      "source": "assets/robot/assets/logo_link.STL",
+      "path": "assets/robot/assets/logo_link.STL",
+      "name": "logo_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-pelvis.STL",
+      "source": "assets/robot/assets/pelvis.STL",
+      "path": "assets/robot/assets/pelvis.STL",
+      "name": "pelvis.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-pelvis_contour_link.STL",
+      "source": "assets/robot/assets/pelvis_contour_link.STL",
+      "path": "assets/robot/assets/pelvis_contour_link.STL",
+      "name": "pelvis_contour_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_ankle_pitch_link.STL",
+      "source": "assets/robot/assets/right_ankle_pitch_link.STL",
+      "path": "assets/robot/assets/right_ankle_pitch_link.STL",
+      "name": "right_ankle_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_ankle_roll_link.STL",
+      "source": "assets/robot/assets/right_ankle_roll_link.STL",
+      "path": "assets/robot/assets/right_ankle_roll_link.STL",
+      "name": "right_ankle_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_elbow_link.STL",
+      "source": "assets/robot/assets/right_elbow_link.STL",
+      "path": "assets/robot/assets/right_elbow_link.STL",
+      "name": "right_elbow_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_hip_pitch_link.STL",
+      "source": "assets/robot/assets/right_hip_pitch_link.STL",
+      "path": "assets/robot/assets/right_hip_pitch_link.STL",
+      "name": "right_hip_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_hip_roll_link.STL",
+      "source": "assets/robot/assets/right_hip_roll_link.STL",
+      "path": "assets/robot/assets/right_hip_roll_link.STL",
+      "name": "right_hip_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_hip_yaw_link.STL",
+      "source": "assets/robot/assets/right_hip_yaw_link.STL",
+      "path": "assets/robot/assets/right_hip_yaw_link.STL",
+      "name": "right_hip_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_knee_link.STL",
+      "source": "assets/robot/assets/right_knee_link.STL",
+      "path": "assets/robot/assets/right_knee_link.STL",
+      "name": "right_knee_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_rubber_hand.STL",
+      "source": "assets/robot/assets/right_rubber_hand.STL",
+      "path": "assets/robot/assets/right_rubber_hand.STL",
+      "name": "right_rubber_hand.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_shoulder_pitch_link.STL",
+      "source": "assets/robot/assets/right_shoulder_pitch_link.STL",
+      "path": "assets/robot/assets/right_shoulder_pitch_link.STL",
+      "name": "right_shoulder_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_shoulder_roll_link.STL",
+      "source": "assets/robot/assets/right_shoulder_roll_link.STL",
+      "path": "assets/robot/assets/right_shoulder_roll_link.STL",
+      "name": "right_shoulder_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_shoulder_yaw_link.STL",
+      "source": "assets/robot/assets/right_shoulder_yaw_link.STL",
+      "path": "assets/robot/assets/right_shoulder_yaw_link.STL",
+      "name": "right_shoulder_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_wrist_pitch_link.STL",
+      "source": "assets/robot/assets/right_wrist_pitch_link.STL",
+      "path": "assets/robot/assets/right_wrist_pitch_link.STL",
+      "name": "right_wrist_pitch_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_wrist_roll_link.STL",
+      "source": "assets/robot/assets/right_wrist_roll_link.STL",
+      "path": "assets/robot/assets/right_wrist_roll_link.STL",
+      "name": "right_wrist_roll_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-right_wrist_yaw_link.STL",
+      "source": "assets/robot/assets/right_wrist_yaw_link.STL",
+      "path": "assets/robot/assets/right_wrist_yaw_link.STL",
+      "name": "right_wrist_yaw_link.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-torso_link_rev_1_0.STL",
+      "source": "assets/robot/assets/torso_link_rev_1_0.STL",
+      "path": "assets/robot/assets/torso_link_rev_1_0.STL",
+      "name": "torso_link_rev_1_0.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-waist_roll_link_rev_1_0.STL",
+      "source": "assets/robot/assets/waist_roll_link_rev_1_0.STL",
+      "path": "assets/robot/assets/waist_roll_link_rev_1_0.STL",
+      "name": "waist_roll_link_rev_1_0.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-assets-waist_yaw_link_rev_1_0.STL",
+      "source": "assets/robot/assets/waist_yaw_link_rev_1_0.STL",
+      "path": "assets/robot/assets/waist_yaw_link_rev_1_0.STL",
+      "name": "waist_yaw_link_rev_1_0.STL",
+      "mimeType": "application/octet-stream",
+      "role": "mesh"
+    },
+    {
+      "resourceId": "workspace-asset-assets-robot-scene.xml",
+      "source": "assets/robot/scene.xml",
+      "path": "assets/robot/scene.xml",
+      "name": "scene.xml",
+      "mimeType": "application/xml",
+      "role": "mesh"
+    }
+  ],
+  "assetBase": "project",
+  "assetPaths": [
+    "assets/models/stage2_actor.onnx",
+    "assets/motions/current.npz",
+    "assets/robot/assets/head_link.STL",
+    "assets/robot/assets/left_ankle_pitch_link.STL",
+    "assets/robot/assets/left_ankle_roll_link.STL",
+    "assets/robot/assets/left_elbow_link.STL",
+    "assets/robot/assets/left_hip_pitch_link.STL",
+    "assets/robot/assets/left_hip_roll_link.STL",
+    "assets/robot/assets/left_hip_yaw_link.STL",
+    "assets/robot/assets/left_knee_link.STL",
+    "assets/robot/assets/left_rubber_hand.STL",
+    "assets/robot/assets/left_shoulder_pitch_link.STL",
+    "assets/robot/assets/left_shoulder_roll_link.STL",
+    "assets/robot/assets/left_shoulder_yaw_link.STL",
+    "assets/robot/assets/left_wrist_pitch_link.STL",
+    "assets/robot/assets/left_wrist_roll_link.STL",
+    "assets/robot/assets/left_wrist_yaw_link.STL",
+    "assets/robot/assets/logo_link.STL",
+    "assets/robot/assets/pelvis.STL",
+    "assets/robot/assets/pelvis_contour_link.STL",
+    "assets/robot/assets/right_ankle_pitch_link.STL",
+    "assets/robot/assets/right_ankle_roll_link.STL",
+    "assets/robot/assets/right_elbow_link.STL",
+    "assets/robot/assets/right_hip_pitch_link.STL",
+    "assets/robot/assets/right_hip_roll_link.STL",
+    "assets/robot/assets/right_hip_yaw_link.STL",
+    "assets/robot/assets/right_knee_link.STL",
+    "assets/robot/assets/right_rubber_hand.STL",
+    "assets/robot/assets/right_shoulder_pitch_link.STL",
+    "assets/robot/assets/right_shoulder_roll_link.STL",
+    "assets/robot/assets/right_shoulder_yaw_link.STL",
+    "assets/robot/assets/right_wrist_pitch_link.STL",
+    "assets/robot/assets/right_wrist_roll_link.STL",
+    "assets/robot/assets/right_wrist_yaw_link.STL",
+    "assets/robot/assets/torso_link_rev_1_0.STL",
+    "assets/robot/assets/waist_roll_link_rev_1_0.STL",
+    "assets/robot/assets/waist_yaw_link_rev_1_0.STL",
+    "assets/robot/scene.xml"
+  ]
+}

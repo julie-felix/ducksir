@@ -1,0 +1,43 @@
+kind: sensor
+outputMode: depth
+targetKind: body
+rayAlignment: yaw
+cameraOffsetFrame: body
+depthBackend: render
+target: torso_link
+width: 32
+height: 18
+fullWidth: 64
+fullHeight: 36
+cropX: 16
+cropY: 18
+fov: 58.29
+near: 0.1
+far: 2.5
+depthScale: 2.5
+depthGaussianKernelSize: 3
+depthGaussianSigma: 1
+depthNoiseStd: 0.001
+depthNoiseDistanceStd: 0.002
+depthDropoutProbability: 0
+depthDropoutPatchCount: 0
+depthDropoutPatchRadius: 0
+depthNoiseSeed: 1
+raycastGeomGroups:
+- 0
+cameraOffset:
+- 0.0487988662332928
+- 0.01
+- 0.4378029937970051
+cameraRotationMode: xyaxes
+cameraEulerDeg:
+- 0
+- -48
+- 0
+cameraXyaxes:
+- -0.00354942436300938
+- -0.999961923184099
+- -0.00797206175650602
+- 0.74313541067776
+- -0.00797206175650602
+- 0.669093571653582

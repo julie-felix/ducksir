@@ -1,0 +1,7 @@
+command:
+  parameters: [target_velocity, target_lateral_velocity, target_yaw_rate, speed_mode]
+  input_mode: keyboard
+  ramp_rate: 0
+  bindings:
+    target_velocity: {increase: KeyW, decrease: false}
+    target_yaw_rate: {increase: KeyA, decrease: KeyD}

@@ -1,0 +1,49 @@
+# G1 的 WBC（动作跟踪）策略：obs 439 = 动作参考 67 + 机器人状态 4×93，action 29。
+# 逐项对齐 botlab 模板 `g1-wbc` 的 controller.py（mode 3）+ ccrpRepo/wbc_fsm 的 State_WBC.cpp。
+kind: ducksir-policy-manifest
+version: 1
+policy_id: g1-wbc-dance
+
+model:
+  file: build/models/g1-wbc-dance.onnx
+  input: {name: obs, shape: [1, 439]}
+  output: {name: actions, shape: [1, 29]}
+
+# mode 2 = loco（96 维），mode 3 = WBC（439 维）；这份 bundle 先只放 WBC
+policies:
+  - {key: g1-wbc-dance, mode: 3, file: build/models/g1-wbc-dance.onnx}
+
+# 顺序 = State_WBC 的装配顺序：先参考段 67，再机器人状态（每帧 93）。
+# 机器人状态 93 = 角速度3 + 投影重力3 + q29 + qd29 + last_action29；
+# 4 帧历史在 pre 图里用 `history` 节点展开（见下面的 obs_history），不是宿主喂 4 份。
+obs:
+  # 参考段 67：关节位置29 + 关节速度29 + 锚点位移3 + 锚点朝向6D
+  - {slot: motion_ref, len: 67}
+  # 状态段 93
+  - {slot: body_angvel, len: 3, target: pelvis}
+  - {slot: projected_gravity, len: 3, target: pelvis}
+  # 观测的关节量用**策略序**（真值核对时策略吃的是 policy order；动作输出在 post 里再换回电机序）
+  - {slot: joint_pos, len: 29, minus: reference, order: policy, scale: 1.0}
+  - {slot: joint_vel, len: 29, order: policy, scale: 1.0}
+  - {slot: last_action, len: 29, scale: 1.0}
+
+# 状态段（offset 67 起、93 长）展开成 4 帧 → 372；和参考段拼成 439
+obs_history: {offset: 67, length: 93, frames: 4}
+
+history: {length: 0, layout: by-frame}
+
+action:
+  # 目标 = referenceJointPositions + 0.25 × action（WBC 的基准不是 default，见 run_bundle）
+  mapping: default_plus_scale
+  order: policy
+  clip: ctrlrange
+
+rates: {control_hz: 50, physics_hz: 200, inference_decimation: 4}
+
+provenance:
+  source: botlab 模板 g1-wbc · assets/models/dance12_0207_1.onnx（2026-11-12 取）
+  upstream: https://botlab.enkeebot.com/templates/g1-wbc/
+  obs_layout: State_WBC.cpp —— reference 67 + robot_state 93×4 = 439
+  action_scale: 0.25（统一值，见 State_WBC 的 _action → joint target）
+  motion: assets/motions/dance12（.bin 容器，fps 50，frame_interval 5，active_mode 3）
+  note: 上游无根 LICENSE；仅本地兼容性对照用，不对外分发。
