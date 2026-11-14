@@ -183,7 +183,8 @@ function applyPose(msg) {
       const wp = new THREE.Vector3();
       g0.getWorldPosition(wp);
       controls.target.copy(wp);
-      camera.position.set(wp.x + 2.6, wp.y + 1.0, wp.z + 2.6);
+      // 相机放在机器人**后方**：这样正前方（+x）的地形/楼梯才在画面中间
+      camera.position.set(wp.x - 3.4, wp.y + 1.3, wp.z);
     }
   }
   // 相机跟着 pelvis 走（不然机器人走出画面）
@@ -246,7 +247,12 @@ function connect() {
         return;
       }
       if (typeof wrap.line !== 'string') return;
-      const msg = JSON.parse(wrap.line);
+      let msg;
+      try { msg = JSON.parse(wrap.line); }
+      catch (e) {          // 长行偶尔被截断（SSE 背压）：跳过这一条，别让整个页面挂掉
+        window.__parseErrors = (window.__parseErrors || 0) + 1;
+        return;
+      }
       if (msg.type === 'scene') {
         pendingScene = msg;
         if (msg.meshBase64) {     // SSE 路径：场景和网格一起送
@@ -375,7 +381,12 @@ async function startBundle() {
         return;
       }
       if (typeof wrap.line !== 'string') return;
-      const msg = JSON.parse(wrap.line);
+      let msg;
+      try { msg = JSON.parse(wrap.line); }
+      catch (e) {          // 长行偶尔被截断（SSE 背压）：跳过这一条，别让整个页面挂掉
+        window.__parseErrors = (window.__parseErrors || 0) + 1;
+        return;
+      }
       if (msg.type === 'scene') {
         buildScene(msg, msg.meshBase64 ? base64ToArrayBuffer(msg.meshBase64) : new ArrayBuffer(0));
         $('busy').classList.add('gone');

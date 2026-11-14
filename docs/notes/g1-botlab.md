@@ -1492,3 +1492,26 @@ t=8.00 x=3.65 z=0.821   ← 走下来继续前进
 ### 现在的 bundle 清单（9 个）
 
 wbc / amp / mjamp / loco / unisupermimic / instinct / gmtrack / hiking / php
+
+## 36. 直播页看不到地形：两个原因
+
+庆喆反馈「没有中间可以爬的地形」。查下来两件事：
+
+**A. 相机站在机器人前面**：`host.js` 初始化把相机放在 `wp + (+2.6, +1.0, +2.6)`，
+也就是机器人**前方偏左**，再回头看机器人——正前方（+x）的楼梯正好在相机背后。
+改成放在机器人**后方**、朝 +x 看：
+
+```js
+camera.position.set(wp.x - 3.4, wp.y + 1.3, wp.z);
+controls.target.set(wp.x + 1.2, wp.y + 0.1, wp.z);
+```
+
+**B. PHP 的地形不在 world 上**：他们的场景把障碍挂在**静态 body** 上，
+而 `host_stream.build_scene` 原来只发 `body == 0` 的世界几何 → PHP 场景只剩一块地面。
+现在改成：先找到带自由关节的机器人根，标记它的整棵子树；**子树之外**的 body 都算场景。
+PHP 的可见几何从 1 块变成 **67 块**，机器人 35 块网格照常。
+
+![Hiking：楼梯就在正前方](../images/host-hiking-stairs.png)
+
+顺带把 `host.js` 的 SSE 解析包了 try/catch：长行偶尔被截断（背压），
+以前会整个页面报错停住，现在只丢那一条。

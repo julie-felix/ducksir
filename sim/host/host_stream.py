@@ -214,8 +214,21 @@ def build_scene(model, mujoco) -> tuple[dict, bytes]:
     meshes, chunks = {}, []
     offset = 0
     geoms = []
+    # 机器人子树之外的 body 都算“场景”（PHP 的地形挂在静态 body 上，不在 world 里）
+    robot_bodies = set()
+    for b in range(model.nbody):
+        if model.body_jntnum[b] > 0 and model.jnt_type[model.body_jntadr[b]] == 0:  # 自由关节
+            stack = [b]
+            while stack:
+                cur = stack.pop()
+                if cur in robot_bodies:
+                    continue
+                robot_bodies.add(cur)
+                stack.extend(int(c) for c in range(model.nbody) if int(model.body_parentid[c]) == cur)
+
     for g in range(model.ngeom):
-        is_world = int(model.geom_bodyid[g]) == 0
+        _b = int(model.geom_bodyid[g])
+        is_world = _b == 0 or (_b not in robot_bodies)
         is_visual = model.geom_contype[g] == 0 and model.geom_conaffinity[g] == 0
         # 机器人的碰撞体不发（会画出「薄壳脚」）。
         # 世界几何：只发**平面/盒子**这类地面（几百块地形 mesh 会把 SSE 撑到几 MB，
@@ -226,7 +239,7 @@ def build_scene(model, mujoco) -> tuple[dict, bytes]:
         # 世界上的地形：只发**机器人附近**的那一块（|x|,|y| < 20 m）。
         # Instinct 的 6 套地形分别摆在 (0,0)/(250,0)/(500,0)… 远处（每个 case 的 offset），
         # 只有 case 8 那块在原点——就是它要翻的箱子。发全部 896 块既看不见又撑爆消息。
-        near = is_world and abs(float(pos[g][0])) < 20 and abs(float(pos[g][1])) < 20
+        near = is_world and (model.geom_contype[g] == 0 or (abs(float(pos[g][0])) < 20 and abs(float(pos[g][1])) < 20))
         is_terrain = near and kind == int(mujoco.mjtGeom.mjGEOM_MESH)
         if not is_visual and not is_ground and not is_terrain:
             continue
