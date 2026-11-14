@@ -260,6 +260,9 @@ def main() -> int:
     d = mujoco.MjData(m)
     m.opt.timestep = 1.0 / physics_hz
     d.qpos[:] = robot["initial_qpos"]
+    _qvel0 = robot.get("initial_qvel")
+    if _qvel0:
+        d.qvel[:] = _qvel0
     mujoco.mj_forward(m, d)
 
     stream = None
@@ -423,8 +426,10 @@ def main() -> int:
         if gm_obs_mod is not None:
             _pb = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "pelvis")
             _R = _GM_mat(d.xquat[_pb])
-            _q = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
-            _qd = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)
+            # 模板的 joint_position() 读的是 **qpos 顺序**（= 模型的关节定义顺序 = policyJointOrder），
+            # 不是契约里 driven 的顺序；用 qpos_off 会错位（实测 q 段差 0.23）。
+            _q = np.asarray(d.qpos[7:7 + 29], dtype=np.float64)
+            _qd = np.asarray(d.qvel[6:6 + 29], dtype=np.float64)
             _local_ang = _R.T @ np.asarray(d.cvel[_pb][:3], dtype=np.float64)
             mimic_obs = gm_obs_mod.assemble(
                 motion=gm_motion, t=sim_k * 0.02 + float(gm_cfg.get("reference_lead", 0.02)),

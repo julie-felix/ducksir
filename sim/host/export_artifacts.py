@@ -276,6 +276,8 @@ def main() -> int:
             "joints": driven,
             "default_q": preset["defaultJointPositions"],
             "initial_qpos": preset["initialQpos"],
+            # 有些上游 preset 带非零初始速度（GMTrack 的 spawn 就有一份），丢了会让第一步动力学偏
+            "initial_qvel": preset.get("initialQvel"),
             "action_scale": preset["actionScale"],
             "ctrlrange": [[lo[i], hi[i]] for i in range(n)],
             # 速度指令范围：preset 显式给 None 表示「这个策略没有速度指令」；

@@ -15,7 +15,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 # 四个 bundle 都要站住：wbc(3) / amp(4) / mjamp(5) / loco(2)。
 # loco 的增益是 plan 里 mode 2 那一支（balanceStiffness/Damping），不是 robot.kp。
-BUNDLES = ["g1-wbc", "g1-amp", "g1-mjamp", "g1-loco", "g1-unisupermimic"]
+BUNDLES = ["g1-wbc", "g1-amp", "g1-mjamp", "g1-loco", "g1-unisupermimic", "g1-gmtrack"]
 MJCF = os.path.join(ROOT, "build", "mjcf", "g1-29dof-torque.xml")
 
 fails = []
@@ -57,7 +57,8 @@ for bundle_name in BUNDLES:
     ok(f"{bundle_name}：末态直立 >0.9", upright is not None and upright > 0.9, f"upright={upright}")
     robot_cfg = json.load(open(os.path.join(bundle, "contract.json"), encoding="utf-8"))["robot"]
     cmds = robot_cfg.get("commands") or {}
-    if robot_cfg.get("motion") and robot_cfg["motion"].get("format") == "unisupermimic":
+    if robot_cfg.get("motion") and robot_cfg["motion"].get("format") in (
+            "unisupermimic", "instinct", "gmtrack"):
         # 这个模板没有速度指令（观测是 99×10 历史 + 未来目标），不具备 commands
         ok(f"{bundle_name}：无速度指令（符合模板）", not cmds, f"commands={cmds or None}")
     else:

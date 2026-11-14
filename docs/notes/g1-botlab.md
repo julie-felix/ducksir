@@ -1122,7 +1122,7 @@ Instinct 的 6 套地形分别在 `(0,0)`、`(250,0)`、`(500,0)`、`(750,0)`…
 
 同时把初始相机拉远到 2.6 m，不然地形一进来就贴脸。
 
-## 32. GMTrack Stage-II：公式对齐了，闭环还差一步（WIP）
+## 32. GMTrack Stage-II：接上了（obs 逐段对齐，闭环站稳）
 
 模板 `Unitree-G1-GMTrack-Stage-II-Local` 已经接进来：obs 1728、动作 `q_ref + scale·action`、
 机器人用他们的 `scene.xml`（位置执行器）。
@@ -1135,20 +1135,29 @@ Instinct 的 6 套地形分别在 `(0,0)`、`(250,0)`、`(500,0)`、`(750,0)`…
 | q / qd / action 段 | **1e-06 / 0** | by-term、最老在前、最新帧=当前状态 |
 | 开环重放（用他们录的 action） | **2e-06** | 说明动力学、执行器、`motorJointOrder` 重排全对 |
 
-### 还没对上的
+### 闭环为什么之前会倒：两处都不是「公式」
 
-闭环跑 330 步会倒（`直立 -0.449`）。第 1 步的 obs 就已经有偏差：
+**A. `q`/`qd` 用错了顺序**：模板的 `joint_position()` 读的是 **qpos 顺序**（= 模型关节定义顺序
+= `policyJointOrder`），而我们用的是契约里 driven 的顺序（从实体导出的）→ 两套顺序不同，
+`q` 段差 0.23，策略一上来就拿到错位的本体状态。
+
+**B. `initial_qvel` 被丢了**：GMTrack 的 preset 带非零初始速度（`spawn_lift` 那套），
+`export_artifacts` 只写了 `initial_qpos`，runner 也只设 qpos。补上之后首帧动力学才对。
+
+修完实测（`/tmp/gmtrack.jsonl` 对拍）：
 
 ```
-step 1: qpos 差 0.0195 | gravity 0.0035 | angvel 0.199 | q 0.237
+step 0: gravity=0  angvel=0  q=0  qd=0  action=0  window=0     ← 完全一致
+step 1: gravity=4.2e-3  q=0  qd=1e-6  window=0
 ```
 
-嫌疑顺序：
+闭环：
 
-1. `body_angular_velocity("pelvis", local)` 用的是 **cvel**（比 qvel 慢一个物理子步），
-   我们取的是「上一步 4 个子步之后」的值，时序可能还差一拍；
-2. 历史缓冲的**填充语义**（mjlab 重置时用第一帧填满）——前 10 步内两者不同；
-3. 他们的 `initial_qpos` 带 `spawn_lift=0.1`，落地瞬间的接触解算可能影响首帧。
+```
+bundle g1-gmtrack｜330/330 步｜基座 终 +0.770 最低 +0.568｜直立 +0.987
+```
+
+探针测试也纳入了：`test_g1_wbc_bundle` 现在跑 6 个 bundle（zmin 0.568、直立 0.998）。
 
 ### 顺手修掉的一个真 bug
 
