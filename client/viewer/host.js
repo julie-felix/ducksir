@@ -67,9 +67,12 @@ function makeGeometry(g, model, meshBytes) {
     return geo;
   }
   if (g.kind === 0) {
-    // MuJoCo 平面：局部 xy 平面、法线 +z；root 已整体转到 y-up，所以直接建就好
-    const geo = new THREE.PlaneGeometry(g.size[0] * 2, g.size[1] * 2);
-    return geo;
+    // MuJoCo 平面：局部 xy 平面、法线 +z；root 已整体转到 y-up，所以直接建就好。
+    // 有些场景（botlab 的 g1 场景）平面 size 写的是 [0,0,0.05]——0 尺寸会完全看不见，
+    // 这时按「无限地面」处理，给一个足够大的方片。
+    const w = g.size[0] > 0.1 ? g.size[0] * 2 : 40;
+    const h = g.size[1] > 0.1 ? g.size[1] * 2 : 40;
+    return new THREE.PlaneGeometry(w, h);
   }
   if (g.kind === 2) return new THREE.SphereGeometry(g.size[0], 14, 10);
   if (g.kind === 3) return new THREE.CapsuleGeometry(g.size[0], g.size[1], 6, 14);
@@ -150,6 +153,17 @@ function buildScene(model, meshBytes) {
   console.log(`[host] 场景建好：${model.bodies.length} body / ${built} geom`);
 }
 
+let follow = null;
+let poseApplied = 0;
+
+function updateCamera(wp) {
+  if (!follow) return;
+  // 直接跟随（不留 lerp）：机器人每帧移动，平滑会让画面落后一大截
+  camera.position.set(wp.x + follow.off.x, wp.y + follow.off.y, wp.z + follow.off.z);
+  controls.target.set(wp.x + follow.look.x, wp.y + follow.look.y, wp.z + follow.look.z);
+  controls.update();
+}
+
 function applyPose(msg) {
   const { xpos, xquat } = msg;
   for (let i = 0; i < bodies.length; i += 1) {
@@ -183,8 +197,9 @@ function applyPose(msg) {
       const wp = new THREE.Vector3();
       g0.getWorldPosition(wp);
       controls.target.copy(wp);
-      // 相机放在机器人**后方**：这样正前方（+x）的地形/楼梯才在画面中间
-      camera.position.set(wp.x - 3.4, wp.y + 1.3, wp.z);
+      // 跟随相机：初始化一次参数，之后每帧 updateCamera() 跟着走
+      follow = { off: new THREE.Vector3(-3.4, 1.3, 0), look: new THREE.Vector3(1.2, -0.6, 0) };
+      camera.position.set(wp.x + follow.off.x, wp.y + follow.off.y, wp.z + follow.off.z);
     }
   }
   // 相机跟着 pelvis 走（不然机器人走出画面）
@@ -195,6 +210,14 @@ function applyPose(msg) {
       g.getWorldPosition(wp);
       controls.target.lerp(wp, 0.08);
     }
+  }
+  // 相机跟随基座（第 2 个 body 是 pelvis/torso；字段是 xpos，不是 pos）
+  // 用 three 世界的基座位置（xpos 是 MuJoCo 的 z-up，直接当 three 坐标会歪）
+  if (pelvis) {
+    const wpp = new THREE.Vector3();
+    pelvis.getWorldPosition(wpp);
+    poseApplied += 1;
+    updateCamera(wpp);
   }
 }
 
@@ -294,6 +317,29 @@ let currentEs = null;      // 同一时刻只允许一条流
 let sceneGen = 0;          // 每次启动 +1；旧流的回调一律作废
 let paused = false;
 
+let uiSpec = null;
+
+/** 读当前 bundle 的 contract.json，按它的 ui 段配置滑杆（和 botlab 参数一致）。 */
+async function loadUiSpec(bundle) {
+  try {
+    const r = await fetch(`/ducksir-static/build/release/${bundle}/contract.json`);
+    if (!r.ok) return;
+    const c = await r.json();
+    uiSpec = (c.robot || {}).ui || null;
+    if (!uiSpec) return;
+    for (const [id, key] of [['fwd', 'forward'], ['yaw', 'yaw']]) {
+      const el = $(id); const spec = uiSpec[key];
+      if (!el || !spec) continue;
+      el.min = spec.min; el.max = spec.max; el.step = spec.step;
+      el.value = spec.default;
+      if ($(`${id}-v`)) $(`${id}-v`).textContent = Number(spec.default).toFixed(2);
+    }
+    const wrap = $('speed-wrap');
+    if (wrap) wrap.style.display = uiSpec.speedMode ? '' : 'none';
+    if ($('cmd-tip')) $('cmd-tip').textContent = uiSpec.speedMode ? '含高速档（指令第 4 维）' : '';
+  } catch (e) { console.warn('[host] 读 contract 失败', e); }
+}
+
 /** 把当前滑杆值发给宿主（唯一控制入口）。 */
 async function pushControl(patch = {}) {
   if (!currentJob) return;
@@ -301,6 +347,7 @@ async function pushControl(patch = {}) {
     forward: Number($('fwd') ? $('fwd').value : 0),
     yaw: Number($('yaw') ? $('yaw').value : 0),
     paused,
+    speedMode: $('speed') && $('speed').checked ? 1 : 0,
     ...patch,
   };
   $('fwd-v').textContent = body.forward.toFixed(2);
@@ -331,12 +378,16 @@ function wireControls() {
     if ($('yaw')) $('yaw').value = '0';
     pushControl();
   };
+  const speedBox = $('speed');
+  if (speedBox) speedBox.onchange = () => pushControl();
   addEventListener('keydown', (e) => {
-    const step = 0.05;
+    const step = (uiSpec && uiSpec.forward && uiSpec.forward.step) || 0.05;
     const fwd = $('fwd'); const yaw = $('yaw');
     if (!fwd || !yaw) return;
-    if (e.key === 'w') fwd.value = String(Math.min(2.5, Number(fwd.value) + step));
-    else if (e.key === 's') fwd.value = String(Math.max(-0.8, Number(fwd.value) - step));
+    const fmin = uiSpec ? uiSpec.forward.min : -0.8;
+    const fmax = uiSpec ? uiSpec.forward.max : 2.5;
+    if (e.key === 'w') fwd.value = String(Math.min(fmax, Number(fwd.value) + step));
+    else if (e.key === 's') fwd.value = String(Math.max(fmin, Number(fwd.value) - step));
     else if (e.key === 'a') yaw.value = String(Math.max(-3.14, Number(yaw.value) - step));
     else if (e.key === 'd') yaw.value = String(Math.min(3.14, Number(yaw.value) + step));
     else return;
@@ -346,6 +397,7 @@ function wireControls() {
 async function startBundle() {
   const bundle = $('bundle').value;
   if (!bundle) { $('status').textContent = '先选一个 bundle'; return; }
+  await loadUiSpec(bundle.split('/').pop());
   $('status').textContent = '启动中…';
   // 只发名字：后端会去 build/release/ 找（ADR-001 判据 4：形状固定，不猜路径）
   const r = await fetch(`${API}/api/jobs`, {

@@ -387,7 +387,8 @@ def main() -> int:
     mode_key = policies[0]["key"]
 
     # 运行期指令（直播用）：一次性读 stdin，主循环取最新的
-    control = {"forward": float(args.forward), "yaw": float(args.yaw), "paused": False}
+    control = {"forward": float(args.forward), "yaw": float(args.yaw), "paused": False,
+               "speedMode": float(os.environ.get("DUCK_SPEED_MODE", "0"))}
     if args.control:
         def _read_control():
             for raw in sys.stdin:
@@ -398,7 +399,7 @@ def main() -> int:
                     upd = json.loads(raw)
                 except json.JSONDecodeError:
                     continue
-                for key in ("forward", "yaw", "paused"):
+                for key in ("forward", "yaw", "paused", "speedMode"):
                     if key in upd:
                         control[key] = upd[key]
                 cmd[0], cmd[2] = float(control["forward"]), float(control["yaw"])
@@ -486,6 +487,7 @@ def main() -> int:
                 last_action=last_action,
                 command=np.array([cmd[0], cmd[1], cmd[2], 0.0], float),
                 latent=_latent)
+        cmd[3] = float(control.get("speedMode") or 0.0)
         if pk_mod is not None:
             _pb = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
             if _pb < 0:

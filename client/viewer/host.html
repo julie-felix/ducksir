@@ -39,6 +39,10 @@
     <label>转向 <input id="yaw" type="range" min="-3.14" max="3.14" step="0.05" value="0"><span id="yaw-v">0.00</span></label>
   </div>
   <div class="ctl">
+    <label id="speed-wrap" style="display:none"><input id="speed" type="checkbox"> 高速模式</label>
+    <span class="dim" id="cmd-tip"></span>
+  </div>
+  <div class="ctl">
     <button id="pause" type="button">⏸ 暂停</button>
     <button id="zero" type="button">归零</button>
     <span class="dim" id="ctl-tip">W/S 前进 · A/D 转向</span>

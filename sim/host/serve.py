@@ -84,7 +84,7 @@ class Job:
         self._thread: threading.Thread | None = None
         self._env = env
         self.metrics: dict = {}
-        self.control_state: dict = {"forward": 0.0, "yaw": 0.0, "paused": False}
+        self.control_state: dict = {"forward": 0.0, "yaw": 0.0, "paused": False, "speedMode": 0.0}
 
     # ---- 生命周期 ----
     def start(self):
@@ -169,7 +169,7 @@ class Job:
         try:
             self._proc.stdin.write(json.dumps(patch) + "\n")
             self._proc.stdin.flush()
-            self.control_state.update({k: patch[k] for k in ("forward", "yaw", "paused") if k in patch})
+            self.control_state.update({k: patch[k] for k in ("forward", "yaw", "paused", "speedMode") if k in patch})
             return True
         except (BrokenPipeError, ValueError):
             return False

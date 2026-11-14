@@ -174,6 +174,36 @@ def build_fsm() -> tuple[bytes, dict]:
     return blob, slots
 
 
+def _ui_from_commands(cmd: dict) -> dict:
+    """把 preset 的 commands 归一成界面要用的滑杆参数（min/max/step/default）。
+
+    两种来源：loco 那种 *_min/_max/step，和 botlab 模板那种 [min,max] 区间。
+    """
+    def _pair(key, alias, default):
+        v = cmd.get(key)
+        if isinstance(v, (list, tuple)) and len(v) >= 2:
+            return float(v[0]), float(v[1])
+        if alias in cmd and cmd.get(alias) is not None:
+            lo = cmd.get(key + "_min", cmd.get("forward_min", default[0]))
+            hi = cmd.get(key + "_max", cmd.get("forward_max", default[1]))
+            return float(lo), float(hi)
+        return default
+
+    step = float(cmd.get("step") or 0.05)
+    fwd = _pair("forward", "forward", (-0.8, 2.5))
+    yaw = _pair("yaw", "yaw", (-1.0, 1.0))
+    if "yaw" in cmd and isinstance(cmd["yaw"], (list, tuple)):
+        yaw = (float(cmd["yaw"][0]), float(cmd["yaw"][1]))
+    elif "yaw_max" in cmd:
+        yaw = (-float(cmd["yaw_max"]), float(cmd["yaw_max"]))
+    default_fwd = float(cmd.get("defaultForward", fwd[0]))
+    return {
+        "forward": {"min": fwd[0], "max": fwd[1], "step": step, "default": default_fwd},
+        "yaw": {"min": yaw[0], "max": yaw[1], "step": step, "default": 0.0},
+        "speedMode": bool(cmd.get("speedMode")),
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--manifest", default="contract/policy/duck-walk.manifest.yaml")
@@ -293,6 +323,7 @@ def main() -> int:
             "ctrlrange": [[lo[i], hi[i]] for i in range(n)],
             # 速度指令范围：preset 显式给 None 表示「这个策略没有速度指令」；
             # 没写这个键才退回鸭子那组（MicroDuck 的旧默认）
+            "ui": _ui_from_commands(preset.get("commands") or {}),
             "commands": (preset["commands"] if "commands" in preset
                          else {"forward_max": 0.25, "back_max": -0.2, "yaw_max": 1.0}),
             # 执行器语义：position = MuJoCo 自己算 PD；torque = 消费者每个物理子步按 kp/kd 算

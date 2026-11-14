@@ -1515,3 +1515,34 @@ PHP 的可见几何从 1 块变成 **67 块**，机器人 35 块网格照常。
 
 顺带把 `host.js` 的 SSE 解析包了 try/catch：长行偶尔被截断（背压），
 以前会整个页面报错停住，现在只丢那一条。
+
+## 37. 操作逻辑对齐 botlab + 跟随相机
+
+庆喆要求「操作逻辑也对齐一下」。botlab 的交互是**模板自己的参数表**决定的
+（`config/parameters.yaml`：range / step / default），所以把这份信息放进契约，页面按它配置控件：
+
+- `contract.json` 的 `robot.ui`：`forward{min,max,step,default}` / `yaw{...}` / `speedMode`；
+- host 页在启动前 `fetch` 当前 bundle 的 `contract.json`，按它设滑杆的 min/max/step/默认值；
+- 键盘 `W/S/A/D` 的步长用 `ui.step`（hiking 0.05、php 0.1），边界也用 ui 的 min/max；
+- PHP 有「高速模式」（指令第 4 维），页面多一个复选框，走 `/api/jobs/<id>/control` 的 `speedMode`。
+
+对照表：
+
+| bundle | forward | yaw | step | 默认 |
+|---|---|---|---|---|
+| g1-hiking | 0 – 0.5 | −1 – 1 | 0.05 | 0.4 |
+| g1-php | 0 – 1.0 | −1 – 1 | 0.10 | 0 |
+
+### 相机：从「初始一摆」改成跟随
+
+机器人会走出画面，所以相机每帧跟基座走（用 three 世界坐标，**不是** MuJoCo 的 xpos）：
+
+```js
+camera.position.set(wp.x - 3.4, wp.y + 1.3, wp.z);
+controls.target.set(wp.x + 1.2, wp.y - 0.6, wp.z);
+```
+
+顺手修了一个「地面消失」的 bug：botlab 的 g1 场景把平面 size 写成 `[0,0,0.05]`，
+页面按 `size*2` 建 `PlaneGeometry` 就成了 0×0 的方片 → 现在尺寸为 0 时按 40×40 兜底。
+
+![跟随相机](../images/host-follow-cam.png)
