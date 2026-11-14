@@ -1841,3 +1841,36 @@ gmtrack：控件隐藏 + 「该 bundle 不接受速度指令（播放/跟踪类�
 2. 闭环要带**默认前进速度**跑，否则「指令」项永远是 0（机器人原地站着）。
 
 CI 现在跑 `bundle_eval.py --min 8`，低于 8 分红。
+
+## 40. 剩下五个 bundle 的「对拍」：换成金标回归
+
+WBC / AMP / MJAMP / Instinct / UniSuperMimic 这五个**拿不到 botlab 录制样本**：
+
+- WBC 模板用了 0.4.1 没有的 `robot.commands(mappings=...)`；
+- Instinct 的场景没有执行器，靠浏览器的 `autoActuators` 生成，headless SDK 不做这件事；
+- AMP / MJAMP 没有随模板发布的资产包。
+
+所以没有假装对齐。改成**金标回归**：用我们自己的轨迹锁住行为。
+
+```
+tools/dev/make_golden.py --bundle g1-wbc --steps 60   # 生成 third_party/golden/<bundle>.json.gz
+sim/test/test_golden_bundles.py                       # 重跑同比，差 >1e-6 就红
+```
+
+```
+PASS  g1-wbc：60 步最大差 0.00e+00
+PASS  g1-amp：60 步最大差 0.00e+00
+PASS  g1-mjamp：60 步最大差 0.00e+00
+PASS  g1-instinct：60 步最大差 0.00e+00
+PASS  g1-unisupermimic：60 步最大差 0.00e+00
+```
+
+两者语义不同，评分卡里分开写：
+
+- **对拍**：和 botlab 比，验证「我们抄对了」——gmtrack / hiking / php；
+- **金标**：和自己比，验证「没改坏」——wbc / amp / mjamp / instinct / uni。
+
+现在 8 个 bundle 全是 10 分，但那张表的最后一项有两种含义，别混。
+
+要拿到真正的对拍，需要比 0.4.1 新的 botlab SDK（模板里的 `mappings`、`autoActuators`
+都是新 API）。这条记在 [feature-map/botlab-templates.md] 的资源表下面。

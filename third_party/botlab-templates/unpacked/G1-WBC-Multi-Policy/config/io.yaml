@@ -1,0 +1,17 @@
+mode_command:
+  parameters: [mode_command]
+  mappings:
+    - {key: Enter, value: 1, label: {en: Stand, zh: 站立}}
+    - {key: KeyR, value: 2, label: {en: Rest, zh: 休息}}
+    - {keys: [KeyI, KeyJ], value: 6, label: AMP / MJAMP}
+    - {keys: [KeyO, KeyK], value: 7, label: {en: Return passive, zh: 回到被动}}
+    - {keys: [KeyU, ArrowUp], value: 8, label: WBC}
+    - {keys: [KeyI, KeyK], value: 13, label: {en: Loco, zh: 行走}}
+
+velocity_command:
+  parameters: [target_velocity, target_lateral_velocity, target_yaw_rate]
+  input_mode: keyboard-gamepad
+  bindings:
+    target_velocity: {increase: KeyW, decrease: KeyS}
+    target_lateral_velocity: {increase: KeyA, decrease: KeyD}
+    target_yaw_rate: {increase: KeyQ, decrease: KeyE}

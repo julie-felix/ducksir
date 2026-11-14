@@ -66,7 +66,11 @@ def _run_summary(bundle, forward=None):
 def _parity(bundle, manifest):
     parity = (manifest or {}).get("parity")
     if not parity:
-        return 1.0, "未声明 parity（覆盖未做）"
+        # 没有 botlab 录制源时，金标轨迹顶上（锁行为，不对齐 botlab）
+        golden = os.path.join(ROOT, "third_party", "golden", f"{bundle}.json.gz")
+        if os.path.isfile(golden):
+            return 2.0, "金标回归锁定（无 botlab 录制源）"
+        return 1.0, "无对拍也无金标"
     path = os.path.join(ROOT, parity.get("sample", ""))
     if not os.path.isfile(path):
         return 0.0, "样本缺失"
@@ -210,7 +214,8 @@ def main() -> int:
     else:
         lines = ["# Bundle 评分（自动生成）", "",
                  "> 由 `python3 tools/dev/bundle_eval.py` 生成，别手改。",
-                 "> 评分项：结构 2 / 契约 2 / 闭环 3 / 指令 1 / 对拍 2。", "",
+                 "> 评分项：结构 2 / 契约 2 / 闭环 3 / 指令 1 / 对拍 2。",
+                 "> 对拍：有 botlab 录制样本的比**对齐**；没有的用**金标回归**锁行为（不对齐 botlab，只防自己改坏）。", "",
                  "| bundle | 分数 | 结构 | 契约 | 闭环 | 指令 | 对拍 |",
                  "|---|---|---|---|---|---|---|"]
         for r in results:

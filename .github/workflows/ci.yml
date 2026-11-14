@@ -75,6 +75,14 @@ jobs:
       - name: 对拍回归（obs 与 botlab 录制逐段比）
         run: python3 sim/test/test_parity.py
 
+      - name: 金标回归（没有 botlab 录制源的 bundle）
+        run: |
+          if python3 -c "import numpy" 2>/dev/null; then
+            python3 sim/test/test_golden_bundles.py
+          else
+            echo "SKIP：没有 numpy"
+          fi
+
       - name: bundle 评分（低于 8 分就红）
         run: |
           if python3 -c "import mujoco" 2>/dev/null; then
