@@ -183,7 +183,7 @@ function applyPose(msg) {
       const wp = new THREE.Vector3();
       g0.getWorldPosition(wp);
       controls.target.copy(wp);
-      camera.position.set(wp.x + 1.8, wp.y + 0.5, wp.z + 1.8);
+      camera.position.set(wp.x + 2.6, wp.y + 1.0, wp.z + 2.6);
     }
   }
   // 相机跟着 pelvis 走（不然机器人走出画面）

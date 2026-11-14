@@ -223,7 +223,12 @@ def build_scene(model, mujoco) -> tuple[dict, bytes]:
         kind = int(model.geom_type[g])
         is_ground = is_world and kind in (int(mujoco.mjtGeom.mjGEOM_PLANE),
                                           int(mujoco.mjtGeom.mjGEOM_BOX))
-        if not is_visual and not is_ground:
+        # 世界上的地形：只发**机器人附近**的那一块（|x|,|y| < 20 m）。
+        # Instinct 的 6 套地形分别摆在 (0,0)/(250,0)/(500,0)… 远处（每个 case 的 offset），
+        # 只有 case 8 那块在原点——就是它要翻的箱子。发全部 896 块既看不见又撑爆消息。
+        near = is_world and abs(float(pos[g][0])) < 20 and abs(float(pos[g][1])) < 20
+        is_terrain = near and kind == int(mujoco.mjtGeom.mjGEOM_MESH)
+        if not is_visual and not is_ground and not is_terrain:
             continue
         kind = int(model.geom_type[g])
         entry = {
@@ -233,7 +238,7 @@ def build_scene(model, mujoco) -> tuple[dict, bytes]:
             "pos": [round(float(pos[g][i]), 6) for i in range(3)],
             "quat": [round(float(quat[g][i]), 6) for i in range(4)],
             "rgba": [round(float(rgba[g][i]), 3) for i in range(4)],
-            "world": bool(is_ground),
+            "world": bool(is_ground or is_terrain),
         }
         if kind == int(mujoco.mjtGeom.mjGEOM_MESH):
             mid = int(model.geom_dataid[g])
