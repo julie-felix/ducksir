@@ -50,6 +50,9 @@ jobs:
           printf 'refs/heads/feat/x 1111 refs/heads/feat/x 0000\n' | .githooks/pre-push origin origin.url
           echo "✓ 普通分支放行"
 
+      - name: UI 单源（键位/区间只许来自契约）
+        run: python3 scripts/check-ui-single-source.py
+
       - name: serve smoke（统一后端 curl 冒烟）
         run: bash tools/dev/serve_smoke.sh
 

@@ -359,7 +359,15 @@ async function loadUiSpec(bundle) {
     if (!r.ok) return;
     const c = await r.json();
     uiSpec = (c.robot || {}).ui || null;
-    if (!uiSpec) return;
+    if (!uiSpec) {
+      // 没有指令接口的 bundle（instinct/uni/gmtrack）：藏掉指令控件，别给假区间
+      for (const id of ['fwd', 'yaw', 'lat']) {
+        const row = $(id) && $(id).closest('.row, label');
+        if (row) row.style.display = 'none';
+      }
+      if ($('ctl-tip')) $('ctl-tip').textContent = '该 bundle 不接受速度指令（播放/跟踪类）';
+      return;
+    }
     for (const [id, key] of [['fwd', 'forward'], ['yaw', 'yaw'], ['lat', 'lateral']]) {
       const el = $(id); const spec = uiSpec[key];
       if (!el || !spec) continue;
@@ -438,7 +446,8 @@ function wireControls() {
       if (next !== cur) el.value = String(next);
       return Math.abs(next - cur);
     };
-    const spec = uiSpec || { forward: { min: -0.8, max: 2.5 }, yaw: { min: -3.14, max: 3.14 }, lateral: { min: -1, max: 1 } };
+    if (!uiSpec) return;                       // 没有指令接口的 bundle 不动
+    const spec = uiSpec;
     // 键位按契约：{forward:[增,减], yaw:[增,减], lateral:[增,减]}（模板 io.yaml 优先）
     const b = (spec.bindings) || { forward: ['w', 's'], yaw: ['q', 'e'], lateral: ['a', 'd'] };
     const dir = (pair) => (pair && pair[0] && held.has(pair[0]) ? 1 : 0) + (pair && pair[1] && held.has(pair[1]) ? -1 : 0);

@@ -1784,3 +1784,31 @@ CI 新增三步：装 numpy/pyyaml/mujoco → 跑 `test_g1_wbc_bundle.py`（`BUN
 - php/hiking 的对拍（需要 encoder 推理 + 渲染，想在 CI 里跑得先装 onnxruntime + 无头 GL）；
 - `bundle_eval.mjs` 的 scorecard（0–10 分）；
 - UI 侧的单源断言（`client/viewer` 里禁止硬编码键位/区间）。
+
+### 38.5 UI 单源：键位与区间不许写在页面里（`scripts/check-ui-single-source.py`）
+
+那个 A/D 改错三次的根因，是把模板键位临时抄进了页面。现在有一条 CI 检查盯着：
+
+| 规则 | 拦什么 |
+|---|---|
+| R1 | `host.js` 里 `held.has('a')` / `key === 'd'` 这类字面量决定语义 |
+| R2 | `host.html` 里滑杆 `min` 是负常量（负区间只能来自契约） |
+| R3 | `client/viewer/**` 出现 botlab 键名 `KeyW/KeyA/…`（属于 preset，不属于页面） |
+
+同一行写 `// ui-single-source: allow <理由>` 可以豁免。
+
+顺手修掉的两处真实隐患：
+
+- `host.html` 三个滑杆原来是硬编码 `min="-0.8" / "-3.14" / "-1"`，现在改成中性 `0…1`，
+  启动时由 `contract.ui` 覆盖；**没有指令接口的 bundle（instinct / uni / gmtrack）
+  直接隐藏指令控件**并提示「该 bundle 不接受速度指令（播放/跟踪类）」，
+  不再给一堆假区间让人去拖。
+- `tick()` 里没有契约就直接返回，不会拿默认区间乱发指令。
+
+验证（本机）：
+
+```
+✓ UI 单源检查通过：键位与区间都来自契约
+PHP：forward.min=0 max=1（来自契约）
+gmtrack：控件隐藏 + 「该 bundle 不接受速度指令（播放/跟踪类）」
+```
