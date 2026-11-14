@@ -160,6 +160,8 @@ let poseApplied = 0;
 
 let depthCanvas = null;
 
+// 面板显示「原始归一化深度」：0 = 贴脸、1 = 超过量程。
+// 模型吃的是 affine 之后的 [-0.5,0.5]，范围内数值会挤在一起，不适合人看。
 function drawDepth(msg) {
   const box = $('depth-box');
   if (box) box.style.display = '';
@@ -259,6 +261,13 @@ window.__probe = {
       step: lastPose ? lastPose.step : 0,
       frames: poseSeen,
       z, upright,
+      yawDeg: (() => {
+        const q = (lastPose && lastPose.xquat && lastPose.xquat.length >= 10)
+          ? [lastPose.xquat[3], lastPose.xquat[4], lastPose.xquat[5], lastPose.xquat[6]] : null;
+        if (!q) return null;
+        const [w, x, y, z] = q;
+        return Number((Math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)) * 180 / Math.PI).toFixed(1));
+      })(),
       meshes: meshCount,
       sceneGeoms: window.__sceneGeoms || 0,
       cmd: { forward: Number(($('fwd') || {}).value || 0), yaw: Number(($('yaw') || {}).value || 0) },

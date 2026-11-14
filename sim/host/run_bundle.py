@@ -477,9 +477,9 @@ def main() -> int:
             _r = php_cfg.get("resize") or [98, 58, 87, 58]
             from depth_camera import resize_depth as _rz
             _frame = _rz(_frame, int(_r[2]), int(_r[3]))
+            last_depth = ("php", _frame.copy())   # 面板显示原始归一化深度（人眼友好）
             _sc, _off = php_cfg.get("affine") or [1.0, 0.0]
             _frame = float(_sc) * _frame + float(_off)
-            last_depth = ("php", _frame)      # 面板显示的就等于下面喂进 encoder 的那一帧
             _latent = php_enc.run(None, {"depth_image": _frame[None].astype("float32")})[0]
             _latent = php_delay.push(_latent.reshape(-1), age_steps=0)
             mimic_obs = php_mod.actor_obs(
