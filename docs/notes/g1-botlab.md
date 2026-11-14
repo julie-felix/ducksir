@@ -1373,3 +1373,36 @@ bundle g1-hiking｜400/400 步｜基座 终 +0.834 最低 +0.804｜直立 +0.998
 
 结论：**平地已经能按指令走**（这是这条线的核心目标），台阶需要他们的地形生成器才能对齐。
 下一步要么（a）继续从编辑器运行时里挖地形生成逻辑，（b）接受「平地可用」先往下走。
+
+### 34.6 追到底了：台阶几何在 botlab 的 WASM 里生成，JS 里只有配置
+
+用 CDP `Page.addScriptToEvaluateOnNewDocument` 把 `window.Worker` 包了一层，
+抓「打开示例 → G1 Hiking Parkour 策略」时发给 MuJoCo worker 的首个 `load` 报文：
+
+```json
+{"id":3,"method":"load","payload":{
+  "label":"G1 29DOF InstinctMJ Shoe MJCF + terrain",
+  "modelUrl":"…/scene_29dof_torsoBase_popsicle_with_shoe.xml",
+  "runtimeTimestep":0.005,
+  "mujocoWasmVariant":"single-threaded",
+  "terrainNodes":[{"id":"Starter Parkour Stairs","type":"scene-terrain","data":{
+      "terrainKind":"stairs","position":[1.6,0,0],"yaw":0,
+      "stepDepth":0.28,"stepHeight":0.06,"stepWidth":1.4,"stepCount":5,
+      "rgba":[0.68,0.62,0.52,1],"friction":[1.5,0.005,0.0001]}}]}}
+```
+
+也就是说：**JS 只负责把配置交给 worker，几何是 worker 内部生成的**。
+worker 是 botlab 自编译的 MuJoCo WASM（`mujocoWasmVariant: single-threaded`），
+所以：
+
+- python SDK 里没有楼梯生成代码（只支持 `heightfield` / `custom-mesh`）；
+- 前端 chunk 里也没有（全站 chunk 都下下来搜过 `stepDepth/stepHeight`，零命中）；
+- 能拿到的只有这份**参数**，生成算法在 WASM 二进制里。
+
+这也解释了为什么我用 box 拼的台阶行为不对——他们内部也可能是 heightfield/别的表示。
+
+### 剩下的可行办法（都要额外投入）
+
+1. **从 WASM 里反推**：抓 `mj_*` 导出（MuJoCo 有 `mj_saveLastXML`），但要先找到 worker 的 RPC 通道；
+2. **视觉反推**：编辑器里把相机调到俯视，用已知的 `stepDepth/stepHeight/stepWidth` 当标尺量实际几何；
+3. **接受平地对齐**：策略已能在我们 sim 里按 0.4 m/s 走（这是核心目标），台阶留作后续。
