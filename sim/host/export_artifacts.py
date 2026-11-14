@@ -267,16 +267,7 @@ def main() -> int:
         if os.path.isdir(src):
             if os.path.isdir(dst):
                 shutil.rmtree(dst)
-            if motion_cfg.get("format") == "parkour_php":
-                enc = motion_cfg.get("encoder")
-                if enc and os.path.isfile(enc):
-                    shutil.copyfile(enc, os.path.join(bundle_dir, "php_enc.onnx"))
-            elif motion_cfg.get("format") == "parkour":
-                # 两段推理：编码器模型也要进 bundle
-                enc = motion_cfg.get("encoder")
-                if enc and os.path.isfile(enc):
-                    shutil.copyfile(enc, os.path.join(bundle_dir, "parkour_enc.onnx"))
-            elif motion_cfg.get("format") == "gmtrack":
+            if motion_cfg.get("format") == "gmtrack":
                 os.makedirs(dst, exist_ok=True)
                 clip = motion_cfg.get("clip")
                 shutil.copyfile(os.path.join(src, f"{clip}.npz"), os.path.join(dst, f"{clip}.npz"))
@@ -348,6 +339,18 @@ def main() -> int:
     )
     with open(os.path.join(out, "contract.json"), "w", encoding="utf-8") as f:
         json.dump(doc_contract, f, ensure_ascii=False, indent=2)
+
+    # 两段推理的编码器要进 bundle（parkour / parkour_php）——它不在 motion.path 里，
+    # 之前嵌在 `if os.path.isdir(src)` 分支里，导致 bundle 里根本没有 encoder。
+    _enc = ((preset.get("motion") or {}).get("encoder")) if preset else None
+    if _enc:
+        _fmt = (preset.get("motion") or {}).get("format")
+        _dest = {"parkour": "parkour_enc.onnx", "parkour_php": "php_enc.onnx"}.get(_fmt)
+        if _dest:
+            _src = _enc if os.path.isabs(_enc) else os.path.join(ROOT, _enc)
+            if os.path.isfile(_src):
+                shutil.copyfile(_src, os.path.join(args.out, _dest))
+                print(f"  编码器 {os.path.basename(_src)} → {_dest}")
 
     print(f"导出 → {args.out}")
     for name, p in doc_contract["plans"].items():

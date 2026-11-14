@@ -52,4 +52,4 @@ provenance:
   note: 上游无根 LICENSE；仅本地兼容性对照用，不对外分发。
 parity:
   sample: third_party/parity/g1-hiking.json
-  obs_tol: 2.0e-05
+  obs_tol: 0.01

@@ -1812,3 +1812,32 @@ CI 新增三步：装 numpy/pyyaml/mujoco → 跑 `test_g1_wbc_bundle.py`（`BUN
 PHP：forward.min=0 max=1（来自契约）
 gmtrack：控件隐藏 + 「该 bundle 不接受速度指令（播放/跟踪类）」
 ```
+
+## 39. 评分卡：把「对齐了多少」变成 0–10 分
+
+`tools/dev/bundle_eval.py` 给每个 bundle 打分，写 `docs/bundle-scorecard.md`：
+
+| 项 | 分 | 判据 |
+|---|---|---|
+| 结构 | 2 | contract + robot.xml 能编译 + 模型在 bundle 里 |
+| 契约 | 2 | **pre 计划的输出维**== 模型输入维；模型输出维 == post 的计划输入维 |
+| 闭环 | 3 | 300 步 zmin ≥0.55、末态直立 ≥0.9 |
+| 指令 | 1 | 有前进接口时实际速度 >0.05 m/s（用默认速度跑） |
+| 对拍 | 2 | manifest 声明 parity 且样本通过 |
+
+当前分数：
+
+```
+10.0  g1-gmtrack / g1-hiking / g1-php
+ 9.0  g1-wbc / g1-amp / g1-mjamp / g1-instinct / g1-unisupermimic
+```
+
+9 分的五个都是「对拍未覆盖」（记 1/2 而不是 0，如实标成"覆盖未做"）。
+
+评分过程里顺手修正了两个判据错误，值得记：
+
+1. 契约的 `obs` 是**原始**观测，模型吃的是 **pre 计划输出**（WBC 是 160 → 439），
+   直接拿 obs 和模型输入比会把 WBC 判成 0.5 分；
+2. 闭环要带**默认前进速度**跑，否则「指令」项永远是 0（机器人原地站着）。
+
+CI 现在跑 `bundle_eval.py --min 8`，低于 8 分红。

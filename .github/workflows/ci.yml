@@ -75,6 +75,14 @@ jobs:
       - name: 对拍回归（obs 与 botlab 录制逐段比）
         run: python3 sim/test/test_parity.py
 
+      - name: bundle 评分（低于 8 分就红）
+        run: |
+          if python3 -c "import mujoco" 2>/dev/null; then
+            python3 tools/dev/bundle_eval.py --min 8
+          else
+            echo "SKIP：没有 mujoco"
+          fi
+
       - name: UI 探针（有 Chrome 才跑）
         run: |
           if command -v google-chrome >/dev/null 2>&1 || command -v chromium >/dev/null 2>&1; then

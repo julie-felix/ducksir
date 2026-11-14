@@ -31,6 +31,19 @@ def _feed_values(feed):
     return None
 
 
+def _pick_action(row, joints=29):
+    """录制的输出名不统一（有的叫 actions，有的叫 output），取长度对得上的那个。"""
+    out = row.get("out") or {}
+    for name in ("actions", "output"):
+        values = out.get(name)
+        if values and len(values) == joints:
+            return values
+    for values in out.values():
+        if isinstance(values, list) and len(values) == joints:
+            return values
+    return None
+
+
 def _pick_feed(row, dim):
     ins = row.get("in") or {}
     for name in ("obs", "input"):
@@ -53,7 +66,7 @@ def sample(trace, steps, obs_dim):
     prev_action = [0.0] * JOINTS
     for row in _rows(trace):
         values = _pick_feed(row, obs_dim)
-        action = (row.get("out") or {}).get("actions")
+        action = _pick_action(row)
         if not values or not row.get("qpos"):
             if action:
                 prev_action = action
