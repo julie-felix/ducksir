@@ -84,6 +84,7 @@ class Job:
         self._thread: threading.Thread | None = None
         self._env = env
         self.metrics: dict = {}
+        self.control_state: dict = {"forward": 0.0, "yaw": 0.0, "paused": False}
 
     # ---- 生命周期 ----
     def start(self):
@@ -98,6 +99,7 @@ class Job:
         try:
             self._proc = subprocess.Popen(
                 self.argv, cwd=ROOT, env=env,
+                stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 text=True, bufsize=1, errors="replace")
         except Exception as exc:                       # 起不来也要有作业记录
@@ -160,6 +162,18 @@ class Job:
             return True
         return False
 
+    def control(self, patch: dict) -> bool:
+        """往子进程 stdin 写一条控制指令（forward/yaw/paused）。"""
+        if not self._proc or not self._proc.stdin:
+            return False
+        try:
+            self._proc.stdin.write(json.dumps(patch) + "\n")
+            self._proc.stdin.flush()
+            self.control_state.update({k: patch[k] for k in ("forward", "yaw", "paused") if k in patch})
+            return True
+        except (BrokenPipeError, ValueError):
+            return False
+
     def push_line(self, line: str):
         """外部线程往里塞一行（工程仿真的显示帧走这里）。"""
         with self._lock:
@@ -193,7 +207,7 @@ class Job:
             "id": self.id, "op": self.op, "status": self.status,
             "startedAt": self.started_at, "endedAt": self.ended_at,
             "exitCode": self.exit_code, "error": self.error,
-            "argv": self.argv, "metrics": self.metrics,
+            "argv": self.argv, "metrics": self.metrics, "control": self.control_state,
         }
 
     def _save(self):
@@ -378,7 +392,7 @@ def make_op(op: str, args: dict) -> tuple[list[str], dict]:
         argv = [python, os.path.join(ROOT, "sim/host/run_bundle.py"),
                 "--bundle", f"build/release/{name}",
                 "--mjcf", f"build/release/{name}/robot.xml",
-                "--seconds", str(seconds), "--stdio", "--pace"]
+                "--seconds", str(seconds), "--stdio", "--pace", "--control"]
         return argv, {"bundle": name, "seconds": seconds}
     if op == "sim":
         project = (args or {}).get("project")
@@ -492,6 +506,14 @@ class Handler(BaseHTTPRequestHandler):
                                  args=(job, int(meta["displayPort"])), daemon=True).start()
             REGISTRY.submit(job)
             return self._send(_json(200, {"id": job.id, "status": job.status, "meta": meta}))
+        if path.startswith("/api/jobs/") and path.endswith("/control"):
+            job_id = path[len("/api/jobs/"):-len("/control")]
+            body = self._read_json()
+            job = REGISTRY.jobs.get(job_id)
+            if not job:
+                return self._send(_err(404, "no_such_job", "没有这个作业", id=job_id))
+            ok = job.control(body)
+            return self._send(_json(200 if ok else 409, {"ok": ok, "control": job.control_state}))
         if path.startswith("/api/jobs/") and path.endswith("/cancel"):
             job_id = path[len("/api/jobs/"):-len("/cancel")]
             return self._send(_json(200, {"ok": REGISTRY.cancel(job_id)}))

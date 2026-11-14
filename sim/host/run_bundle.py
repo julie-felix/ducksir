@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import ctypes
 import json
+import threading
 import time as _time_mod
 import os
 import sys
@@ -96,6 +97,8 @@ def main() -> int:
     ap.add_argument("--steps", type=int)
     ap.add_argument("--pace", action="store_true",
                     help="按实时速度跑（直播用；否则宿主会几十倍速跑完）")
+    ap.add_argument("--control", action="store_true",
+                    help="从 stdin 读 JSONL 指令（{\"forward\":0.3,\"yaw\":0,\"paused\":true}），直播时用")
     ap.add_argument("--stdio", action="store_true",
                     help="把场景和每帧位姿按 JSONL 打到 stdout（插件宿主用它转 SSE）")
     ap.add_argument("--stream", type=int, metavar="PORT",
@@ -308,8 +311,40 @@ def main() -> int:
     trace_fh = open(args.trace, "w", encoding="utf-8") if args.trace else None
     mode_key = policies[0]["key"]
 
+    # 运行期指令（直播用）：一次性读 stdin，主循环取最新的
+    control = {"forward": float(args.forward), "yaw": float(args.yaw), "paused": False}
+    if args.control:
+        def _read_control():
+            for raw in sys.stdin:
+                raw = raw.strip()
+                if not raw:
+                    continue
+                try:
+                    upd = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                for key in ("forward", "yaw", "paused"):
+                    if key in upd:
+                        control[key] = upd[key]
+                cmd[0], cmd[2] = float(control["forward"]), float(control["yaw"])
+        threading.Thread(target=_read_control, daemon=True).start()
+
     _t_start = _time_mod.time() if args.pace else 0.0
-    for k in range(steps):
+    sim_k = 0            # 真正步进过的步数（暂停时不动，直播时间轴才不会继续走）
+    k = 0                # 循环计数（含暂停期间的轮询）
+    while sim_k < steps:
+        k = sim_k
+        if args.control:
+            if control.get("paused"):
+                # 暂停：不步进、时间轴不动，但继续推当前位姿（否则画面冻住看不出是暂停）
+                if stdio:
+                    try:
+                        sys.stdout.write(_HS.pose_message(sim_k, sim_k / control_hz, d.xpos, d.xquat) + "\n")
+                        sys.stdout.flush()
+                    except BrokenPipeError:
+                        stdio = False
+                _time_mod.sleep(0.02)
+                continue
         if k in pulses:
             pulse = pulses[k]
         t_step = time.perf_counter()
@@ -436,7 +471,7 @@ def main() -> int:
                                                        - np.asarray(preset.get("defaultJointPositions"), np.float64))
         if trace_fh is not None:
             trace_fh.write(json.dumps({
-                "step": k, "t": k / control_hz,
+                "step": sim_k, "t": sim_k / control_hz,
                 "obs": [round(float(x), 6) for x in obs],
                 "action": [round(float(x), 6) for x in raw],
                 "ctrl": [round(float(x), 6) for x in act],
@@ -466,7 +501,7 @@ def main() -> int:
             for _ in range(decim):
                 mujoco.mj_step(m, d)
         if (stream is not None or stdio) and k % max(1, int(round(control_hz / 30))) == 0:
-            _msg = _HS.pose_message(k, k / control_hz, d.xpos, d.xquat)
+            _msg = _HS.pose_message(sim_k, sim_k / control_hz, d.xpos, d.xquat)
             if stream is not None:
                 stream.send(_msg)
             if stdio:
@@ -480,6 +515,7 @@ def main() -> int:
             _slack = _due - _time_mod.time()
             if _slack > 0:
                 _time_mod.sleep(min(_slack, 0.5))
+        sim_k += 1
         if not np.isfinite(d.qpos).all():
             dead = True
             break

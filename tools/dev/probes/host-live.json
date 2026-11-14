@@ -1,15 +1,84 @@
 {
   "url": "/ducksir-static/client/viewer/host.html",
   "steps": [
-    { "wait": 4000 },
-    { "assert": "js", "expr": "typeof window.__probe === 'object'", "why": "页面暴露了 __probe" },
-    { "assert": "js", "expr": "__probe.state().meshes > 10", "why": "网格挂上了（>10）" },
-    { "wait": 6000 },
-    { "assert": "js", "expr": "__probe.state().frames > 60", "why": "帧在流（>60）" },
-    { "assert": "js", "expr": "__probe.state().z > 0.5", "why": "基座 >0.5 m（没躺下）" },
-    { "assert": "js", "expr": "__probe.state().upright > 0.8", "why": "直立 >0.8" },
-    { "assert": "pixels", "minRatio": 0.02, "why": "画面不是空的" },
-    { "assert": "changed", "gap": 1200, "why": "画面在变化（在动）" },
-    { "shot": "host-live" }
+    {
+      "wait": 4000
+    },
+    {
+      "assert": "js",
+      "expr": "typeof window.__probe === 'object'",
+      "why": "页面暴露了 __probe"
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().meshes > 10",
+      "why": "网格挂上了（>10）"
+    },
+    {
+      "wait": 6000
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().frames > 60",
+      "why": "帧在流（>60）"
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().z > 0.5",
+      "why": "基座 >0.5 m（没躺下）"
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().upright > 0.8",
+      "why": "直立 >0.8"
+    },
+    {
+      "assert": "pixels",
+      "minRatio": 0.02,
+      "why": "画面不是空的"
+    },
+    {
+      "assert": "changed",
+      "gap": 1200,
+      "why": "画面在变化（在动）"
+    },
+    {
+      "assert": "js",
+      "expr": "(() => { const e = document.getElementById('fwd'); e.value = '0.8'; e.dispatchEvent(new Event('input')); return e.value; })() === '0.8'",
+      "why": "滑杆可设置"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().cmd.forward === 0.8",
+      "why": "指令已下发（0.8）"
+    },
+    {
+      "capture": "simBeforePause",
+      "expr": "__probe.state().sim"
+    },
+    {
+      "click": "#pause",
+      "after": 1200,
+      "why": "点「暂停」"
+    },
+    {
+      "assert": "js",
+      "expr": "__probe.state().paused === true",
+      "why": "暂停状态同步"
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "assert": "js",
+      "expr": "(__probe.state().sim - window.__cap.simBeforePause) < 0.8",
+      "why": "暂停后仿真基本不再前进（<0.8 s 滞后）"
+    },
+    {
+      "shot": "host-live"
+    }
   ]
 }

@@ -179,6 +179,8 @@ window.__probe = {
       frames: poseSeen,
       z, upright,
       meshes: meshCount,
+      cmd: { forward: Number(($('fwd') || {}).value || 0), yaw: Number(($('yaw') || {}).value || 0) },
+      paused,
       bodies: bodies.length,
       error: null,
     };
@@ -243,6 +245,57 @@ addEventListener('resize', () => {
 });
 
 let currentJob = null;
+let paused = false;
+
+/** 把当前滑杆值发给宿主（唯一控制入口）。 */
+async function pushControl(patch = {}) {
+  if (!currentJob) return;
+  const body = {
+    forward: Number($('fwd') ? $('fwd').value : 0),
+    yaw: Number($('yaw') ? $('yaw').value : 0),
+    paused,
+    ...patch,
+  };
+  $('fwd-v').textContent = body.forward.toFixed(2);
+  $('yaw-v').textContent = body.yaw.toFixed(2);
+  try {
+    await fetch(`${API}/api/jobs/${currentJob}/control`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (e) { console.warn('[host] 控制失败', e); }
+}
+
+function wireControls() {
+  for (const id of ['fwd', 'yaw']) {
+    const el = $(id);
+    if (el) el.addEventListener('input', () => pushControl());
+  }
+  const pauseBtn = $('pause');
+  if (pauseBtn) pauseBtn.onclick = () => {
+    paused = !paused;
+    pauseBtn.textContent = paused ? '▶ 继续' : '⏸ 暂停';
+    pauseBtn.classList.toggle('held', paused);
+    pushControl();
+  };
+  const zero = $('zero');
+  if (zero) zero.onclick = () => {
+    if ($('fwd')) $('fwd').value = '0';
+    if ($('yaw')) $('yaw').value = '0';
+    pushControl();
+  };
+  addEventListener('keydown', (e) => {
+    const step = 0.05;
+    const fwd = $('fwd'); const yaw = $('yaw');
+    if (!fwd || !yaw) return;
+    if (e.key === 'w') fwd.value = String(Math.min(2.5, Number(fwd.value) + step));
+    else if (e.key === 's') fwd.value = String(Math.max(-0.8, Number(fwd.value) - step));
+    else if (e.key === 'a') yaw.value = String(Math.max(-3.14, Number(yaw.value) - step));
+    else if (e.key === 'd') yaw.value = String(Math.min(3.14, Number(yaw.value) + step));
+    else return;
+    pushControl();
+  });
+}
 async function startBundle() {
   const bundle = $('bundle').value;
   if (!bundle) { $('status').textContent = '先选一个 bundle'; return; }
@@ -260,6 +313,9 @@ async function startBundle() {
   }
   const out = await r.json();
   currentJob = out.id;
+  paused = false;
+  if ($('pause')) { $('pause').textContent = '⏸ 暂停'; $('pause').classList.remove('held'); }
+  pushControl();
   $('status').textContent = `已启动（job ${out.id}），接流中…`;
   const es = new EventSource(`${API}/api/jobs/${out.id}/stream`);
   es.onmessage = (ev) => {
@@ -330,6 +386,7 @@ if (WS_PORT) {
 } else {
   // SSE 模式：不要用全屏遮罩挡住状态文字（否则失败原因被盖住，只能看到「连接宿主…」）
   $('busy').classList.add('gone');
+  wireControls();
   loadBundles().then(() => {
     const sel = $('bundle');
     if (sel && sel.value) startBundle();      // 默认自动开第一个，进页面就能动
