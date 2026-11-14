@@ -67,6 +67,18 @@ class Plan:
         return int(s[0]), int(s[1])
 
 
+def _GM_mat(q):
+    """四元数 → 旋转矩阵（GMTrack 的 pelvis 局部角速度要用）。"""
+    w, x, y, z = (float(v) for v in q)
+    n = w * w + x * x + y * y + z * z
+    s = 2.0 / n
+    return np.array([
+        [1 - s * (y * y + z * z), s * (x * y - z * w), s * (x * z + y * w)],
+        [s * (x * y + z * w), 1 - s * (x * x + z * z), s * (y * z - x * w)],
+        [s * (x * z - y * w), s * (y * z + x * w), 1 - s * (x * x + y * y)],
+    ], dtype=np.float64)
+
+
 def _with_gains(preset: dict, n: int) -> dict:
     """把 preset 里可能缺的 kp/kd/effortLimit/actionScale/default 按 n 补齐。"""
     out = dict(preset)
@@ -129,13 +141,28 @@ def main() -> int:
     use_reference = any(int(p.get("mode", 0)) in (3, 4) for p in (con.get("policies") or []))
     _motion_all = (con.get("robot") or {}).get("motion")
     # UniSuperMimic：配方是单条目 mimic:uni，不走 reference，但要读动作
-    _is_uni = bool(_motion_all) and _motion_all.get("format") in ("unisupermimic", "instinct")
+    _is_uni = bool(_motion_all) and _motion_all.get("format") in ("unisupermimic", "instinct", "gmtrack")
     motion_cfg = _motion_all if (use_reference or _is_uni) else None
     ref_angles = (con.get("robot") or {}).get("reference_joint_positions")
     motion_arrays = motion_meta = playhead = None
     uni_obs_mod = uni_motion = uni_hist = None
     inst_obs_mod = inst_motion = inst_hist = inst_cfg = inst_cam = None
-    if motion_cfg and motion_cfg.get("format") == "instinct":
+    gm_obs_mod = gm_motion = gm_ph = gm_ah = gm_cfg = None
+    if motion_cfg and motion_cfg.get("format") == "gmtrack":
+        import numpy as _np
+        import gmtrack_obs as _GM
+        _mp = motion_cfg["path"]
+        if not os.path.isabs(_mp):
+            _mp = os.path.join(bdir, _mp)
+        z = _np.load(os.path.join(_mp, f"{motion_cfg['clip']}.npz"), allow_pickle=True)
+        gm_motion = {k: z[k] for k in ("joint_pos", "joint_vel", "body_pos_w", "body_quat_w",
+                                       "body_lin_vel_w", "body_ang_vel_w")}
+        gm_motion["fps"] = float(z["fps"][0])
+        gm_obs_mod = _GM
+        gm_ph = _GM.TermHistory()
+        gm_ah = _GM.ActionHistory()
+        gm_cfg = dict(motion_cfg)
+    elif motion_cfg and motion_cfg.get("format") == "instinct":
         import numpy as _np
         import instinct_obs as _IN
         import depth_camera as _DC
@@ -222,10 +249,13 @@ def main() -> int:
         steps = min(steps, args.steps)
 
     spec = mujoco.MjSpec.from_file(mjcf)
-    geom = spec.worldbody.add_geom()
-    geom.type = mujoco.mjtGeom.mjGEOM_PLANE
-    geom.size = [6.0, 6.0, 0.1]
-    geom.condim = 3
+    # 有些上游场景自带地面（GMTrack 的 scene.xml 就有一块 plane）。
+    # 再叠一块会变成「两层地面」→ 接触力翻倍，第 1 步就偏（实测 qpos 差 0.0195）。
+    if 'type="plane"' not in open(mjcf, encoding="utf-8", errors="replace").read():
+        geom = spec.worldbody.add_geom()
+        geom.type = mujoco.mjtGeom.mjGEOM_PLANE
+        geom.size = [6.0, 6.0, 0.1]
+        geom.condim = 3
     m = spec.compile()
     d = mujoco.MjData(m)
     m.opt.timestep = 1.0 / physics_hz
@@ -390,6 +420,21 @@ def main() -> int:
                 last_anchor_quat=motion_arrays["body_quat"][last][0],
                 base_quat=d.qpos[3:7], pause=playhead.paused)
         mimic_obs = None
+        if gm_obs_mod is not None:
+            _pb = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "pelvis")
+            _R = _GM_mat(d.xquat[_pb])
+            _q = np.array([d.qpos[i] for i in qpos_off], dtype=np.float64)
+            _qd = np.array([d.qvel[i] for i in dof_off], dtype=np.float64)
+            _local_ang = _R.T @ np.asarray(d.cvel[_pb][:3], dtype=np.float64)
+            mimic_obs = gm_obs_mod.assemble(
+                motion=gm_motion, t=sim_k * 0.02 + float(gm_cfg.get("reference_lead", 0.02)),
+                joint_order=preset.get("policyJointOrder"),
+                default_angles=np.asarray(preset["defaultJointPositions"]),
+                joint_pos=_q, joint_vel=_qd,
+                gravity_b=_R.T @ np.array([0, 0, -1.0]),
+                base_ang_vel_local=_local_ang,
+                last_action=last_action,
+                proprio_hist=gm_ph, action_hist=gm_ah)
         if inst_obs_mod is not None:
             if inst_cam is None:
                 inst_cam = _DC_DepthCamera(m, motion_cfg["camera"])
@@ -464,6 +509,14 @@ def main() -> int:
             act = raw
         if playhead is not None and in_active_mode:
             playhead.advance()
+        if gm_obs_mod is not None:
+            # 模板：target = q_ref(t+lead) + scale·action（policy 序），再按 motor_order 重排
+            _tref = sim_k * 0.02 + float(gm_cfg.get("reference_lead", 0.02))
+            _qref = gm_obs_mod.sample(gm_motion, _tref, "joint_pos")
+            _scale = np.asarray(preset.get("actionScale"), dtype=np.float64)
+            _raw = np.asarray(raw, dtype=np.float64)
+            _tgt = _qref + _scale * _raw
+            act = np.asarray(_tgt, dtype=np.float64)[np.asarray(preset["motorJointOrder"])]
         if playhead is not None and ref_angles is not None and in_active_mode:
             # WBC 的目标基准是 referenceJointPositions（不是 default），
             # post 已按 default 算好，这里补上差值即可（缩放不变）

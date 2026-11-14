@@ -1121,3 +1121,37 @@ Instinct 的 6 套地形分别在 `(0,0)`、`(250,0)`、`(500,0)`、`(750,0)`…
 ![Instinct 翻箱子的地形](../images/host-instinct-terrain.png)
 
 同时把初始相机拉远到 2.6 m，不然地形一进来就贴脸。
+
+## 32. GMTrack Stage-II：公式对齐了，闭环还差一步（WIP）
+
+模板 `Unitree-G1-GMTrack-Stage-II-Local` 已经接进来：obs 1728、动作 `q_ref + scale·action`、
+机器人用他们的 `scene.xml`（位置执行器）。
+
+### 已经对上的
+
+| 段 | 残差 | 说明 |
+|---|---|---|
+| 命令窗 798 | **5e-07** | 21 个 token（−10…+10 帧）；关键是 `t_ref = 控制步×0.02 **+ 0.02**`（模板 `REFERENCE_LEAD_S`） |
+| q / qd / action 段 | **1e-06 / 0** | by-term、最老在前、最新帧=当前状态 |
+| 开环重放（用他们录的 action） | **2e-06** | 说明动力学、执行器、`motorJointOrder` 重排全对 |
+
+### 还没对上的
+
+闭环跑 330 步会倒（`直立 -0.449`）。第 1 步的 obs 就已经有偏差：
+
+```
+step 1: qpos 差 0.0195 | gravity 0.0035 | angvel 0.199 | q 0.237
+```
+
+嫌疑顺序：
+
+1. `body_angular_velocity("pelvis", local)` 用的是 **cvel**（比 qvel 慢一个物理子步），
+   我们取的是「上一步 4 个子步之后」的值，时序可能还差一拍；
+2. 历史缓冲的**填充语义**（mjlab 重置时用第一帧填满）——前 10 步内两者不同；
+3. 他们的 `initial_qpos` 带 `spawn_lift=0.1`，落地瞬间的接触解算可能影响首帧。
+
+### 顺手修掉的一个真 bug
+
+`run_bundle` 无条件给场景补一块地面；GMTrack 的 `scene.xml` **自带 plane**，
+于是两层地面同时接触 → 接触力翻倍（实测第 1 步 qpos 就差 0.0195）。
+现在只在 MJCF 里没有 `type="plane"` 时才补。

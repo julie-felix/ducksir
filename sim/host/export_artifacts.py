@@ -66,6 +66,7 @@ SOURCE_BY_SLOT = {
     "velocity_command": lambda o: "command:velocity",
     "mimic_uni": lambda o: "mimic:uni",
     "mimic_instinct": lambda o: "mimic:instinct",
+    "mimic_gmtrack": lambda o: "mimic:gmtrack",
 }
 
 
@@ -225,7 +226,11 @@ def main() -> int:
         if os.path.isdir(src):
             if os.path.isdir(dst):
                 shutil.rmtree(dst)
-            if motion_cfg.get("format") == "instinct":
+            if motion_cfg.get("format") == "gmtrack":
+                os.makedirs(dst, exist_ok=True)
+                clip = motion_cfg.get("clip")
+                shutil.copyfile(os.path.join(src, f"{clip}.npz"), os.path.join(dst, f"{clip}.npz"))
+            elif motion_cfg.get("format") == "instinct":
                 os.makedirs(dst, exist_ok=True)
                 clip = motion_cfg.get("clip")
                 shutil.copyfile(os.path.join(src, f"{clip}.npz"), os.path.join(dst, f"{clip}.npz"))

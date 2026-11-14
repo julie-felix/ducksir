@@ -97,8 +97,8 @@ def check_manifest(man: dict, preset: dict, n_joints: int) -> None:
         errs.append("physics_hz 必须是 control_hz 的整数倍")
     if int(r["inference_decimation"]) < 1:
         errs.append("inference_decimation 必须 ≥ 1")
-    if man["action"]["mapping"] != "default_plus_scale":
-        errs.append(f"暂只支持 mapping=default_plus_scale（现在 {man['action']['mapping']}）")
+    if man["action"]["mapping"] not in ("default_plus_scale", "reference_plus_scale"):
+        errs.append(f"mapping 只支持 default_plus_scale / reference_plus_scale（现在 {man['action']['mapping']}）")
     if man["action"]["order"] not in ("motor", "policy"):
         errs.append(f"action.order 只支持 motor / policy（现在 {man['action']['order']}）")
     if sorted(preset["motorJointOrder"]) != list(range(n_joints)):
