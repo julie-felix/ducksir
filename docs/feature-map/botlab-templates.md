@@ -70,3 +70,16 @@ python3 sim/test/test_parity.py
 | 机器人 MJCF + mesh | `https://botlab.enkeebot.com/models/g1/instinctmj/…` |
 
 **记住**：`hn()` 传出的 size 是**全长**，最后统一在 `mn()` 里 `×0.5` 变成 MJCF 半长。
+
+## 录制源限制（2026-11-14）
+
+| 模板 | 能否录制 | 卡在哪 |
+|---|---|---|
+| GMTrack / Hiking / PHP | ✅ | — |
+| WBC | ❌ | 模板用 `robot.commands(mappings=...)`，0.4.1 没有 |
+| Instinct | ❌ | 场景无执行器，依赖浏览器 `autoActuators` 生成 |
+| AMP / MJAMP | ❌ | 没有随模板发布的资产包 |
+| UniSuperMimic | ⚠️ | 模板在，但要确认深/动作资产 |
+
+拿不到录制的，用**金标回归**替代：`tools/dev/make_golden.py` 生成轨迹、
+`sim/test/test_golden_bundles.py` 重跑对比（差 >1e-6 报警）。
